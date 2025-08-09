@@ -19,8 +19,11 @@ const SignUp = () => {
 
     try {
       // Call the signUp function
-      await signUp(email, password);
-      alert("Sign-up successful! Please verify your email.");
+  await signUp(email, password);
+  alert("Sign-up successful! Please verify your email.");
+  setEmail("");
+  setPassword("");
+  setConfirmPassword("");
     } catch (error) {
       // Handle Firebase authentication errors
       setError(error.message);
