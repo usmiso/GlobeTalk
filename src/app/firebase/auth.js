@@ -6,6 +6,8 @@ export async function signUp(email, password) {
   try {
     // Create a new user with email and password
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    // Send verification email
+    await sendEmailVerification(userCredential.user);
     return userCredential.user; // Return the newly created user
   } catch (error) {
     throw error; // Re-throw the error for handling in the component

@@ -11,8 +11,14 @@ const SignIn = () => {
     e.preventDefault();
 
     try {
-      await signIn(email, password);
-      alert("Sign-in successful!");
+      const user = await signIn(email, password);
+      if (!user.emailVerified) {
+        setError("Please verify your email before signing in.");
+        return;
+      }
+  alert("Sign-in successful!");
+  setEmail("");
+  setPassword("");
     } catch (error) {
       setError(error.message);
     }
