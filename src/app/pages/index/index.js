@@ -12,6 +12,13 @@ export default function Index() {
         <Link href="/pages/contact" className="text-red-600 underline">
           Go to Contact&apos;s
         </Link>
+        <Link href="/pages/signup" className="text-green-600 underline">
+          Sign Up
+        </Link>
+        <Link href="/pages/signin" className="text-yellow-600 underline">
+          Go to Login
+        </Link>
+        
       </div>
 
       <h1 className="text-4xl font-bold text-pink-600">Hello, Tailwind!</h1>
