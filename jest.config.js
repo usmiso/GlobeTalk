@@ -15,8 +15,8 @@ const customJestConfig = {
     testEnvironment: 'jsdom',
     collectCoverage: true,
     collectCoverageFrom: [
-        'src/components/**/*.{js,jsx,ts,tsx}',
-        'src/pages/**/*.{js,jsx,ts,tsx}',  // optional
+        '!src/components/**/*.{js,jsx,ts,tsx}',
+        '!src/pages/**/*.{js,jsx,ts,tsx}',  // optional
         "src/app/**/*.{js,jsx}",
         '!**/*.test.{js,jsx,ts,tsx}',      // exclude test files
         '!**/node_modules/**',
