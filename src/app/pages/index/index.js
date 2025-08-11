@@ -21,6 +21,7 @@ export default function Index() {
         <Link href="/pages/forgotPassword" className="text-green-900 underline">
           Go to forgotPasswordPage
         </Link>
+        
       </div>
 
       <h1 className="text-4xl font-bold text-green-600">Hello, Tailwind!</h1>
