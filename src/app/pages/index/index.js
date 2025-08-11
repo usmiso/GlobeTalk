@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 export default function Index() {
   return (
-    <main className="p-8 text-center">
+    <main className="p-8 text-center bg-amber-300">
       <h1 className="text-3xl font-bold mb-6">Welcome to My Site</h1>
 
       <div className="flex justify-center gap-6">
@@ -23,7 +23,7 @@ export default function Index() {
         </Link>
       </div>
 
-      <h1 className="text-4xl font-bold text-pink-600">Hello, Tailwind!</h1>
+      <h1 className="text-4xl font-bold text-green-600">Hello, Tailwind!</h1>
 
     </main>
   );
