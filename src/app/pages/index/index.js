@@ -18,6 +18,9 @@ export default function Index() {
         <Link href="/pages/signin" className="text-yellow-600 underline">
           Go to Login
         </Link>
+        <Link href="/pages/forgotPassword" className="text-green-900 underline">
+          Go to forgotPasswordPage
+        </Link>
         
       </div>
 
