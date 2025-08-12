@@ -1,8 +1,13 @@
+"use client";
 import Link from 'next/link';
 import React from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+
 
 export default function Index() {
+
+  const router = useRouter();
   return (
     <main className="min-h-screen w-full
       bg-[url('/images/backgroundImage.jpg')]
@@ -47,6 +52,7 @@ export default function Index() {
           </ul>
 
           <button type='button'
+            onClick={() => router.push("/pages/signin")}
             className='absolute right-4 top-1/2 -translate-y-1/2 
             rounded-3xl h-[44px] px-6 bg-blue-950
              shadow-[0px_4px_4px_0px_rgba(0,0,0,0.50)] 
@@ -58,6 +64,7 @@ export default function Index() {
         </section>
         <section aria-label='Open chat' className='justify-self-end'>
           <button type='button'
+            onClick={() => router.push("/pages/signup")}
             className='rounded-3xl mr-20 ml-6 bg-blue-300/20 
             shadow-[0px_4px_4px_0px_rgba(0,0,0,0.50)] 
             border border-neutral-400 h-12 w-35 px-6
