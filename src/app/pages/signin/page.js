@@ -2,11 +2,13 @@
 import React, { useState } from "react";
 import { signIn, signInWithGoogle } from "../../firebase/auth";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const SignIn = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const router = useRouter();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,6 +22,7 @@ const SignIn = () => {
       alert("Sign-in successful!");
       setEmail("");
       setPassword("");
+  router.push("/");
     } catch (error) {
       setError(error.message);
     }
@@ -29,6 +32,7 @@ const SignIn = () => {
     try {
       await signInWithGoogle();
       alert("Google sign-in successful!");
+  router.push("/");
     } catch (error) {
       setError(error.message);
     }
