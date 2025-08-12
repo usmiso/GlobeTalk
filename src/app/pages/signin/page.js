@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { signIn, signInWithGoogle } from "../../firebase/auth";
+import Link from "next/link";
 
 const SignIn = () => {
   const [email, setEmail] = useState("");
@@ -16,9 +17,9 @@ const SignIn = () => {
         setError("Please verify your email before signing in.");
         return;
       }
-  alert("Sign-in successful!");
-  setEmail("");
-  setPassword("");
+      alert("Sign-in successful!");
+      setEmail("");
+      setPassword("");
     } catch (error) {
       setError(error.message);
     }
@@ -80,8 +81,11 @@ const SignIn = () => {
         >
           Sign In with Google
         </button>
-        <div className="mt-4 text-center">
-          <a href="/pages/forget-password" className="text-blue-500 hover:underline">Forgot Password?</a>
+        <div className="mt-4"> {/* Please edit this section remove mrin the classes if you have to */}
+          <span>Don&apos;t have an account? </span>
+          <Link href="/pages/signup" className="text-blue-500 hover:underline mr-10"> SignUp</Link>
+          <br></br>
+          <Link href="/pages/forgetpassword" className="text-blue-500 hover:underline mt-5">Forgot Password?</Link>
         </div>
       </form>
     </div>

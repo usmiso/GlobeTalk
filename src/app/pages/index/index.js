@@ -6,19 +6,13 @@ export default function Index() {
       <h1 className="text-3xl font-bold mb-6">Welcome to My Site</h1>
 
       <div className="flex justify-center gap-6">
-        <Link href="/pages/about" className="text-blue-600 underline">
-          Go to About
-        </Link>
-        <Link href="/pages/contact" className="text-red-600 underline">
-          Go to Contact&apos;s
-        </Link>
         <Link href="/pages/signup" className="text-green-600 underline">
           Sign Up
         </Link>
         <Link href="/pages/signin" className="text-yellow-600 underline">
           Go to Login
         </Link>
-        <Link href="/pages/forgotPassword" className="text-green-900 underline">
+        <Link href="/pages/forgetpassword" className="text-green-900 underline">
           Go to forgotPasswordPage
         </Link>
         
