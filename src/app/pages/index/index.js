@@ -21,7 +21,7 @@ export default function Index() {
          border border-neutral-400 
         shadow-[0px_4px_4px_0px_rgba(0,0,0,1)] 
         overflow-hidden'>
-          <a href='/'
+          <Link href='/'
             aria-label='GlobeTalk home'
             className='flex items-center gap-2'>
             <Image
@@ -32,7 +32,7 @@ export default function Index() {
               className="rounded-full ml-4"
               priority />
             <p className="text-base font-semibold text-slate-800 px-2">GlobeTalk</p>
-          </a>
+          </Link>
           <ul className=" col-start-3 flex items-center justify-center gap-20 mt-1 mr-40 whitespace-nowrap">
             <li>
               <Link href="/pages/home" className="text-gray-800 text-[19px] font-[roboto_slab]">
