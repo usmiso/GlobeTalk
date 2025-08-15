@@ -68,7 +68,7 @@ export default function Index() {
               priority />
             <p className="text-base font-semibold text-slate-800 px-2">GlobeTalk</p>
           </Link>
-          <ul className="col-start-3 justify-self-center flex items-center gap-16 lg:gap-20 mt-0 mr-0 whitespace-nowrap">
+          <ul className=" col-start-3 flex items-center justify-center gap-20 mt-1 mr-40 whitespace-nowrap">
             <li>
               <Link href="/" className={`text-[19px] font-[roboto_slab] ${router === "/" ? "text-blue-900" : "hover:text-blue-800 "}`}>
                 Home
