@@ -1,38 +1,242 @@
+# GlobeTalk — Virtual Pen Pals 🌍✉️
+
+**GlobeTalk** is a privacy-first, anonymous pen-pal platform that connects people around the world for friendly, cultural, asynchronous “letter” exchanges. It recreates the charm of postal pen pals using modern web tech: random matchmaking, delayed message delivery, short cultural profiles, and moderation — text-only and anonymous by design.
+
+---
+
 [![codecov](https://codecov.io/gh/MakomaneTau/GlobeTalk/branch/main/graph/badge.svg)](https://codecov.io/gh/MakomaneTau/GlobeTalk)
+![License](https://img.shields.io/badge/license-MIT-blue)
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Table of contents
+1. [Quick summary](#quick-summary)
+2. [Features](#features)  
+3. [Tech stack](#tech-stack)  
+4. [Architecture & data model](#architecture--data-model)  
+5. [API endpoints](#api-endpoints)  
+6. [Local setup & development](#local-setup--development)  
+7. [Testing & CI](#testing--ci)  
+8. [Sprint 1 deliverables](#sprint-1-deliverables-rubric-aligned)  
+9. [Privacy, safety & moderation](#privacy-safety--moderation)  
+10. [Contributing](#contributing)  
+11. [Contact & support](#contact--support)  
+12. [License](#license)
 
-## Getting Started
+# Quick summary
+- **Purpose:** Help users make anonymous, cross-cultural connections via delayed text letters.  
+- **Key constraints:** Text-only (no file/media), anonymous (no names/emails published), moderation/reporting, OAuth-based sign-in for account protection.  
+- **Target users:** Curious learners, language learners, students, and anyone seeking low-pressure cultural exchange.
 
-First, run the development server:
+# Features
+- **Random Matchmaking** — pair users globally with optional filters (language, region/time-zone).  
+- **Asynchronous Messaging** — write a “letter”, schedule a delivery delay (e.g., 12 hours).  
+- **Cultural Profiles** — short, anonymous fields (age range, hobbies, region, languages).  
+- **Inbox / Compose** — thread-based UI for reading and writing letters.  
+- **Moderation** — reporting, moderation logs, blocking.  
+- **Settings & Safety** — block/report, toggle match preferences, delete account.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Tech stack
+
+**Frontend**
+- Next.js - Modern UI Library with hooks and context
+- Tailwind CSS  - Utility-first CSS framework
+- React Query or Context API
+
+**Backend**
+- Next.js API routes  
+- Firebase - Backend-as-a-Service Platform
+    - **Firebase Auth** - Authentication service
+    - **Firestore** - NoSQL document database
+
+**Development Infrastructure**
+- GitHub for version control  
+- GitHub Actions for CI (test.yml)
+    - Jest for unit testing
+    - Codecov for Code Coverage
+- Hosting: Netlify (One-click deployment)
+- Secrets & Environment management: Github Secrets & Netlify Environment Variables
+- Docs site: GitHub Pages (MkDocs)
+
+# Architecture & data model
+
+### High-level components
+- Frontend (Next) — UI, auth redirect, profile flow  
+- Backend API — matchmaking, messaging, moderation  
+- Database — persistent storage for users, matches, messages, logs  
+- Worker / Scheduler — processes delayed deliveries
+
+### Minimal DB schema (relational)
+```NoSQL
+users
+{
+  "uid": "uid_abc123",
+  "anonId": "G-42a7",          // public id shown to others
+  "createdAt": "<Firestore Timestamp>",
+  "lastSeenAt": "<Firestore Timestamp>",
+  "authProvider": "google",    // for admin use
+  "settings": {
+    "receiveEmail": false
+  }
+}
+
+profiles
+{
+  "anonId": "G-42a7",
+  "ownerUid": "uid_abc123",    // internal link, not public PII
+  "region": "South Africa",
+  "languages": ["English","Zulu"],
+  "hobbies": ["music","soccer"],
+  "bio": "22-28 • interested in culture & language exchange",
+  "createdAt": "<Firestore Timestamp>"
+}
+
+matches
+{
+  "id": "match_ab12",
+  "userA": "uid_abc123",
+  "userB": "uid_def456",
+  "matchedAt": "<Firestore Timestamp>",
+  "longTerm": false,
+  "state": "active"   // e.g., active, archived
+}
+
+messages
+{
+  "id": "msg_x001",
+  "senderId": "uid_abc123",
+  "body": "Hello from South Africa! What are your local holidays like?",
+  "createdAt": "<Firestore Timestamp>",
+  "deliveryTime": "<Firestore Timestamp>",    // when message should become visible
+  "delivered": false,
+  "deliveredAt": null,
+  "flagged": 0
+}
+
+moderation logs
+{
+  "id": "report_0001",
+  "reporterId": "uid_xyz789",
+  "messageRef": "/matches/match_ab12/messages/msg_x001",  // path reference
+  "reason": "abusive language",
+  "status": "pending",
+  "createdAt": "<Firestore Timestamp>",
+  "handledBy": null,
+  "actionTaken": null
+}
+```
+# API Endpoints
+
+> See [docs/api.md](docs/api.md) for full request/response examples.
+
+### Auth
+- `GET /auth/oauth/login` — Redirect user to OAuth provider.
+- `POST /auth/oauth/callback` — Exchange provider code for app JWT.
+
+### Profiles
+- `POST /profiles` — Create or update a profile.
+- `GET /profiles/:anonId` — Retrieve a profile by public anon ID.
+
+### Matchmaking
+- `POST /match` — Request a new match (with optional filters).
+- `GET /matches` — List active matches for the current user.
+
+### Messaging
+- `POST /messages` — Write a letter (delayed delivery).  
+- `GET /messages/:matchId` — Get delivered messages for a match.
+
+### Moderation
+- `POST /moderation/report` — Report a message.  
+- `GET /moderation/reports` — Moderator-only list of reports.  
+- `POST /admin/moderation/:reportId/action` — Moderator resolves report.  
+- `DELETE /users/:uid` — Delete user account (self or admin).
+
+---
+
+# Local Setup & Development
+
+### Prerequisites
+- Node.js 18+  
+- npm / pnpm / yarn  
+- Firebase project (Auth + Firestore enabled)  
+- Netlify
+
+### `.env.local`
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3000
+FIREBASE_API_KEY=xxxx
+FIREBASE_AUTH_DOMAIN=xxxx.firebaseapp.com
+FIREBASE_PROJECT_ID=xxxx
+FIREBASE_STORAGE_BUCKET=xxxx.appspot.com
+FIREBASE_MESSAGING_SENDER_ID=xxxx
+FIREBASE_APP_ID=xxxx
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Install dependencies
+```sh
+npm install
+```
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+### Run locally
+```sh
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Build for production
+```sh
+npm run build
+```
 
-## Learn More
+### Run tests
+```sh
+npm test
+```
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Testing & CI
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Jest** for unit and integration tests
+- **Testing Library** for React component tests
+- **GitHub Actions** for CI/CD
+- **Codecov** for code coverage reporting
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# Sprint 1 Deliverables (Rubric-aligned)
+- [x] User authentication (email, Google OAuth)
+- [x] Anonymous profile creation
+- [x] Responsive UI (Next.js + Tailwind CSS)
+- [x] Netlify deployment
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+# Privacy, Safety & Moderation
+
+- No personal info shared between users
+- All messages are text-only, no media
+- Moderation tools for reporting/blocking
+- Data stored securely in Firebase
+- Users can delete their account at any time
+
+---
+
+# Contributing
+
+1. Fork the repo and clone locally
+2. Create a new branch (`git checkout -b feature/my-feature`)
+3. Commit your changes (`git commit -m 'Add feature'`)
+4. Push to GitHub and open a Pull Request
+
+See CONTRIBUTING.md for more details.
+
+---
+
+# Contact & Support
+
+- Issues: [GitHub Issues](https://github.com/MakomaneTau/GlobeTalk/issues)
+- Email: [pontshotau09@gmail.com](pontshotau097@gmail.com)
+
+---
+
+# License
+
+This project is licensed under the MIT License. See [`LICENSE`](LICENSE) for details.
