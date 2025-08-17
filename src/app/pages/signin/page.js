@@ -62,9 +62,11 @@ const AuthPage = () => {
             if (mode === "signup") {
                 await signUpWithGoogle();
                 alert("Google sign-up successful!");
+                router.push("/pages/home");
             } else {
                 await signInWithGoogle();
                 alert("Google sign-in successful!");
+                router.push("/pages/home");
             }
         } catch (error) {
             setError(error.message);
