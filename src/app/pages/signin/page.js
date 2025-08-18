@@ -183,6 +183,14 @@ const AuthPage = () => {
                         <Link href="/pages/forgetpassword" className="text-blue-500 hover:underline">Forgot password?</Link>
                     </p>
                 )}
+
+                 {/* Go to Homepage button */}
+        <Link
+          href="/"
+          className="mt-4 bg-black hover:bg-black text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+        >
+          Go to Homepage
+        </Link>
             </div>
         </div>
     );
