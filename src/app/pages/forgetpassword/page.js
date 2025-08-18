@@ -96,7 +96,8 @@ const ForgotPassword = () => {
       <section className="hidden lg:flex w-full h-screen overflow-hidden">
         {/* Left Side */}
         <div
-          className="relative w-1/2 bg-blue-300 rounded-[50px] m-2 overflow-hidden"
+          className="relative w-1/2  rounded-[50px] m-2 overflow-hidden"
+          style={{ backgroundColor: "#476C8A" }}
         >
           <div className="absolute top-6 left-6 flex items-center gap-3">
             <Image
