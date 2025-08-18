@@ -76,7 +76,7 @@ const AuthPage = () => {
     return (
         <div className="flex h-screen">
             {/* Left side: colored panel */}
-            <div className="w-1/2 relative" style={{ backgroundColor: "#8ECAE6" }}>
+            <div className="w-1/2 relative" style={{ backgroundColor: "#476C8A" }}>
                 {/* Globe - Top Left */}
                 <div className="absolute top-8 left-8 flex items-center space-x-2">
                     <Image src="/images/globe.png" alt="Globe" width={100} height={100} priority />
