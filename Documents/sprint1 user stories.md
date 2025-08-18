@@ -1,0 +1,9 @@
+# User Stories and User Acceptance Tests
+
+| # | User Story | User Acceptance Test | Tasks | Story Points |
+|---|------------|---------------------|-------|--------------|
+
+ 1 | As a user, I can sign up using my email so that I can create an account on the system. | **Given** I am a new user, when I enter my email, password, and required details on the signup page, then I should be able to create an account and see a confirmation message. | - Design email signup form<br>- Implement backend logic to save user<br>- Display success/error messages | 5 |
+| 2 | As a user, I can sign up using Google so that I can quickly create an account without entering my details manually. | **Given** I am a new user, when I click the "Sign up with Google" button and authorize access, then my account should be created and I should be redirected to my dashboard. | - Integrate Google OAuth<br>- Handle new account creation in backend<br>- Display success/error messages | 5 |
+| 3 | As a user, I can log in so that I can access my account. | **Given** I am a registered user, when I enter valid credentials, then I should be redirected to my dashboard. | - Design login interface<br>- Implement authentication logic<br>- Display login error messages | 3 |
+| 4 | As a user, I can reset my password so that I can regain access if I forget it. | **Given** I am a user with an existing account, when I enter my registered email on the "Forgot Password" page, then I should receive a password reset email and be able to set a new password. | - Design reset password form<br>- Implement backend logic for password reset (email/token)<br>- Display success/error messages | 3 |
