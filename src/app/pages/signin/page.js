@@ -49,7 +49,7 @@ const AuthPage = () => {
                 alert("Sign-in successful!");
                 setEmail("");
                 setPassword("");
-                router.push("/pages/home"); // Redirect to home page after sign-in
+                router.push("/pages/explore"); // Redirect to home page after sign-in
             } catch (error) {
                 setError(error.message);
             }
@@ -62,11 +62,11 @@ const AuthPage = () => {
             if (mode === "signup") {
                 await signUpWithGoogle();
                 alert("Google sign-up successful!");
-                router.push("/pages/home");
+                router.push("/pages/explore");
             } else {
                 await signInWithGoogle();
                 alert("Google sign-in successful!");
-                router.push("/pages/home");
+                router.push("/pages/explore");
             }
         } catch (error) {
             setError(error.message);

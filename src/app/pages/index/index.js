@@ -13,7 +13,7 @@ export default function Index() {
   return (
     <main className="min-h-screen w-full
       bg-[url('/images/backgroundImage.jpg')]
-      bg-cover bg-center bg-no-repeat pt-10">
+      bg-auto bg-center bg-no-repeat pt-10">
 
       {/* MOBILE HEADER */}
       <header className="md:hidden flex items-center justify-between px-4 py-4 text-white">
