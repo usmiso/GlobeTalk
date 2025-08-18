@@ -11,9 +11,15 @@ export default function Index() {
 
 
   return (
-    <main className="min-h-screen w-full
-      bg-[url('/images/backgroundImage.jpg')]
-      bg-cover bg-center bg-no-repeat pt-10">
+    <main className="relative min-h-screen w-full pt-10 overflow-hidden">
+      <Image
+        src="/images/backgroundImage.avif"
+        alt="background image"
+        fill
+        priority
+        sizes="100vw"
+        className="object-cover object-center -z-10"
+      />
 
       {/* MOBILE HEADER */}
       <header className="md:hidden flex items-center justify-between px-4 py-4 text-white">
@@ -99,7 +105,7 @@ export default function Index() {
         </section>
         <section aria-label='Open chat' className='justify-self-end'>
           <button type='button'
-            onClick={() => router.push("/pages/signup")}
+            onClick={() => router.push("/pages/signin")}
             className='rounded-3xl mr-20 ml-6 bg-blue-300/20 
             shadow-[0px_4px_4px_0px_rgba(0,0,0,0.50)] 
             border border-neutral-400 h-12 w-35 px-6
@@ -124,7 +130,7 @@ export default function Index() {
         <p className="mt-4 sm:mt-6 text-sm sm:text-lg md:text-xl
                 text-white font-[Roboto_Slab]">One message away from your new favourite human</p>
         <button type="button"
-          onClick={() => router.push("/pages/signup")}
+          onClick={() => router.push("/pages/signin")}
           className="mx-auto mt-6 sm:mt-8
                w-[240px] md:w-[250px] h-12 md:h-14
                rounded-[30px] bg-gray-800
