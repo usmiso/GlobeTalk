@@ -293,5 +293,7 @@ const Profile = () => {
         </main>
     );
 };
+    );
+};
 
 export default Profile;
