@@ -69,6 +69,7 @@ const Profile = () => {
             try {
                 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
                 const res = await fetch(`${apiUrl}/api/profile?userID=${user.uid}`);
+                // const res = await fetch(`http://localhost:5000/api/profile?userID=${user.uid}`);
                 if (res.ok) {
                     const data = await res.json();
                     if (data && data.intro) {
@@ -79,7 +80,7 @@ const Profile = () => {
                         setProfileLoaded(true);
                     }
                 }
-            } catch (err) {}
+            } catch (err) { }
             setLoading(false);
         };
         fetchProfile();
@@ -120,17 +121,19 @@ const Profile = () => {
         }
         try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-            const res = await fetch(`${apiUrl}/api/profile`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    userID: user.uid,
-                    intro,
-                    ageRange,
-                    hobbies,
-                    timezone,
-                }),
-            });
+            const res = await fetch(`${apiUrl}/api/profile`,
+                // const res = await fetch(`http://localhost5000/api/profile`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userID: user.uid,
+                        intro,
+                        ageRange,
+                        hobbies,
+                        timezone,
+                    }),
+                });
             if (!res.ok) {
                 const data = await res.json();
                 setError(data.error || 'Failed to save profile.');
