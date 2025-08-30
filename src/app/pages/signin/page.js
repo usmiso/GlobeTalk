@@ -97,7 +97,21 @@ const AuthPage = () => {
                 // If email is verified, proceed
                 setEmail("");
                 setPassword("");
-                router.push("/pages/profile");
+                // Check if user has a profile, redirect accordingly
+                try {
+                    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+                    const res = await fetch(`${apiUrl}/api/profile?userID=${user.uid}`);
+                    if (res.ok) {
+                        // Profile exists, go to matchmaking
+                        router.push("/pages/matchmaking");
+                    } else {
+                        // No profile, go to profile completion
+                        router.push("/pages/profile");
+                    }
+                } catch {
+                    // On error, go to profile completion
+                    router.push("/pages/profile");
+                }
             } catch (error) {
                 if (
                     error.code === "auth/user-not-found" ||
@@ -122,7 +136,18 @@ const AuthPage = () => {
             if (isNewUser) {
                 router.push("/pages/profile");
             } else {
-                router.push("/pages/explore");
+                // Check if user has a profile, redirect accordingly
+                try {
+                    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+                    const res = await fetch(`${apiUrl}/api/profile?userID=${user.uid}`);
+                    if (res.ok) {
+                        router.push("/pages/matchmaking");
+                    } else {
+                        router.push("/pages/profile");
+                    }
+                } catch {
+                    router.push("/pages/profile");
+                }
             }
         } catch (error) {
             console.error(error);
@@ -137,7 +162,6 @@ const AuthPage = () => {
                 setError("Google sign-up failed. Please try again.");
             }
         }
-
     };
 
 
