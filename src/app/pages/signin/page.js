@@ -118,12 +118,8 @@ const AuthPage = () => {
 
     const handleGoogleAuth = async () => {
         try {
-            const { isNewUser, user } = await signInWithGoogle();
-            if (isNewUser) {
-                router.push("/pages/profile");
-            } else {
-                router.push("/pages/explore");
-            }
+            await signInWithGoogle();
+            router.push("/pages/profile");
         } catch (error) {
             console.error(error);
 
@@ -137,7 +133,6 @@ const AuthPage = () => {
                 setError("Google sign-up failed. Please try again.");
             }
         }
-
     };
 
 
