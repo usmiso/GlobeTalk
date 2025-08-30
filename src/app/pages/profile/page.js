@@ -284,7 +284,7 @@ const Profile = () => {
                     </button>
                     <button
                         className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition mt-4"
-                        onClick={() => router.push('/pages/explore')}
+                        onClick={() => router.push('/pages/matchmaking')}
                     >
                         Next
                     </button>
