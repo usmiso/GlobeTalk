@@ -115,6 +115,10 @@ const Profile = () => {
             setError('Please fill in all fields.');
             return;
         }
+        const languageName = LANGUAGES_LIST[selectedLanguage]?.name || selectedLanguage;
+        const tzObj = timezones.find(tz => tz.value === timezone);
+        const timezoneText = tzObj ? tzObj.text : timezone;
+
         try {
             const res = await fetch(`http://localhost:5000/api/profile`, {
                 method: 'POST',
@@ -124,8 +128,8 @@ const Profile = () => {
                     intro,
                     ageRange,
                     hobbies,
-                    timezone,
-                    language: selectedLanguage,
+                    timezone: timezoneText,
+                    language: languageName,
                 }),
             });
             if (!res.ok) {
