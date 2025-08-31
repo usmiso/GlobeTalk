@@ -98,6 +98,34 @@ app.get('/api/facts', async (req, res) => {
     }
 });
 
+
+
+// 🆕 API endpoint to save avatar + username
+app.post('/api/profile/avatar', async (req, res) => {
+	if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
+	try {
+		const { userID, username, avatarUrl } = req.body;
+		if (!userID || !username || !avatarUrl) {
+			return res.status(400).json({ error: 'Missing required fields (userID, username, avatarUrl)' });
+		}
+		await db.collection('profiles').doc(userID).set({
+			userID,
+			username,
+			avatarUrl
+		}, { merge: true }); // merge ensures we don’t overwrite intro/age/etc
+		res.status(200).json({ message: 'Avatar and username saved successfully' });
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+})
+
+
+
+
+
+
+
+
 // Serve static files (optional)
 // app.use('/static', express.static(path.join(__dirname, 'public')));
 
