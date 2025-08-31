@@ -25,6 +25,9 @@ function EditProfile() {
     const [ageRange, setAgeRange] = useState('');
     const [intro, setIntro] = useState("");
     const [region, setRegion] = useState("");
+    const [avatar, setAvatar] = useState("");
+    const [username, setUsername] = useState("");
+
 
 
     const ageRanges = [
@@ -97,6 +100,35 @@ function EditProfile() {
     const handleRemove = (hobby) => {
         setHobbies(hobbies.filter((h) => h !== hobby));
     };
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            const user = auth.currentUser;
+            if (!user) return;
+
+            try {
+                const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+                const res = await fetch(`${apiUrl}/api/profile?userID=${user.uid}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data) {
+                        setIntro(data.intro || "");
+                        setAgeRange(data.ageRange || "");
+                        setHobbies(data.hobbies || []);
+                        setLanguages(data.languages || []);
+                        setRegion(data.region || "");
+                        setSayings(data.sayings || []);
+                        setUsername(data.username || "");
+                        setAvatar(data.avatar || "");
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to load profile:", err);
+            }
+        };
+
+        fetchProfile();
+    }, []);
 
     useEffect(() => {
         const fetchLanguages = async () => {
@@ -205,31 +237,34 @@ function EditProfile() {
             <form onSubmit={handleSubmitSave} className="bg-white rounded-lg shadow-lg p-8 max-auto w-screen space-y-10">
 
                 {/* Profile Info */}
-                <section className="flex flex-col items-center text-center mb-8 max-w-2xl mx-auto">
-                    <div className="w-28 h-28 rounded-full bg-red-400 mb-4"></div>
-                    <h1 className="text-2xl font-bold text-center text-gray-800">username123</h1>
-                    <select className="p-0.5 mt-4 text-sm"
-                        value={ageRange}
-                        onChange={e => setAgeRange(e.target.value)}
-                        required
-                    >
-                        {ageRanges.map(range => (
-                            <option key={range} value={range}>{range}</option>
-                        ))}
-                    </select>
+                <div className="w-28 h-28 rounded-full bg-gray-200 mb-4 overflow-hidden">
+                    {avatar && <img src={avatar} alt="avatar" className="w-full h-full object-cover" />}
+                </div>
+                <h1 className="text-2xl font-bold text-center text-gray-800">
+                    {username || "Loading..."}
+                </h1>
+                <select className="p-0.5 mt-4 text-sm"
+                    value={ageRange}
+                    onChange={e => setAgeRange(e.target.value)}
+                    required
+                >
+                    {ageRanges.map(range => (
+                        <option key={range} value={range}>{range}</option>
+                    ))}
+                </select>
 
 
-                    <select
-                        className="mt-2 p-2 text-sm"
-                        value={region}
-                        onChange={(e) => setRegion(e.target.value)}
-                    >
-                        <option value="">Select Region</option>
-                        {regions.map((r) => (
-                            <option key={r} value={r}>{r}</option>
-                        ))}
-                    </select>
-                </section>
+                <select
+                    className="mt-2 p-2 text-sm"
+                    value={region}
+                    onChange={(e) => setRegion(e.target.value)}
+                >
+                    <option value="">Select Region</option>
+                    {regions.map((r) => (
+                        <option key={r} value={r}>{r}</option>
+                    ))}
+                </select>
+
 
                 {/* About Me */}
                 <section>
@@ -379,7 +414,7 @@ function EditProfile() {
                     {saving ? "Saving..." : "Save Changes"}
                 </button>
             </form>
-        </main>
+        </main >
 
     );
 }
