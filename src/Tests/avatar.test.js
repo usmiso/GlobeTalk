@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import ProfileSetup from '../app/pages/avatarUsernameGen/page';
+import ProfileSetup from '../app/components/avatar/page';
 
 // Mock the fetch API
 global.fetch = jest.fn();
