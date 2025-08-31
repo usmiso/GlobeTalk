@@ -27,6 +27,8 @@ function EditProfile() {
     const [region, setRegion] = useState("");
     const [avatar, setAvatar] = useState("");
     const [username, setUsername] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [avatarUrl, setAvatarUrl] = useState("");
 
 
 
@@ -101,6 +103,7 @@ function EditProfile() {
         setHobbies(hobbies.filter((h) => h !== hobby));
     };
 
+
     useEffect(() => {
         const fetchProfile = async () => {
             const user = auth.currentUser;
@@ -123,8 +126,9 @@ function EditProfile() {
                     }
                 }
             } catch (err) {
-                console.error("Failed to load profile:", err);
+                console.error("Error fetching profile:", err);
             }
+            setLoading(false);
         };
 
         fetchProfile();
@@ -191,24 +195,26 @@ function EditProfile() {
             setError('User not authenticated.');
             setSaving(false);
             return;
-
         }
 
         try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-            const res = await fetch(`${apiUrl}/api/profile?userID=${user.uid}`);
-            // const res = await fetch(`http://localhost:5000/api/profile?userID=${user.uid}`);
-            if (res.ok) {
-                const data = await res.json();
-                if (data && data.intro) {
-                    setIntro(data.intro);
-                    setAgeRange(data.ageRange);
-                    setHobbies(data.hobbies || []);
-                    setTimezone(data.timezone);
-                    setProfileLoaded(true);
-                    setLanguages(data.languages || []);
-                }
-            };
+
+            const res = await fetch(`${apiUrl}/api/profile`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    userID: user.uid,
+                    intro,
+                    ageRange,
+                    hobbies,
+                    region,
+                    languages,
+                    sayings,
+                    username,
+                    avatar
+                }),
+            });
 
             if (!res.ok) {
                 const data = await res.json();
@@ -216,14 +222,16 @@ function EditProfile() {
                 setSaving(false);
                 return;
             }
+
             setSaving(false);
-            router.push('/userprofile');
+            router.push('/userprofile'); // ✅ go to profile page
 
         } catch (err) {
             setError('Failed to connect to server.');
             setSaving(false);
         }
     };
+
 
     return (
         <main className="min-h-screen bg-white flex flex-col items-center py-10 px-4 max-w-4xl mx-auto">
@@ -238,11 +246,16 @@ function EditProfile() {
 
                 {/* Profile Info */}
                 <div className="w-28 h-28 rounded-full bg-gray-200 mb-4 overflow-hidden">
-                    {avatar && <img src={avatar} alt="avatar" className="w-full h-full object-cover" />}
+                    {avatar ? (
+                        <img src={avatar} alt="avatar" className="w-full h-full object-cover" />
+                    ) : (
+                        <span className="text-gray-400 text-sm flex items-center justify-center h-full">No Avatar</span>
+                    )}
                 </div>
                 <h1 className="text-2xl font-bold text-center text-gray-800">
                     {username || "Loading..."}
                 </h1>
+
                 <select className="p-0.5 mt-4 text-sm"
                     value={ageRange}
                     onChange={e => setAgeRange(e.target.value)}
@@ -272,6 +285,9 @@ function EditProfile() {
                     <textarea
                         placeholder="Write something about yourself..."
                         className="w-full border border-gray-300 rounded-md p-4 bg-gray-50"
+                        value={intro}
+                        onChange={(e) => setIntro(e.target.value)}
+
                     />
                 </section>
 

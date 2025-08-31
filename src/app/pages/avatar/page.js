@@ -2,15 +2,18 @@
 
 import { useState, useEffect } from "react";
 import { auth } from "../../firebase/auth"; // ✅ grab current user
+import { useRouter } from "next/navigation";
 
 export default function AvatarUsernameGen() {
   const [avatar, setAvatar] = useState("");
   const [username, setUsername] = useState("");
   const [gender, setGender] = useState("male");
   const [hair, setHair] = useState("");
+  const router = useRouter();
 
   const femaleHairOptions = ['straight02', 'bun', 'curly'];
   const maleHairOptions = ['shaggy', 'dreads02', 'theCaesarAndSidePart'];
+
 
   const generateUsername = async () => {
     const res = await fetch("https://randomuser.me/api/");
@@ -68,6 +71,7 @@ export default function AvatarUsernameGen() {
       }
 
       alert("Avatar saved successfully!");
+      router.push('/pages/editprofile');
     } catch (err) {
       alert("Error saving avatar: " + err.message);
     }
