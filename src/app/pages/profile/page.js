@@ -44,7 +44,7 @@ const Profile = () => {
                 return;
             }
             try {
-                const res = await fetch(`http://localhost:5000/api/profile?userID=${user.uid}`);
+                // const res = await fetch(`http://localhost:5000/api/profile?userID=${user.uid}`);
                 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
                 const res = await fetch(`${apiUrl}/api/profile?userID=${user.uid}`);
                 // const res = await fetch(`http://localhost:5000/api/profile?userID=${user.uid}`);
@@ -135,20 +135,20 @@ const Profile = () => {
                     language: languageName,
                 }),
             });
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-            const res = await fetch(`${apiUrl}/api/profile`,
-                // const res = await fetch(`http://localhost5000/api/profile`,
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        userID: user.uid,
-                        intro,
-                        ageRange,
-                        hobbies,
-                        timezone,
-                    }),
-                });
+            // const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+            // // const res = await fetch(`${apiUrl}/api/profile`,
+            //     // const res = await fetch(`http://localhost5000/api/profile`,
+            //     {
+            //         method: 'POST',
+            //         headers: { 'Content-Type': 'application/json' },
+            //         body: JSON.stringify({
+            //             userID: user.uid,
+            //             intro,
+            //             ageRange,
+            //             hobbies,
+            //             timezone,
+            //         }),
+            //     });
             if (!res.ok) {
                 const data = await res.json();
                 setError(data.error || 'Failed to save profile.');
