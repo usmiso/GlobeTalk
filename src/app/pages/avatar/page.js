@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect } from "react";
+import { auth } from "../../firebase/auth"; // ✅ grab current user
 
-export default function ProfileSetup() {
+export default function AvatarUsernameGen() {
   const [avatar, setAvatar] = useState("");
   const [username, setUsername] = useState("");
   const [gender, setGender] = useState("male");
@@ -41,20 +42,42 @@ export default function ProfileSetup() {
     generateAvatar();
   }, []);
 
+  // ✅ Save avatar + username to backend
   const handleConfirm = async () => {
-    await fetch("/api/users/setup", {
-      method: "POST",
-      body: JSON.stringify({ username, avatar }),
-      headers: { "Content-Type": "application/json" },
-    });
+    const user = auth.currentUser;
+    if (!user) {
+      alert("User not logged in");
+      return;
+    }
+
+    try {
+      const res = await fetch("http://localhost:5000/api/profile/avatar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userID: user.uid,
+          username,
+          avatarUrl: avatar,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || "Failed to save avatar");
+        return;
+      }
+
+      alert("Avatar saved successfully!");
+    } catch (err) {
+      alert("Error saving avatar: " + err.message);
+    }
   };
 
   return (
     <div className="p-8">
-      {/* Heading */}
       <h1 className="text-4xl font-bold mb-8">Avatar Generator</h1>
 
-      {/* Left side: username block */}
+      {/* Username */}
       <div className="flex flex-col w-1/3 space-y-4">
         <div className="bg-gray-300 h-40 flex items-center justify-center text-xl font-semibold rounded-lg">
           {username || "Generated Username"}
@@ -67,14 +90,12 @@ export default function ProfileSetup() {
         </button>
       </div>
 
-      {/* Avatar group shifted up */}
+      {/* Avatar */}
       <div className="flex flex-col items-center justify-center mt-10 transform -translate-y-10">
-        {/* Avatar Circle */}
-        <div className="w-64 h-63 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden mb-6">
+        <div className="w-64 h-64 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden mb-6">
           {avatar && <img src={avatar} alt="avatar" className="w-full h-full object-cover" />}
         </div>
 
-        {/* Button: Generate New Avatar */}
         <button
           onClick={generateAvatar}
           className="bg-purple-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-purple-600 mb-6"
@@ -98,17 +119,9 @@ export default function ProfileSetup() {
             onChange={(e) => setHair(e.target.value)}
             className="bg-gray-300 px-4 py-3 rounded-lg font-medium"
           >
-            {gender === 'female'
-              ? femaleHairOptions.map(option => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))
-              : maleHairOptions.map(option => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
+            {(gender === "female" ? femaleHairOptions : maleHairOptions).map(option => (
+              <option key={option} value={option}>{option}</option>
+            ))}
           </select>
         </div>
 
@@ -123,3 +136,9 @@ export default function ProfileSetup() {
     </div>
   );
 }
+
+
+
+
+
+
