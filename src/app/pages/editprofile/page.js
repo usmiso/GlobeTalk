@@ -25,6 +25,11 @@ function EditProfile() {
     const [ageRange, setAgeRange] = useState('');
     const [intro, setIntro] = useState("");
     const [region, setRegion] = useState("");
+    const [avatar, setAvatar] = useState("");
+    const [username, setUsername] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [avatarUrl, setAvatarUrl] = useState("");
+
 
 
     const ageRanges = [
@@ -98,6 +103,37 @@ function EditProfile() {
         setHobbies(hobbies.filter((h) => h !== hobby));
     };
 
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            const user = auth.currentUser;
+            if (!user) return;
+
+            try {
+                const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+                const res = await fetch(`${apiUrl}/api/profile?userID=${user.uid}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data) {
+                        setIntro(data.intro || "");
+                        setAgeRange(data.ageRange || "");
+                        setHobbies(data.hobbies || []);
+                        setLanguages(data.languages || []);
+                        setRegion(data.region || "");
+                        setSayings(data.sayings || []);
+                        setUsername(data.username || "");
+                        setAvatar(data.avatar || "");
+                    }
+                }
+            } catch (err) {
+                console.error("Error fetching profile:", err);
+            }
+            setLoading(false);
+        };
+
+        fetchProfile();
+    }, []);
+
     useEffect(() => {
         const fetchLanguages = async () => {
             try {
@@ -159,24 +195,26 @@ function EditProfile() {
             setError('User not authenticated.');
             setSaving(false);
             return;
-
         }
 
         try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-            const res = await fetch(`${apiUrl}/api/profile?userID=${user.uid}`);
-            // const res = await fetch(`http://localhost:5000/api/profile?userID=${user.uid}`);
-            if (res.ok) {
-                const data = await res.json();
-                if (data && data.intro) {
-                    setIntro(data.intro);
-                    setAgeRange(data.ageRange);
-                    setHobbies(data.hobbies || []);
-                    setTimezone(data.timezone);
-                    setProfileLoaded(true);
-                    setLanguages(data.languages || []);
-                }
-            };
+
+            const res = await fetch(`${apiUrl}/api/profile`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    userID: user.uid,
+                    intro,
+                    ageRange,
+                    hobbies,
+                    region,
+                    languages,
+                    sayings,
+                    username,
+                    avatar
+                }),
+            });
 
             if (!res.ok) {
                 const data = await res.json();
@@ -184,14 +222,16 @@ function EditProfile() {
                 setSaving(false);
                 return;
             }
+
             setSaving(false);
-            router.push('/userprofile');
+            router.push('/userprofile'); // ✅ go to profile page
 
         } catch (err) {
             setError('Failed to connect to server.');
             setSaving(false);
         }
     };
+
 
     return (
         <main className="min-h-screen bg-white flex flex-col items-center py-10 px-4 max-w-4xl mx-auto">
@@ -205,31 +245,39 @@ function EditProfile() {
             <form onSubmit={handleSubmitSave} className="bg-white rounded-lg shadow-lg p-8 max-auto w-screen space-y-10">
 
                 {/* Profile Info */}
-                <section className="flex flex-col items-center text-center mb-8 max-w-2xl mx-auto">
-                    <div className="w-28 h-28 rounded-full bg-red-400 mb-4"></div>
-                    <h1 className="text-2xl font-bold text-center text-gray-800">username123</h1>
-                    <select className="p-0.5 mt-4 text-sm"
-                        value={ageRange}
-                        onChange={e => setAgeRange(e.target.value)}
-                        required
-                    >
-                        {ageRanges.map(range => (
-                            <option key={range} value={range}>{range}</option>
-                        ))}
-                    </select>
+                <div className="w-28 h-28 rounded-full bg-gray-200 mb-4 overflow-hidden">
+                    {avatar ? (
+                        <img src={avatar} alt="avatar" className="w-full h-full object-cover" />
+                    ) : (
+                        <span className="text-gray-400 text-sm flex items-center justify-center h-full">No Avatar</span>
+                    )}
+                </div>
+                <h1 className="text-2xl font-bold text-center text-gray-800">
+                    {username || "Loading..."}
+                </h1>
+
+                <select className="p-0.5 mt-4 text-sm"
+                    value={ageRange}
+                    onChange={e => setAgeRange(e.target.value)}
+                    required
+                >
+                    {ageRanges.map(range => (
+                        <option key={range} value={range}>{range}</option>
+                    ))}
+                </select>
 
 
-                    <select
-                        className="mt-2 p-2 text-sm"
-                        value={region}
-                        onChange={(e) => setRegion(e.target.value)}
-                    >
-                        <option value="">Select Region</option>
-                        {regions.map((r) => (
-                            <option key={r} value={r}>{r}</option>
-                        ))}
-                    </select>
-                </section>
+                <select
+                    className="mt-2 p-2 text-sm"
+                    value={region}
+                    onChange={(e) => setRegion(e.target.value)}
+                >
+                    <option value="">Select Region</option>
+                    {regions.map((r) => (
+                        <option key={r} value={r}>{r}</option>
+                    ))}
+                </select>
+
 
                 {/* About Me */}
                 <section>
@@ -237,6 +285,9 @@ function EditProfile() {
                     <textarea
                         placeholder="Write something about yourself..."
                         className="w-full border border-gray-300 rounded-md p-4 bg-gray-50"
+                        value={intro}
+                        onChange={(e) => setIntro(e.target.value)}
+
                     />
                 </section>
 
@@ -379,7 +430,7 @@ function EditProfile() {
                     {saving ? "Saving..." : "Save Changes"}
                 </button>
             </form>
-        </main>
+        </main >
 
     );
 }

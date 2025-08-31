@@ -122,7 +122,7 @@ const AuthPage = () => {
             if (isNewUser) {
                 router.push("/pages/profile");
             } else {
-                router.push("/pages/explore");
+                router.push("/pages/dashboard");
             }
         } catch (error) {
             console.error(error);

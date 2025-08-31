@@ -44,10 +44,9 @@ const Profile = () => {
                 return;
             }
             try {
-                
+                // const res = await fetch(`http://localhost:5000/api/profile?userID=${user.uid}`);
                 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
                 const res = await fetch(`${apiUrl}/api/profile?userID=${user.uid}`);
-                // const res = await fetch(`http://localhost:5000/api/profile?userID=${user.uid}`);
                 if (res.ok) {
                     const data = await res.json();
                     if (data && data.intro) {
@@ -123,20 +122,32 @@ const Profile = () => {
         const timezoneText = tzObj ? tzObj.text : timezone;
 
         try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-            const res = await fetch(`${apiUrl}/api/profile`,
-                // const res = await fetch(`http://localhost5000/api/profile`,
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        userID: user.uid,
-                        intro,
-                        ageRange,
-                           timezone: timezoneText,
-                           language: languageName,
-                    }),
-                });
+            const res = await fetch(`http://localhost:5000/api/profile`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userID: user.uid,
+                    intro,
+                    ageRange,
+                    hobbies,
+                    timezone: timezoneText,
+                    language: languageName,
+                }),
+            });
+            // const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+            // // const res = await fetch(`${apiUrl}/api/profile`,
+            //     // const res = await fetch(`http://localhost5000/api/profile`,
+            //     {
+            //         method: 'POST',
+            //         headers: { 'Content-Type': 'application/json' },
+            //         body: JSON.stringify({
+            //             userID: user.uid,
+            //             intro,
+            //             ageRange,
+            //             hobbies,
+            //             timezone,
+            //         }),
+            //     });
             if (!res.ok) {
                 const data = await res.json();
                 setError(data.error || 'Failed to save profile.');
