@@ -1,37 +1,15 @@
 'use client'
 
-
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 import { auth } from '../../firebase/auth';
+import LANGUAGES_LIST from '../../../../public/assets/languages.js';
 
-
-const timezones = [
-    { label: 'GMT-12:00', value: 'GMT-12:00', key: 'GMT-12:00' },
-    { label: 'GMT-11:00', value: 'GMT-11:00', key: 'GMT-11:00' },
-    { label: 'GMT-10:00 (Hawaii)', value: 'GMT-10:00 (Hawaii)', key: 'GMT-10:00-Hawaii' },
-    { label: 'GMT-09:00 (Alaska)', value: 'GMT-09:00 (Alaska)', key: 'GMT-09:00-Alaska' },
-    { label: 'GMT-08:00 (Pacific)', value: 'GMT-08:00 (Pacific)', key: 'GMT-08:00-Pacific' },
-    { label: 'GMT-07:00 (Mountain)', value: 'GMT-07:00 (Mountain)', key: 'GMT-07:00-Mountain' },
-    { label: 'GMT-06:00 (Central)', value: 'GMT-06:00 (Central)', key: 'GMT-06:00-Central' },
-    { label: 'GMT-05:00 (Eastern)', value: 'GMT-05:00 (Eastern)', key: 'GMT-05:00-Eastern' },
-    { label: 'GMT-03:00 (Brazil, Argentina)', value: 'GMT-03:00 (Brazil, Argentina)', key: 'GMT-03:00-Brazil-Argentina' },
-    { label: 'GMT+00:00 (London)', value: 'GMT+00:00 (London)', key: 'GMT+00:00-London' },
-    { label: 'GMT+01:00 (Central Europe)', value: 'GMT+01:00 (Central Europe)', key: 'GMT+01:00-CentralEurope' },
-    { label: 'GMT+02:00 (Eastern Europe)', value: 'GMT+02:00 (Eastern Europe)', key: 'GMT+02:00-EasternEurope' },
-    { label: 'GMT+02:00 (Cairo, Egypt)', value: 'GMT+02:00 (Cairo, Egypt)', key: 'GMT+02:00-Cairo' },
-    { label: 'GMT+02:00 (Johannesburg, South Africa)', value: 'GMT+02:00 (Johannesburg, South Africa)', key: 'GMT+02:00-Johannesburg' },
-    { label: 'GMT+01:00 (Lagos, Nigeria)', value: 'GMT+01:00 (Lagos, Nigeria)', key: 'GMT+01:00-Lagos' },
-    { label: 'GMT+03:00 (Nairobi, Kenya)', value: 'GMT+03:00 (Nairobi, Kenya)', key: 'GMT+03:00-Nairobi' },
-    { label: 'GMT+01:00 (Algiers, Algeria)', value: 'GMT+01:00 (Algiers, Algeria)', key: 'GMT+01:00-Algiers' },
-    { label: 'GMT+00:00 (Casablanca, Morocco)', value: 'GMT+00:00 (Casablanca, Morocco)', key: 'GMT+00:00-Casablanca' },
-    { label: 'GMT+03:00 (Moscow)', value: 'GMT+03:00 (Moscow)', key: 'GMT+03:00-Moscow' },
-    { label: 'GMT+05:30 (India)', value: 'GMT+05:30 (India)', key: 'GMT+05:30-India' },
-    { label: 'GMT+08:00 (China, Singapore)', value: 'GMT+08:00 (China, Singapore)', key: 'GMT+08:00-China-Singapore' },
-    { label: 'GMT+09:00 (Japan, Korea)', value: 'GMT+09:00 (Japan, Korea)', key: 'GMT+09:00-Japan-Korea' },
-    { label: 'GMT+10:00 (Sydney)', value: 'GMT+10:00 (Sydney)', key: 'GMT+10:00-Sydney' },
-    { label: 'GMT+12:00 (Auckland)', value: 'GMT+12:00 (Auckland)', key: 'GMT+12:00-Auckland' },
-];
+const languageOptions = Object.entries(LANGUAGES_LIST).map(([code, lang]) => ({
+    code,
+    name: lang.name,
+    nativeName: lang.nativeName,
+}));
 
 const ageRanges = [
     'Under 18',
@@ -42,9 +20,6 @@ const ageRanges = [
     '55-64',
     '65+',
 ];
-
-
-
 
 const Profile = () => {
     const [intro, setIntro] = useState('');
@@ -57,6 +32,8 @@ const Profile = () => {
     const [loading, setLoading] = useState(true);
     const [profileLoaded, setProfileLoaded] = useState(false);
     const router = useRouter();
+    const [timezones, setTimezones] = useState([]);
+    const [selectedLanguage, setSelectedLanguage] = useState('');
 
     // Fetch profile on mount
     useEffect(() => {
@@ -67,6 +44,7 @@ const Profile = () => {
                 return;
             }
             try {
+                const res = await fetch(`http://localhost:5000/api/profile?userID=${user.uid}`);
                 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
                 const res = await fetch(`${apiUrl}/api/profile?userID=${user.uid}`);
                 // const res = await fetch(`http://localhost:5000/api/profile?userID=${user.uid}`);
@@ -77,6 +55,7 @@ const Profile = () => {
                         setAgeRange(data.ageRange);
                         setHobbies(data.hobbies || []);
                         setTimezone(data.timezone);
+                        setSelectedLanguage(data.language || '');
                         setProfileLoaded(true);
                     }
                 }
@@ -86,12 +65,28 @@ const Profile = () => {
         fetchProfile();
     }, []);
 
-    // Add hobby as tag
+    // Fetch timezones
+    useEffect(() => {
+        const fetchTimezones = async () => {
+            try {
+                const res = await fetch('/Assets/timezones.json');
+                if (res.ok) {
+                    const data = await res.json();
+                    const validZones = data.filter(tz => tz && tz.value && tz.text);
+                    setTimezones(validZones);
+                }
+            } catch (err) {
+                setTimezones([]);
+            }
+        };
+        fetchTimezones();
+    }, []);
+
+    // Add hobby
     const handleHobbyKeyDown = (e) => {
         if ((e.key === 'Enter' || e.key === ',') && hobbyInput.trim()) {
             e.preventDefault();
             const trimmed = hobbyInput.trim();
-            // Only allow one word (no spaces)
             if (trimmed.includes(' ')) {
                 setError('Hobby tags must be one word (no spaces).');
                 return;
@@ -107,6 +102,10 @@ const Profile = () => {
         setHobbies(hobbies.filter(h => h !== hobby));
     };
 
+    const handleLanguageChange = (e) => {
+        setSelectedLanguage(e.target.value);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -115,11 +114,27 @@ const Profile = () => {
             setError('User not authenticated.');
             return;
         }
-        if (!intro || !ageRange || !timezone || hobbies.length === 0) {
+        if (!intro || !ageRange || !timezone || hobbies.length === 0 || !selectedLanguage) {
             setError('Please fill in all fields.');
             return;
         }
+        const languageName = LANGUAGES_LIST[selectedLanguage]?.name || selectedLanguage;
+        const tzObj = timezones.find(tz => tz.value === timezone);
+        const timezoneText = tzObj ? tzObj.text : timezone;
+
         try {
+            const res = await fetch(`http://localhost:5000/api/profile`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userID: user.uid,
+                    intro,
+                    ageRange,
+                    hobbies,
+                    timezone: timezoneText,
+                    language: languageName,
+                }),
+            });
             const apiUrl = process.env.NEXT_PUBLIC_API_URL;
             const res = await fetch(`${apiUrl}/api/profile`,
                 // const res = await fetch(`http://localhost5000/api/profile`,
@@ -199,17 +214,35 @@ const Profile = () => {
                             placeholder="Type a hobby and press Enter or comma"
                         />
                     </div>
-                    <div className="mb-4">
+                    <div className="mb-4 w-full max-w-md">
                         <label className="block mb-1 font-medium">Region (Timezone)</label>
                         <select
-                            className="w-full border rounded px-3 py-2"
+                            className="w-full border rounded px-3 py-2 cursor-pointer"
                             value={timezone}
                             onChange={e => setTimezone(e.target.value)}
                             required
                         >
                             <option value="">Select region/timezone</option>
-                            {timezones.map(tz => (
-                                <option key={tz.key} value={tz.value}>{tz.label}</option>
+                            {timezones.map((tz, idx) => (
+                                <option key={`${tz.value}-${idx}`} value={tz.value}>
+                                    {tz.text}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="mb-4 w-full max-w-md">
+                        <label className="block mb-1 font-medium">Language</label>
+                        <select
+                            className="w-full border rounded px-3 py-2 cursor-pointer"
+                            value={selectedLanguage}
+                            onChange={handleLanguageChange}
+                            required
+                        >
+                            <option value="">Select a language</option>
+                            {languageOptions.map(lang => (
+                                <option key={lang.code} value={lang.code}>
+                                    {lang.name} {lang.nativeName ? `(${lang.nativeName})` : ''}
+                                </option>
                             ))}
                         </select>
                     </div>
@@ -242,13 +275,35 @@ const Profile = () => {
                     </div>
                     <div className="mb-4">
                         <span className="block font-medium">Region (Timezone):</span>
-                        <span className="block text-gray-700 mt-1">{timezone}</span>
+                        <span className="block text-gray-700 mt-1">
+                            {(() => {
+                                const tzObj = timezones.find(tz => tz.value === timezone);
+                                return tzObj ? tzObj.text : timezone;
+                            })()}
+                        </span>
+                    </div>
+                    <div className="mb-4">
+                        <span className="block font-medium">Language:</span>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                            {selectedLanguage && (
+                                <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full flex items-center">
+                                    {LANGUAGES_LIST[selectedLanguage]?.name}
+                                    {LANGUAGES_LIST[selectedLanguage]?.nativeName ? ` (${LANGUAGES_LIST[selectedLanguage].nativeName})` : ''}
+                                </span>
+                            )}
+                        </div>
                     </div>
                     <button
                         className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition"
                         onClick={() => setIsEditing(true)}
                     >
                         Edit
+                    </button>
+                    <button
+                        className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition mt-4"
+                        onClick={() => router.push('/pages/explore')}
+                    >
+                        Next
                     </button>
                 </div>
             )}
