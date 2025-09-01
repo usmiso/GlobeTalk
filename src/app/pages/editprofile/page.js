@@ -197,9 +197,9 @@ function EditProfile() {
             return;
         }
 
+
         try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-
             const res = await fetch(`${apiUrl}/api/profile`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
