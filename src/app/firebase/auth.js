@@ -83,4 +83,5 @@ export async function forgotPassword(email) {
   }
 }
 
-export { auth };
+export { auth, onAuthStateChanged };
+
