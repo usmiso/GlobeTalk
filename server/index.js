@@ -40,18 +40,18 @@ app.get('/api/health', (req, res) => {
 app.post('/api/profile', async (req, res) => {
     if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
 
-    const { userID, intro, ageRange, hobbies, timezone, language } = req.body;
+    const { userID, intro, ageRange, hobbies, timezone, languages, avatarUrl, username } = req.body;
 
     console.log('Received profile POST:', req.body);
 
-    if (!userID || !intro || !ageRange || !hobbies || !timezone || !language) {
+    if (!userID || !intro || !ageRange || !hobbies || !timezone || !languages || !avatarUrl || !username) {
         return res.status(400).json({ error: 'Missing required fields' });
     }
 
     try {
         // Use merge to avoid overwriting other fields accidentally
         await db.collection('profiles').doc(userID).set(
-            { userID, intro, ageRange, hobbies, timezone, language },
+            { userID, intro, ageRange, hobbies, timezone, languages, avatarUrl, username },
             { merge: true }
         );
         res.status(200).json({ message: 'Profile saved successfully' });
@@ -87,8 +87,8 @@ app.get('/api/facts', async (req, res) => {
         const snapshot = await db.collection('profiles').get();
         const facts = [];
         snapshot.forEach(doc => {
-            const { ageRange, hobbies, timezone, language } = doc.data();
-            facts.push({ ageRange, hobbies, timezone, language });
+            const { ageRange, hobbies, timezone, languages } = doc.data();
+            facts.push({ ageRange, hobbies, timezone, languages });
         });
         res.status(200).json(facts);
     } catch (error) {
@@ -101,21 +101,21 @@ app.get('/api/facts', async (req, res) => {
 
 // 🆕 API endpoint to save avatar + username
 app.post('/api/profile/avatar', async (req, res) => {
-	if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
-	try {
-		const { userID, username, avatarUrl } = req.body;
-		if (!userID || !username || !avatarUrl) {
-			return res.status(400).json({ error: 'Missing required fields (userID, username, avatarUrl)' });
-		}
-		await db.collection('profiles').doc(userID).set({
-			userID,
-			username,
-			avatarUrl
-		}, { merge: true }); // merge ensures we don’t overwrite intro/age/etc
-		res.status(200).json({ message: 'Avatar and username saved successfully' });
-	} catch (error) {
-		res.status(500).json({ error: error.message });
-	}
+    if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
+    try {
+        const { userID, username, avatarUrl } = req.body;
+        if (!userID || !username || !avatarUrl) {
+            return res.status(400).json({ error: 'Missing required fields (userID, username, avatarUrl)' });
+        }
+        await db.collection('profiles').doc(userID).set({
+            userID,
+            username,
+            avatarUrl
+        }, { merge: true }); // merge ensures we don’t overwrite intro/age/etc
+        res.status(200).json({ message: 'Avatar and username saved successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 })
 
 
