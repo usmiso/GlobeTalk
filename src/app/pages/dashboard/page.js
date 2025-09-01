@@ -14,7 +14,7 @@ export default function Dashboard() {
           className="flex flex-col justify-between transition-all duration-300"
           style={{
             backgroundColor: "#6492BD",
-            width: "13rem", 
+            width: "13rem",
           }}
         >
           {/* GlobeTalk & Toggle */}
@@ -42,7 +42,7 @@ export default function Dashboard() {
           <div className="flex flex-col justify-between h-full p-2 sm:p-3">
             <nav className="space-y-1 sm:space-y-2">
               <button
-                onClick={() => router.push("/pages/profile")}
+                onClick={() => router.push("/pages/userprofile")}
                 className="flex items-center gap-1 sm:gap-2 p-1 sm:p-2 rounded w-full text-left text-xs sm:text-sm lg:text-base"
               >
                 <img

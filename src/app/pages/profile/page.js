@@ -34,6 +34,7 @@ const Profile = () => {
     const router = useRouter();
     const [timezones, setTimezones] = useState([]);
     const [selectedLanguage, setSelectedLanguage] = useState('');
+    const [languages, setLanguages] = useState([]);
 
     // Fetch profile on mount
     useEffect(() => {
@@ -55,7 +56,7 @@ const Profile = () => {
                         setAgeRange(data.ageRange);
                         setHobbies(data.hobbies || []);
                         setTimezone(data.timezone);
-                        setSelectedLanguage(data.language || '');
+                        setSelectedLanguage(data.languages || '');
                         setProfileLoaded(true);
                     }
                 }
@@ -103,7 +104,12 @@ const Profile = () => {
     };
 
     const handleLanguageChange = (e) => {
-        setSelectedLanguage(e.target.value);
+        const lang = e.target.value;
+        const name = LANGUAGES_LIST[lang]?.name || lang;
+        if (name && !languages.includes(name)) {
+            setLanguages([...languages, name]);
+        }
+        setSelectedLanguage("");
     };
 
     const handleSubmit = async (e) => {
@@ -118,11 +124,11 @@ const Profile = () => {
             setError('Please fill in all fields.');
             return;
         }
-        const languageName = LANGUAGES_LIST[selectedLanguage]?.name || selectedLanguage;
         const tzObj = timezones.find(tz => tz.value === timezone);
         const timezoneText = tzObj ? tzObj.text : timezone;
 
         try {
+            console.log("Saving profile with languages:", languages);
             const res = await fetch(`http://localhost:5000/api/profile`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -132,23 +138,10 @@ const Profile = () => {
                     ageRange,
                     hobbies,
                     timezone: timezoneText,
-                    language: languageName,
+                    languages,
                 }),
             });
-            // const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-            // // const res = await fetch(`${apiUrl}/api/profile`,
-            //     // const res = await fetch(`http://localhost5000/api/profile`,
-            //     {
-            //         method: 'POST',
-            //         headers: { 'Content-Type': 'application/json' },
-            //         body: JSON.stringify({
-            //             userID: user.uid,
-            //             intro,
-            //             ageRange,
-            //             hobbies,
-            //             timezone,
-            //         }),
-            //     });
+
             if (!res.ok) {
                 const data = await res.json();
                 setError(data.error || 'Failed to save profile.');
@@ -235,8 +228,15 @@ const Profile = () => {
                         <select
                             className="w-full border rounded px-3 py-2 cursor-pointer"
                             value={selectedLanguage}
-                            onChange={handleLanguageChange}
-                            required
+                            onChange={(e) => {
+                                const code = e.target.value;
+                                const name = LANGUAGES_LIST[code]?.name || code;
+
+                                if (name && !languages.includes(name)) {
+                                    setLanguages([...languages, name]);  // ✅ push into array
+                                }
+                                setSelectedLanguage(""); // reset dropdown
+                            }}
                         >
                             <option value="">Select a language</option>
                             {languageOptions.map(lang => (
@@ -245,6 +245,7 @@ const Profile = () => {
                                 </option>
                             ))}
                         </select>
+
                     </div>
                     <button
                         type="submit"

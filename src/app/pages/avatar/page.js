@@ -71,7 +71,7 @@ export default function AvatarUsernameGen() {
       }
 
       alert("Avatar saved successfully!");
-      router.push('/pages/editprofile');
+      router.push('/pages/dashboard');
     } catch (err) {
       alert("Error saving avatar: " + err.message);
     }
