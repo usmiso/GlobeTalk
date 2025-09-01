@@ -13,7 +13,9 @@ const NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL;
 export default function MatchmakingPage() {
   const [timezones, setTimezones] = useState([]);
   const [timezone, setTimezone] = useState('');
+  const [timezoneSearch, setTimezoneSearch] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState('');
+  const [languageSearch, setLanguageSearch] = useState('');
   const [match, setMatch] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -65,30 +67,51 @@ export default function MatchmakingPage() {
       <h1 className="text-2xl font-bold mb-4">Find a Match</h1>
       <div className="mb-4">
         <label className="block mb-1 font-medium">Timezone</label>
+        <input
+          type="text"
+          className="border rounded px-3 py-2 w-full mb-2"
+          placeholder="Search timezone..."
+          value={timezoneSearch}
+          onChange={e => setTimezoneSearch(e.target.value)}
+        />
         <select
           className="border rounded px-3 py-2 w-full"
           value={timezone}
           onChange={e => setTimezone(e.target.value)}
         >
           <option value="">Select region/timezone</option>
-          {timezones.map((tz, idx) => (
-            <option key={`${tz.value}-${idx}`} value={tz.text}>{tz.text}</option>
-          ))}
+          {timezones
+            .filter(tz => tz.text.toLowerCase().includes(timezoneSearch.toLowerCase()))
+            .map((tz, idx) => (
+              <option key={`${tz.value}-${idx}`} value={tz.text}>{tz.text}</option>
+            ))}
         </select>
       </div>
       <div className="mb-4">
         <label className="block mb-1 font-medium">Language</label>
+        <input
+          type="text"
+          className="border rounded px-3 py-2 w-full mb-2"
+          placeholder="Search language..."
+          value={languageSearch}
+          onChange={e => setLanguageSearch(e.target.value)}
+        />
         <select
           className="border rounded px-3 py-2 w-full"
           value={selectedLanguage}
           onChange={e => setSelectedLanguage(e.target.value)}
         >
           <option value="">Select a language</option>
-          {languageOptions.map(lang => (
-            <option key={lang.code} value={lang.name}>
-              {lang.name} {lang.nativeName ? `(${lang.nativeName})` : ''}
-            </option>
-          ))}
+          {languageOptions
+            .filter(lang =>
+              lang.name.toLowerCase().includes(languageSearch.toLowerCase()) ||
+              (lang.nativeName && lang.nativeName.toLowerCase().includes(languageSearch.toLowerCase()))
+            )
+            .map(lang => (
+              <option key={lang.code} value={lang.name}>
+                {lang.name} {lang.nativeName ? `(${lang.nativeName})` : ''}
+              </option>
+            ))}
         </select>
       </div>
       <button
