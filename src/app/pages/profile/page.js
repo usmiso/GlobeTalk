@@ -49,7 +49,8 @@ const Profile = () => {
                 return;
             }
             try {
-                const res = await fetch(`http://localhost:5000/api/profile?userID=${user.uid}`);
+                const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+                const res = await fetch(`${apiUrl}/api/profile?userID=${user.uid}`);
                 if (res.ok) {
                     const data = await res.json();
                     if (data && data.intro) {
@@ -134,7 +135,8 @@ const Profile = () => {
         const timezoneText = tzObj ? tzObj.text : timezone;
 
         try {
-            const res = await fetch(`http://localhost:5000/api/profile`, {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+            const res = await fetch(`${apiUrl}/api/profile`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

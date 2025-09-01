@@ -7,7 +7,7 @@ import { auth } from '../../firebase/auth';
 
 import LANGUAGES_LIST from '../../../../public/assets/languages.js';
 
-const NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL;
+const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
 
 export default function MatchmakingPage() {
@@ -52,7 +52,7 @@ export default function MatchmakingPage() {
       if (timezone) params.append('timezone', timezone);
       if (selectedLanguage) params.append('language', selectedLanguage);
       if (user && user.uid) params.append('excludeUserID', user.uid);
-      const res = await fetch(`${NEXT_PUBLIC_API_URL}/api/matchmaking?${params.toString()}`);
+  const res = await fetch(`${apiUrl}/api/matchmaking?${params.toString()}`);
       if (!res.ok) throw new Error((await res.json()).error || 'No match found');
       setMatch(await res.json());
     } catch (err) {
