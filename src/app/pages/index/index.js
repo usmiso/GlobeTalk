@@ -35,12 +35,12 @@ export default function Index() {
             </section>
           </summary>
 
-          <nav className="px-4 pb-4">
+          <nav className="px-4 pb-4 bg-white text-gray-900 rounded-xl shadow-lg">
             <ul className="flex flex-col gap-3">
               <li><Link href="/">Home</Link></li>
               <li><Link href="/pages/about">About</Link></li>
               <li><Link href="/pages/explore">Explore</Link></li>
-              <li><Link href="/pages/signin">LogIninn</Link></li>
+              <li><Link href="/pages/signin">LogIn</Link></li>
               <li><Link href="/pages/signup">SIgnUp</Link></li>
             </ul>
           </nav>

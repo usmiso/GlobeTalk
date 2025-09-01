@@ -9,6 +9,8 @@ export default function UserProfile() {
     const [hobbies, setHobbies] = useState([]);
     const [timezone, setTimezone] = useState("");
     const [languages, setLanguages] = useState([]); // optional if you add later
+    const [avatarUrl, setAvatarUrl] = useState("");
+    const [username, setUsername] = useState("");
     const [loading, setLoading] = useState(true);
 
 
@@ -41,6 +43,8 @@ export default function UserProfile() {
                     setHobbies(Array.isArray(data.hobbies) ? data.hobbies : []);
                     setTimezone(data.timezone || "");
                     setLanguages(Array.isArray(data.languages) ? data.languages : []); // safe fallback
+                    setAvatarUrl(data.avatarUrl || "");
+                    setUsername(data.username || "Username");
                 }
             } catch (err) {
                 console.error("Error fetching profile:", err);
@@ -63,10 +67,16 @@ export default function UserProfile() {
     return (
         <main className="flex flex-col items-center justify-center min-h-screen py-10 px-4 max-w-4xl mx-auto">
             {/* Avatar */}
-            <div className="w-28 h-28 rounded-full bg-red-500 mb-4"></div>
+            <div className="w-28 h-28 rounded-full bg-gray-200 mb-4 overflow-hidden flex items-center justify-center">
+                {avatarUrl ? (
+                    <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+                ) : (
+                    <span className="text-gray-400 text-sm">No Avatar</span>
+                )}
+            </div>
 
             {/* Username + Age + Region */}
-            <h1 className="text-2xl font-bold mb-2">Username</h1>
+            <h1 className="text-2xl font-bold mb-2">{username}</h1>
             <p className="text-gray-700 text-base">{ageRange}</p>
             <p className="text-gray-500 text-sm mb-4">{timezone}</p>
 
