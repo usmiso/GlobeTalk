@@ -122,7 +122,7 @@ const AuthPage = () => {
             if (isNewUser) {
                 router.push("/pages/profile");
             } else {
-                router.push("/pages/explore");
+                router.push("/pages/dashboard");
             }
         } catch (error) {
             console.error(error);
@@ -144,18 +144,19 @@ const AuthPage = () => {
 
     return (
 
-        <div className="flex h-screen">
-            {/* Left side: colored panel */}
+        <div className="flex h-screen flex-col md:flex-row">
+            {/* Notification */}
             {notification && (
                 <div className="fixed top-5 right-5 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50">
                     {notification}
                 </div>
             )}
+            {/* Left side: colored panel, hidden on mobile */}
             <div
-                className="w-1/2 relative"
+                className="hidden md:block md:w-1/2 relative"
                 style={{ backgroundColor: "#476C8A" }}
             >
-                <div className="absolute top-8 left-8 flex items-center space-x-2">
+                <div className="absolute top-8 left-8 flex flex-col items-center space-y-2">
                     <Image
                         src="/images/globe.png"
                         alt="Globe"
@@ -163,7 +164,7 @@ const AuthPage = () => {
                         height={100}
                         priority
                     />
-                    <span className="text-[#002D72] font-bold text-[22px] tracking-wider">
+                    <span className="text-[#002D72] font-bold text-[22px] tracking-wider mt-2">
                         GlobeTalk
                     </span>
                 </div>
@@ -179,8 +180,22 @@ const AuthPage = () => {
                 </div>
             </div>
 
-            {/* Right side: form */}
-            <div className="w-1/2 bg-[#F1F5F9] flex flex-col justify-center items-center px-12">
+            {/* Mobile logo + text on top */}
+            <div className="md:hidden flex flex-col items-center mt-8 mb-2">
+                <Image
+                    src="/images/globe.png"
+                    alt="Globe"
+                    width={80}
+                    height={80}
+                    priority
+                />
+                <span className="text-[#002D72] font-bold text-xl tracking-wider mt-2">
+                    GlobeTalk
+                </span>
+            </div>
+
+            {/* Right side: form, full width on mobile */}
+            <div className="w-full md:w-1/2 bg-[#F1F5F9] flex flex-col justify-center items-center px-4 md:px-12">
                 {/* Toggle Sign In/Sign Up */}
                 <div className="flex mb-8 space-x-4">
                     <button
