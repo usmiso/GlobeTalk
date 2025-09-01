@@ -10,11 +10,16 @@ jest.mock("../app/firebase/auth", () => ({
 }));
 
 // Mock Next.js Link, Image, and useRouter
-jest.mock("next/link", () => ({ children, href }) => <a href={href}>{children}</a>);
-jest.mock("next/image", () => (props) => {
+const MockLink = ({ children, href }) => <a href={href}>{children}</a>;
+MockLink.displayName = "MockLink";
+jest.mock("next/link", () => MockLink);
+
+const MockImage = (props) => {
   const { priority, ...rest } = props; // remove priority to avoid React warning
   return <img {...rest} alt={props.alt} />;
-});
+};
+MockImage.displayName = "MockImage";
+jest.mock("next/image", () => MockImage);
 jest.mock("next/navigation", () => ({
   useRouter: jest.fn(),
 }));
