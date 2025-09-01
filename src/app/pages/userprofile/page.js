@@ -12,7 +12,7 @@ export default function UserProfile() {
     const [ageRange, setAgeRange] = useState("");
     const [hobbies, setHobbies] = useState([]);
     const [timezone, setTimezone] = useState("");
-    const [languages, setLanguages] = useState([]); // optional if you add later
+    const [languages, setLanguages] = useState([]);
     const [loading, setLoading] = useState(true);
     const [username, setUsername] = useState("");
     const [avatarUrl, setAvatarUrl] = useState("");
@@ -44,22 +44,24 @@ export default function UserProfile() {
     const fetchProfile = async (uid) => {
 
 
-            try {
-                const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-                const res = await fetch(`${apiUrl}/api/profile?userID=${user.uid}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    console.log("Fetched profile:", data);
-
-                    setIntro(data.intro || "");
-                    setAgeRange(data.ageRange || "");
-                    setHobbies(Array.isArray(data.hobbies) ? data.hobbies : []);
-                    setTimezone(data.timezone || "");
-                    setLanguages(Array.isArray(data.languages) ? data.languages : []); // safe fallback
-                }
-            } catch (err) {
-                console.error("Error fetching profile:", err);
+        try {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+            const res = await fetch(`${apiUrl}/api/profile?userID=${user.uid}`);
+            if (res.ok) {
+                const data = await res.json();
+                setIntro(data.intro || "");
+                setAgeRange(data.ageRange || "");
+                setHobbies(Array.isArray(data.hobbies) ? data.hobbies : []);
+                setTimezone(data.timezone || "");
+                setLanguages(Array.isArray(data.languages) ? data.languages : []);
+                // setRegion(data.region || "");
+                // setSayings(data.sayings || []);
+                setUsername(data.username || "");
+                setAvatarUrl(data.avatarUrl || "");
             }
+        } catch (err) {
+            console.error("Error fetching profile:", err);
+        }
 
         setLoading(false);
     };
@@ -81,8 +83,15 @@ export default function UserProfile() {
                 EditProfile
             </button>
             {/* Avatar */}
-            <div className="w-28 h-28 rounded-full bg-red-500 mb-4"></div>
+            <div className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 rounded-full mb-8">
 
+                {avatarUrl ? (
+                    <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+                ) : (
+                    <span className="text-gray-400 text-sm flex items-center justify-center h-full">No Avatar</span>
+                )}
+
+            </div>
             {/* Username + Age + Region */}
             <h1 className="text-2xl font-bold mb-2">{username}</h1>
             <p className="text-gray-700 text-base">{ageRange}</p>
