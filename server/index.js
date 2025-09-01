@@ -44,7 +44,7 @@ app.post('/api/profile', async (req, res) => {
 
     console.log('Received profile POST:', req.body);
 
-    if (!userID || !intro || !ageRange || !hobbies || !timezone || !languages) {
+    if (!userID || !intro || !ageRange || !hobbies || !avatarUrl || !username) {
         return res.status(400).json({ error: 'Missing required fields' });
     }
 
