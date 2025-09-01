@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 import { auth } from '../../firebase/auth';
 import LANGUAGES_LIST from '../../../../public/assets/languages.js';
+import AvatarUsernameGen from '../../components/avatar/page';
 
 const languageOptions = Object.entries(LANGUAGES_LIST).map(([code, lang]) => ({
     code,
@@ -27,14 +28,15 @@ const Profile = () => {
     const [hobbyInput, setHobbyInput] = useState('');
     const [hobbies, setHobbies] = useState([]);
     const [timezone, setTimezone] = useState('');
-    const [isEditing, setIsEditing] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(true);
     const [profileLoaded, setProfileLoaded] = useState(false);
-    const router = useRouter();
     const [timezones, setTimezones] = useState([]);
     const [selectedLanguage, setSelectedLanguage] = useState('');
-    const [languages, setLanguages] = useState([]);
+    const [avatarUrl, setAvatarUrl] = useState('');
+    const [username, setUsername] = useState('');
+    const [mode, setMode] = useState('avatar'); // 'avatar', 'editProfile', 'viewProfile'
+    const router = useRouter();
 
     // Fetch profile on mount
     useEffect(() => {
@@ -45,10 +47,7 @@ const Profile = () => {
                 return;
             }
             try {
-                // const res = await fetch(`http://localhost:5000/api/profile?userID=${user.uid}`);
-                const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-                const res = await fetch(`${apiUrl}/api/profile?userID=${user.uid}`);
-                // const res = await fetch(`http://localhost:5000/api/profile?userID=${user.uid}`);
+                const res = await fetch(`http://localhost:5000/api/profile?userID=${user.uid}`);
                 if (res.ok) {
                     const data = await res.json();
                     if (data && data.intro) {
@@ -56,11 +55,20 @@ const Profile = () => {
                         setAgeRange(data.ageRange);
                         setHobbies(data.hobbies || []);
                         setTimezone(data.timezone);
-                        setSelectedLanguage(data.languages || '');
+                        setSelectedLanguage(data.language || '');
+                        setAvatarUrl(data.avatarUrl || '');
+                        setUsername(data.username || '');
                         setProfileLoaded(true);
+                        setMode('viewProfile');
+                    } else {
+                        setMode('avatar');
                     }
+                } else {
+                    setMode('avatar');
                 }
-            } catch (err) { }
+            } catch (err) {
+                setMode('avatar');
+            }
             setLoading(false);
         };
         fetchProfile();
@@ -104,12 +112,7 @@ const Profile = () => {
     };
 
     const handleLanguageChange = (e) => {
-        const lang = e.target.value;
-        const name = LANGUAGES_LIST[lang]?.name || lang;
-        if (name && !languages.includes(name)) {
-            setLanguages([...languages, name]);
-        }
-        setSelectedLanguage("");
+        setSelectedLanguage(e.target.value);
     };
 
     const handleSubmit = async (e) => {
@@ -124,11 +127,11 @@ const Profile = () => {
             setError('Please fill in all fields.');
             return;
         }
+        const languageName = LANGUAGES_LIST[selectedLanguage]?.name || selectedLanguage;
         const tzObj = timezones.find(tz => tz.value === timezone);
         const timezoneText = tzObj ? tzObj.text : timezone;
 
         try {
-            console.log("Saving profile with languages:", languages);
             const res = await fetch(`http://localhost:5000/api/profile`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -138,17 +141,16 @@ const Profile = () => {
                     ageRange,
                     hobbies,
                     timezone: timezoneText,
-                    languages,
+                    language: languageName,
                 }),
             });
-
             if (!res.ok) {
                 const data = await res.json();
                 setError(data.error || 'Failed to save profile.');
                 return;
             }
-            setIsEditing(false);
             setProfileLoaded(true);
+            setMode('viewProfile');
         } catch (err) {
             setError('Failed to connect to server.');
         }
@@ -158,10 +160,22 @@ const Profile = () => {
         return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
     }
 
-    return (
-        <main className="flex flex-col items-center justify-center min-h-screen">
-            <h1 className="text-2xl mb-6">Profile</h1>
-            {(!profileLoaded || isEditing) ? (
+    // Avatar generator mode
+    if (mode === 'avatar') {
+        return (
+            <main className="flex flex-col items-center justify-center min-h-screen">
+                <AvatarUsernameGen
+                    onSuccess={() => setMode('editProfile')}
+                />
+            </main>
+        );
+    }
+
+    // Profile edit mode
+    if (mode === 'editProfile') {
+        return (
+            <main className="flex flex-col items-center justify-center min-h-screen">
+                <h1 className="text-2xl mb-6">Profile</h1>
                 <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
                     {error && <div className="text-red-500 mb-2">{error}</div>}
                     <div className="mb-4">
@@ -228,15 +242,8 @@ const Profile = () => {
                         <select
                             className="w-full border rounded px-3 py-2 cursor-pointer"
                             value={selectedLanguage}
-                            onChange={(e) => {
-                                const code = e.target.value;
-                                const name = LANGUAGES_LIST[code]?.name || code;
-
-                                if (name && !languages.includes(name)) {
-                                    setLanguages([...languages, name]);  // ✅ push into array
-                                }
-                                setSelectedLanguage(""); // reset dropdown
-                            }}
+                            onChange={handleLanguageChange}
+                            required
                         >
                             <option value="">Select a language</option>
                             {languageOptions.map(lang => (
@@ -245,26 +252,45 @@ const Profile = () => {
                                 </option>
                             ))}
                         </select>
-
                     </div>
                     <button
                         type="submit"
                         className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition"
                     >
-                        Save
+                        Save Profile
                     </button>
                 </form>
-            ) : (
-                <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
-                    <div className="mb-4">
+            </main>
+        );
+    }
+
+    // Profile view mode
+    if (mode === 'viewProfile') {
+        return (
+            <main className="flex flex-col items-center justify-center min-h-screen">
+                <h1 className="text-2xl mb-6">Profile</h1>
+                <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md flex flex-col items-center">
+                    {/* Avatar Display */}
+                    {avatarUrl && (
+                        <div className="w-32 h-32 rounded-full bg-gradient-to-tr from-purple-300 via-blue-200 to-pink-200 flex items-center justify-center overflow-hidden shadow-lg mb-4 border-4 border-purple-400">
+                            <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+                        </div>
+                    )}
+                    {/* Username Display */}
+                    {username && (
+                        <div className="bg-gray-100 h-10 flex items-center justify-center text-lg font-bold rounded-xl w-full border border-purple-200 mb-5">
+                            {username}
+                        </div>
+                    )}
+                    <div className="mb-4 w-full">
                         <span className="block font-medium">Short Intro:</span>
                         <span className="block text-gray-700 mt-1">{intro}</span>
                     </div>
-                    <div className="mb-4">
+                    <div className="mb-4 w-full">
                         <span className="block font-medium">Age Range:</span>
                         <span className="block text-gray-700 mt-1">{ageRange}</span>
                     </div>
-                    <div className="mb-4">
+                    <div className="mb-4 w-full">
                         <span className="block font-medium">Hobbies:</span>
                         <div className="flex flex-wrap gap-2 mt-1">
                             {hobbies.map(hobby => (
@@ -274,7 +300,7 @@ const Profile = () => {
                             ))}
                         </div>
                     </div>
-                    <div className="mb-4">
+                    <div className="mb-4 w-full">
                         <span className="block font-medium">Region (Timezone):</span>
                         <span className="block text-gray-700 mt-1">
                             {(() => {
@@ -283,7 +309,7 @@ const Profile = () => {
                             })()}
                         </span>
                     </div>
-                    <div className="mb-4">
+                    <div className="mb-4 w-full">
                         <span className="block font-medium">Language:</span>
                         <div className="flex flex-wrap gap-2 mt-1">
                             {selectedLanguage && (
@@ -295,21 +321,29 @@ const Profile = () => {
                         </div>
                     </div>
                     <button
-                        className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition"
-                        onClick={() => setIsEditing(true)}
+                        className="w-full bg-purple-500 text-white py-2 rounded hover:bg-purple-600 transition mb-2"
+                        onClick={() => setMode('avatar')}
                     >
-                        Edit
+                        Edit Avatar
                     </button>
                     <button
-                        className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition mt-4"
-                        onClick={() => router.push('/pages/explore')}
+                        className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition mb-2"
+                        onClick={() => setMode('editProfile')}
                     >
-                        Next
+                        Edit Profile
+                    </button>
+                    <button
+                        className="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600 transition"
+                        onClick={() => router.push('/pages/dashboard')}
+                    >
+                        Go to Dashboard
                     </button>
                 </div>
-            )}
-        </main>
-    );
+            </main>
+        );
+    }
+
+    return null;
 };
 
 export default Profile;
