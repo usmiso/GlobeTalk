@@ -40,18 +40,18 @@ app.get('/api/health', (req, res) => {
 app.post('/api/profile', async (req, res) => {
     if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
 
-    const { userID, intro, ageRange, hobbies, timezone, languages, avatarUrl, username } = req.body;
+    const { userID, intro, ageRange, hobbies, timezone, language, avatarUrl, username } = req.body;
 
     console.log('Received profile POST:', req.body);
 
-    // if (!userID || !intro || !ageRange || !hobbies || !avatarUrl || !username) {
-    //     return res.status(400).json({ error: 'Missing required fields extra' });
-    // }
+    if (!userID || !intro || !ageRange || !hobbies || !timezone || !language || !avatarUrl || !username) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
 
     try {
         // Use merge to avoid overwriting other fields accidentally
         await db.collection('profiles').doc(userID).set(
-            { userID, intro, ageRange, hobbies, timezone, languages, avatarUrl, username },
+            { userID, intro, ageRange, hobbies, timezone, language, avatarUrl, username },
             { merge: true }
         );
         res.status(200).json({ message: 'Profile saved successfully' });
@@ -87,8 +87,8 @@ app.get('/api/facts', async (req, res) => {
         const snapshot = await db.collection('profiles').get();
         const facts = [];
         snapshot.forEach(doc => {
-            const { ageRange, hobbies, timezone, languages } = doc.data();
-            facts.push({ ageRange, hobbies, timezone, languages });
+            const { ageRange, hobbies, timezone, language } = doc.data();
+            facts.push({ ageRange, hobbies, timezone, language });
         });
         res.status(200).json(facts);
     } catch (error) {
