@@ -33,6 +33,8 @@ const Profile = () => {
     const [profileLoaded, setProfileLoaded] = useState(false);
     const [timezones, setTimezones] = useState([]);
     const [selectedLanguage, setSelectedLanguage] = useState('');
+    const [timezoneSearch, setTimezoneSearch] = useState('');
+    const [languageSearch, setLanguageSearch] = useState('');
     const [avatarUrl, setAvatarUrl] = useState('');
     const [username, setUsername] = useState('');
     const [mode, setMode] = useState('avatar'); // 'avatar', 'editProfile', 'viewProfile'
@@ -47,7 +49,8 @@ const Profile = () => {
                 return;
             }
             try {
-                const res = await fetch(`http://localhost:5000/api/profile?userID=${user.uid}`);
+                const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+                const res = await fetch(`${apiUrl}/api/profile?userID=${user.uid}`);
                 if (res.ok) {
                     const data = await res.json();
                     if (data && data.intro) {
@@ -132,7 +135,8 @@ const Profile = () => {
         const timezoneText = tzObj ? tzObj.text : timezone;
 
         try {
-            const res = await fetch(`http://localhost:5000/api/profile`, {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+            const res = await fetch(`${apiUrl}/api/profile`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -223,6 +227,13 @@ const Profile = () => {
                     </div>
                     <div className="mb-4 w-full max-w-md">
                         <label className="block mb-1 font-medium">Region (Timezone)</label>
+                        <input
+                            type="text"
+                            className="w-full border rounded px-3 py-2 mb-2"
+                            placeholder="Search timezone..."
+                            value={timezoneSearch}
+                            onChange={e => setTimezoneSearch(e.target.value)}
+                        />
                         <select
                             className="w-full border rounded px-3 py-2 cursor-pointer"
                             value={timezone}
@@ -230,15 +241,24 @@ const Profile = () => {
                             required
                         >
                             <option value="">Select region/timezone</option>
-                            {timezones.map((tz, idx) => (
-                                <option key={`${tz.value}-${idx}`} value={tz.value}>
-                                    {tz.text}
-                                </option>
-                            ))}
+                            {timezones
+                                .filter(tz => tz.text.toLowerCase().includes(timezoneSearch.toLowerCase()))
+                                .map((tz, idx) => (
+                                    <option key={`${tz.value}-${idx}`} value={tz.value}>
+                                        {tz.text}
+                                    </option>
+                                ))}
                         </select>
                     </div>
                     <div className="mb-4 w-full max-w-md">
                         <label className="block mb-1 font-medium">Language</label>
+                        <input
+                            type="text"
+                            className="w-full border rounded px-3 py-2 mb-2"
+                            placeholder="Search language..."
+                            value={languageSearch}
+                            onChange={e => setLanguageSearch(e.target.value)}
+                        />
                         <select
                             className="w-full border rounded px-3 py-2 cursor-pointer"
                             value={selectedLanguage}
@@ -246,11 +266,16 @@ const Profile = () => {
                             required
                         >
                             <option value="">Select a language</option>
-                            {languageOptions.map(lang => (
-                                <option key={lang.code} value={lang.code}>
-                                    {lang.name} {lang.nativeName ? `(${lang.nativeName})` : ''}
-                                </option>
-                            ))}
+                            {languageOptions
+                                .filter(lang =>
+                                    lang.name.toLowerCase().includes(languageSearch.toLowerCase()) ||
+                                    (lang.nativeName && lang.nativeName.toLowerCase().includes(languageSearch.toLowerCase()))
+                                )
+                                .map(lang => (
+                                    <option key={lang.code} value={lang.code}>
+                                        {lang.name} {lang.nativeName ? `(${lang.nativeName})` : ''}
+                                    </option>
+                                ))}
                         </select>
                     </div>
                     <button
