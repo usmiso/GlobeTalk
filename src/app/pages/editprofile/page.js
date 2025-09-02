@@ -122,7 +122,7 @@ function EditProfile() {
                         setRegion(data.region || "");
                         setSayings(data.sayings || []);
                         setUsername(data.username || "");
-                        setAvatar(data.avatar || "");
+                        setAvatar(data.avatarUrl || "");
                     }
                 }
             } catch (err) {
@@ -201,7 +201,7 @@ function EditProfile() {
         try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL;
             const res = await fetch(`${apiUrl}/api/profile`, {
-                method: "POST",
+                method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     userID: user.uid,
@@ -212,7 +212,7 @@ function EditProfile() {
                     languages,
                     sayings,
                     username,
-                    avatar
+                    avatarUrl
                 }),
             });
 
@@ -224,7 +224,7 @@ function EditProfile() {
             }
 
             setSaving(false);
-            router.push('/userprofile'); // ✅ go to profile page
+            router.push('/pages/userprofile');
 
         } catch (err) {
             setError('Failed to connect to server.');
