@@ -23,11 +23,18 @@ jest.mock("../../public/assets/languages.js", () => ({
 }));
 
 // Mock AvatarUsernameGen component
-jest.mock("../app/components/avatar/page", () => (props) => (
-  <div data-testid="avatar-generator">
-    <button onClick={props.onSuccess}>Generate Avatar</button>
-  </div>
-));
+function MockAvatarUsernameGen(props) {
+  return (
+    <div data-testid="avatar-generator">
+      <button onClick={props.onSuccess}>Generate Avatar</button>
+    </div>
+  );
+}
+MockAvatarUsernameGen.displayName = "MockAvatarUsernameGen";
+jest.mock("../app/components/avatar/page", () => ({
+  __esModule: true,
+  default: MockAvatarUsernameGen
+}));
 
 beforeEach(() => {
   jest.clearAllMocks();
