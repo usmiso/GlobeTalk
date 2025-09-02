@@ -112,6 +112,7 @@ function EditProfile() {
             try {
                 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
                 const res = await fetch(`${apiUrl}/api/profile?userID=${user.uid}`);
+                // const res = await fetch(`http://localhost:5000/api/profile?userID=${uid}`);
                 if (res.ok) {
                     const data = await res.json();
                     if (data) {
@@ -241,13 +242,13 @@ function EditProfile() {
                 </Link>
             </header>
 
-            {/* ✅ One form wrapping all fields */}
+            {/* One form wrapping all fields */}
             <form onSubmit={handleSubmitSave} className="bg-white rounded-lg shadow-lg p-8 max-auto w-screen space-y-10">
 
                 {/* Profile Info */}
                 <div className="w-28 h-28 rounded-full bg-gray-200 mb-4 overflow-hidden">
                     {avatar ? (
-                        <img src={avatar} alt="avatar" className="w-full h-full object-cover" />
+                        <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
                     ) : (
                         <span className="text-gray-400 text-sm flex items-center justify-center h-full">No Avatar</span>
                     )}

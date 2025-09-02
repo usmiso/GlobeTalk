@@ -7,28 +7,28 @@ export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   return (
-      <div className="flex min-h-screen bg-gray-100">
-        {/* Sidebar */}
-        {sidebarOpen && (
-          <aside
-            className="flex flex-col justify-between transition-all duration-300"
-            style={{
-              backgroundColor: "#6492BD",
-              width: "13rem",
-            }}
-          >
-            {/* GlobeTalk & Toggle */}
-            <div className="flex flex-row items-start p-2 sm:gap-15 sm:p-5">
-              <div className="flex items-center gap-1 sm:gap-2 mb-2 sm:mb-3">
-                <img
-                  src="/images/globe.png"
-                  alt="GlobeTalk Logo"
-                  className="w-5 h-5 sm:w-6 sm:h-6 object-cover"
-                />
-                <p className="text-xs sm:text-sm lg:text-base font-bold text-black">
-                  GlobeTalk
-                </p>
-              </div>
+    <div className="flex min-h-screen bg-gray-100">
+      {/* Sidebar */}
+      {sidebarOpen && (
+        <aside
+          className="flex flex-col justify-between transition-all duration-300"
+          style={{
+            backgroundColor: "#6492BD",
+            width: "13rem", 
+          }}
+        >
+          {/* GlobeTalk & Toggle */}
+          <div className="flex flex-row items-start p-2 sm:gap-15 sm:p-5">
+            <div className="flex items-center gap-1 sm:gap-2 mb-2 sm:mb-3">
+              <img
+                src="/images/globe.png"
+                alt="GlobeTalk Logo"
+                className="w-5 h-5 sm:w-6 sm:h-6 object-cover"
+              />
+              <p className="text-xs sm:text-sm lg:text-base font-bold text-black">
+                GlobeTalk
+              </p>
+            </div>
 
               <button
                 onClick={() => setSidebarOpen(false)}
@@ -131,7 +131,7 @@ export default function Dashboard() {
               </div>
 
               <button
-                onClick={() => router.push("/pages/find-pal")}
+                onClick={() => router.push("/pages/matchmaking")}
                 className="text-blue-600 font-semibold hover:underline text-xs sm:text-sm lg:text-base mt-1 sm:mt-0"
               >
                 Find A Pal →
