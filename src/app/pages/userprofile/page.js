@@ -43,10 +43,9 @@ export default function UserProfile() {
 
     const fetchProfile = async (uid) => {
 
-
         try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-            const res = await fetch(`${apiUrl}/api/profile?userID=${user.uid}`);
+            const res = await fetch(`${apiUrl}/api/profile?userID=${uid}`);
             if (res.ok) {
                 const data = await res.json();
                 setIntro(data.intro || "");
