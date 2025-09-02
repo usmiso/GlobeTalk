@@ -14,7 +14,7 @@ jest.mock('next/link', () => {
 
 // ✅ Mock next/image (so tests don’t complain about <Image />)
 jest.mock('next/image', () => (props) => {
-  return <img {...props} />;
+  return <img alt={props.alt || ''} {...props} />;
 });
 
 // ✅ Mock useRouter from next/navigation
