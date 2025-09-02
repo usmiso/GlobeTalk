@@ -138,7 +138,46 @@ export default function MatchmakingPage() {
       {match && (
         <div className="mt-6 p-4 border rounded bg-gray-50">
           <h2 className="font-semibold mb-2">Matched User</h2>
-          <pre className="text-sm whitespace-pre-wrap">{JSON.stringify(match, null, 2)}</pre>
+          {match.username || match.avatar || match.name || match.email || match.language || match.timezone ? (
+            <div className="space-y-2">
+              {(match.avatarURL || match.avatar) && (
+                <div>
+                  <span className="font-medium">Avatar:</span><br />
+                  <img src={match.avatarURL ? match.avatarURL : match.avatar} alt="avatar" className="w-16 h-16 rounded-full border" />
+                </div>
+              )}
+              {match.username && (
+                <div><span className="font-medium">Username:</span> {match.username}</div>
+              )}
+              {match.name && (
+                <div><span className="font-medium">Name:</span> {match.name}</div>
+              )}
+              {match.email && (
+                <div><span className="font-medium">Email:</span> {match.email}</div>
+              )}
+              {match.language && (
+                <div><span className="font-medium">Language:</span> {match.language}</div>
+              )}
+              {match.timezone && (
+                <div><span className="font-medium">Timezone:</span> {match.timezone}</div>
+              )}
+              {match.intro && (
+                <div><span className="font-medium">Intro:</span> {match.intro}</div>
+              )}
+              {(match.ageMin || match.ageMax) && (
+                <div>
+                  <span className="font-medium">Age Range:</span> {match.ageMin ? match.ageMin : "?"} - {match.ageMax ? match.ageMax : "?"}
+                </div>
+              )}
+              {match.hobbies && Array.isArray(match.hobbies) && match.hobbies.length > 0 && (
+                <div>
+                  <span className="font-medium">Hobbies:</span> {match.hobbies.join(", ")}
+                </div>
+              )}
+            </div>
+          ) : (
+            <pre className="text-sm whitespace-pre-wrap">{JSON.stringify(match, null, 2)}</pre>
+          )}
         </div>
       )}
     </div>
