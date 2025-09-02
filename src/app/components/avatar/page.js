@@ -16,9 +16,21 @@ export default function AvatarUsernameGen({ onSuccess }) {
   const maleHairOptions = ['shaggy', 'dreads02', 'theCaesarAndSidePart'];
 
   const generateUsername = async () => {
-    const res = await fetch("https://randomuser.me/api/");
-    const data = await res.json();
-    setUsername(data.results[0].login.username);
+    try {
+      const res = await fetch("https://randomuser.me/api/");
+      if (!res.ok) {
+        alert("Failed to fetch username");
+        return;
+      }
+      const data = await res.json();
+      if (!data.results || !data.results[0] || !data.results[0].login || !data.results[0].login.username) {
+        alert("Malformed response from username API");
+        return;
+      }
+      setUsername(data.results[0].login.username);
+    } catch (err) {
+      alert("Error generating username: " + err.message);
+    }
   };
 
   const generateAvatar = () => {
