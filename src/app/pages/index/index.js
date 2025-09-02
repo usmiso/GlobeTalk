@@ -35,12 +35,12 @@ export default function Index() {
             </section>
           </summary>
 
-          <nav className="px-4 pb-4">
+          <nav className="px-4 pb-4 bg-white text-gray-900 rounded-xl shadow-lg">
             <ul className="flex flex-col gap-3">
               <li><Link href="/">Home</Link></li>
               <li><Link href="/pages/about">About</Link></li>
               <li><Link href="/pages/explore">Explore</Link></li>
-              <li><Link href="/pages/signin">LogIninn</Link></li>
+              <li><Link href="/pages/signin">LogIn</Link></li>
               <li><Link href="/pages/signup">SIgnUp</Link></li>
             </ul>
           </nav>
@@ -97,7 +97,7 @@ export default function Index() {
             className='absolute right-4 top-1/2 -translate-y-1/2 
             rounded-3xl h-[44px] px-6 bg-gray-800
              shadow-[0px_4px_4px_0px_rgba(0,0,0,0.50)] 
-             border border-neutral-400 w-33
+             border border-neutral-400 w-33 cursor-pointer
              font-bold text-[17px] font-[Roboto_Serif] text-white'>
             Login
           </button>
@@ -108,7 +108,7 @@ export default function Index() {
             onClick={() => router.push("/pages/signin")}
             className='rounded-3xl mr-20 ml-6 bg-blue-300/20 
             shadow-[0px_4px_4px_0px_rgba(0,0,0,0.50)] 
-            border border-neutral-400 h-12 w-35 px-6
+            border border-neutral-400 h-12 w-35 px-6 cursor-pointer
              text-white font-bold text-[17px] font-[Roboto_Serif]'>
             Sign Up
           </button>
@@ -136,7 +136,7 @@ export default function Index() {
                rounded-[30px] bg-gray-800
                shadow-[0px_4px_4px_0px_rgba(0,0,0,0.50)]
                border border-neutral-400/20
-               text-white font-semibold
+               text-white font-semibold cursor-pointer
                text-base sm:text-lg md:text-xl font-[Roboto_Serif]">Start Chatting!</button>
       </section>
 
