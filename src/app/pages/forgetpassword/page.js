@@ -150,7 +150,7 @@ const ForgotPassword = () => {
             <button
               type="submit"
               className="w-full h-14 mt-8 rounded-[30px] bg-gray-800 text-white text-lg font-semibold
-                     hover:bg-gray-700 transition font-[Roboto_serif]"
+                     hover:bg-gray-700 transition font-[Roboto_serif] cursor-pointer"
             >
               Send Reset Email
             </button>
