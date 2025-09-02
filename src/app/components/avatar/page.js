@@ -54,16 +54,18 @@ export default function AvatarUsernameGen({ onSuccess }) {
     }
 
     try {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-  const res = await fetch(`${apiUrl}/api/profile/avatar`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userID: user.uid,
-          username,
-          avatarUrl: avatar,
-        }),
-      });
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      // const res = await fetch(`${apiUrl}/api/profile/avatar`, 
+      const res = await fetch(`http://localhost:5000/api/profile/avatar`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userID: user.uid,
+            username,
+            avatarUrl: avatar,
+          }),
+        });
 
       if (!res.ok) {
         const data = await res.json();
