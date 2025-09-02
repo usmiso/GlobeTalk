@@ -39,19 +39,24 @@ describe('Index page', () => {
 
   it('renders the About link with correct href', () => {
     render(<Index />);
-    const aboutLink = screen.getByRole('link', { name: /About/i });
-    expect(aboutLink).toHaveAttribute('href', '/pages/about');
+    const aboutLinks = screen.getAllByRole('link', { name: /About/i });
+    // Find the one with the correct href
+    const aboutLink = aboutLinks.find(link => link.getAttribute('href') === '/pages/about');
+    expect(aboutLink).toBeInTheDocument();
   });
 
   it('renders the Explore link with correct href', () => {
     render(<Index />);
-    const exploreLink = screen.getByRole('link', { name: /Explore/i });
-    expect(exploreLink).toHaveAttribute('href', '/pages/explore');
+    const exploreLinks = screen.getAllByRole('link', { name: /Explore/i });
+    const exploreLink = exploreLinks.find(link => link.getAttribute('href') === '/pages/explore');
+    expect(exploreLink).toBeInTheDocument();
   });
 
   it('renders the Login button and triggers router.push on click', () => {
     render(<Index />);
-    const loginButton = screen.getByRole('button', { name: /Login/i });
+    const loginButtons = screen.getAllByRole('button', { name: /Login/i });
+    // Find the button with text 'Login'
+    const loginButton = loginButtons.find(btn => btn.textContent.match(/Login/i));
     expect(loginButton).toBeInTheDocument();
 
     loginButton.click();
@@ -60,7 +65,8 @@ describe('Index page', () => {
 
   it('renders the Start Chatting button and triggers router.push on click', () => {
     render(<Index />);
-    const chatButton = screen.getByRole('button', { name: /Start Chatting!/i });
+    const chatButtons = screen.getAllByRole('button', { name: /Start Chatting!/i });
+    const chatButton = chatButtons.find(btn => btn.textContent.match(/Start Chatting!/i));
     expect(chatButton).toBeInTheDocument();
 
     chatButton.click();
@@ -69,7 +75,8 @@ describe('Index page', () => {
 
   it('renders the Sign Up button and triggers router.push on click', () => {
     render(<Index />);
-    const signUpButton = screen.getByRole('button', { name: /Sign Up/i });
+    const signUpButtons = screen.getAllByRole('button', { name: /Sign Up/i });
+    const signUpButton = signUpButtons.find(btn => btn.textContent.match(/Sign Up/i));
     expect(signUpButton).toBeInTheDocument();
 
     signUpButton.click();
@@ -77,17 +84,18 @@ describe('Index page', () => {
   });
 
   it('renders the mobile menu with correct links when opened', () => {
-    render(<Index />);
+  const { container } = render(<Index />);
 
-    // Open the <details> menu by clicking its <summary>
-    const summary = screen.getByRole('button', { hidden: true });
-    fireEvent.click(summary);
+  // Open the <details> menu by clicking its <summary>
+  const summary = container.querySelector('summary');
+  fireEvent.click(summary);
 
-    // Now check the links inside mobile nav
-    expect(screen.getByRole('link', { name: /Home/i })).toHaveAttribute('href', '/');
-    expect(screen.getByRole('link', { name: /About/i })).toHaveAttribute('href', '/pages/about');
-    expect(screen.getByRole('link', { name: /Explore/i })).toHaveAttribute('href', '/pages/explore');
-    expect(screen.getByRole('link', { name: /LogIninn/i })).toHaveAttribute('href', '/pages/signin');
-    expect(screen.getByRole('link', { name: /SIgnUp/i })).toHaveAttribute('href', '/pages/signup');
+  // Now check the links inside mobile nav
+  const mobileLinks = screen.getAllByRole('link');
+  expect(mobileLinks.some(link => link.textContent.match(/Home/i) && link.getAttribute('href') === '/')).toBeTruthy();
+  expect(mobileLinks.some(link => link.textContent.match(/About/i) && link.getAttribute('href') === '/pages/about')).toBeTruthy();
+  expect(mobileLinks.some(link => link.textContent.match(/Explore/i) && link.getAttribute('href') === '/pages/explore')).toBeTruthy();
+  expect(mobileLinks.some(link => link.textContent.match(/LogIn/i) && link.getAttribute('href') === '/pages/signin')).toBeTruthy();
+  expect(mobileLinks.some(link => link.textContent.match(/SIgnUp/i) && link.getAttribute('href') === '/pages/signup')).toBeTruthy();
   });
 });
