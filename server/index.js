@@ -40,7 +40,7 @@ app.get('/api/health', (req, res) => {
 app.post('/api/profile', async (req, res) => {
     if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
 
-    const { userID, intro, ageRange, hobbies, timezone, language} = req.body;
+    const { userID, intro, ageRange, hobbies, timezone, language } = req.body;
 
     console.log('Received profile POST:', req.body);
 
@@ -51,7 +51,7 @@ app.post('/api/profile', async (req, res) => {
     try {
         // Use merge to avoid overwriting other fields accidentally
         await db.collection('profiles').doc(userID).set(
-            { userID, intro, ageRange, hobbies, timezone, language},
+            { userID, intro, ageRange, hobbies, timezone, language },
             { merge: true }
         );
         res.status(200).json({ message: 'Profile saved successfully' });
@@ -145,7 +145,7 @@ app.get('/api/matchmaking', async (req, res) => {
             if (
                 data.timezone === timezone &&
                 ((typeof data.language === 'string' && data.language === language) ||
-                 (Array.isArray(data.language) && data.language.includes(language)))
+                    (Array.isArray(data.language) && data.language.includes(language)))
             ) {
                 users.push(data);
             }
@@ -162,12 +162,56 @@ app.get('/api/matchmaking', async (req, res) => {
 });
 // app.use('/static', express.static(path.join(__dirname, 'public')));
 
+
+
+//api for edit page specifically
+app.post('/api/profile/edit', async (req, res) => {
+    if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
+
+    const { userID, intro, ageRange, hobbies, region, languages, sayings, username, avatarUrl } = req.body;
+
+    if (!userID) {
+        return res.status(400).json({ error: 'Missing userID' });
+    }
+
+    try {
+        await db.collection('profiles').doc(userID).set(
+            {
+                userID,
+                intro: intro || "",
+                ageRange: ageRange || "",
+                hobbies: hobbies || [],
+                region: region || "",
+                languages: languages || [],
+                sayings: sayings || [],
+                username: username || "",
+                avatarUrl: avatarUrl || ""
+            },
+            { merge: true }
+        );
+        res.status(200).json({ message: 'Profile (edit) saved successfully' });
+    } catch (error) {
+        console.error('Error saving profile (edit):', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
 // Catch-all for undefined routes
 app.use((req, res) => {
     res.status(404).json({ error: 'Not found' });
 });
 
 // Start server
+
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`GlobeTalk backend listening on port ${PORT}`);
+    });
+}
+/*
 app.listen(PORT, () => {
     console.log(`GlobeTalk backend listening on port ${PORT}`);
-});
+});*/
+
+module.exports = app;

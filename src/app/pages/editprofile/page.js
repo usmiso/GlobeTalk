@@ -28,7 +28,7 @@ function EditProfile() {
     const [avatar, setAvatar] = useState("");
     const [username, setUsername] = useState("");
     const [loading, setLoading] = useState(true);
-    const [avatarUrl, setAvatarUrl] = useState("");
+    const [avatarUrl, setAvatarUrl] = useState(null);
 
 
 
@@ -111,8 +111,8 @@ function EditProfile() {
 
             try {
                 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-                const res = await fetch(`${apiUrl}/api/profile?userID=${user.uid}`);
-                // const res = await fetch(`http://localhost:5000/api/profile?userID=${uid}`);
+                // const res = await fetch(`${apiUrl}/api/profile?userID=${user.uid}`);
+                const res = await fetch(`http://localhost:5000/api/profile?userID=${user.uid}`);
                 if (res.ok) {
                     const data = await res.json();
                     if (data) {
@@ -123,7 +123,7 @@ function EditProfile() {
                         setRegion(data.region || "");
                         setSayings(data.sayings || []);
                         setUsername(data.username || "");
-                        setAvatar(data.avatar || "");
+                        setAvatar(data.avatarUrl || "");
                     }
                 }
             } catch (err) {
@@ -201,7 +201,8 @@ function EditProfile() {
 
         try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-            const res = await fetch(`${apiUrl}/api/profile`, {
+            // const res = await fetch(`${apiUrl}/api/profile`,
+            const res = await fetch(`http://localhost:5000/api/profile/edit`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -225,7 +226,7 @@ function EditProfile() {
             }
 
             setSaving(false);
-            router.push('/userprofile'); // ✅ go to profile page
+            router.push('/pages/userprofile');
 
         } catch (err) {
             setError('Failed to connect to server.');
