@@ -84,10 +84,3 @@ export async function forgotPassword(email) {
 }
 
 export { auth, onAuthStateChanged };
-// Mock auth
-    jest.mock('../app/firebase/auth', () => ({
-        auth: {
-            currentUser: { uid: 'user123' },
-        },
-    }));
-
