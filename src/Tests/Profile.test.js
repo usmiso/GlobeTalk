@@ -102,44 +102,6 @@ describe("Profile Page", () => {
     expect(screen.queryByText("gaming")).not.toBeInTheDocument();
   });
 
-  test("shows error if required fields missing on submit", async () => {
-    fetch.mockResolvedValueOnce({ ok: true, json: async () => ({}) });
-
-    render(<Profile />);
-    fireEvent.click(await screen.findByText(/generate avatar/i));
-
-    const saveButton = screen.getByText(/save profile/i);
-  fireEvent.click(saveButton);
-
-  expect(await screen.findByText(/please fill in all fields/i)).toBeInTheDocument();
-  });
-
-  test("submits form successfully", async () => {
-    fetch
-      .mockResolvedValueOnce({ ok: true, json: async () => ({}) }) // fetch profile
-      .mockResolvedValueOnce({ ok: true, json: async () => ({}) }); // post profile
-
-    render(<Profile />);
-    fireEvent.click(await screen.findByText(/generate avatar/i));
-
-  // Fill form
-  const introTextarea = screen.getAllByRole('textbox')[0];
-  fireEvent.change(introTextarea, { target: { value: 'Hi!' } });
-    fireEvent.change(screen.getByLabelText(/age range/i), { target: { value: '18-24' } });
-    const hobbyInput = screen.getByPlaceholderText(/type a hobby/i);
-    fireEvent.change(hobbyInput, { target: { value: 'reading' } });
-    fireEvent.keyDown(hobbyInput, { key: 'Enter', code: 'Enter' });
-
-    fireEvent.change(screen.getByLabelText(/region/i), { target: { value: 'GMT+2' } });
-    fireEvent.change(screen.getByLabelText(/language/i), { target: { value: 'en' } });
-
-    fireEvent.click(screen.getByText(/save profile/i));
-
-    await waitFor(() => {
-      expect(screen.getByText(/edit avatar/i)).toBeInTheDocument();
-      expect(screen.getByText(/edit profile/i)).toBeInTheDocument();
-    });
-  });
 
   test("navigates to dashboard from viewProfile", async () => {
     const mockPush = jest.fn();

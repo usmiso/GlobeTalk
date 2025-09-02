@@ -18,13 +18,16 @@ describe("Dashboard component", () => {
     render(<Dashboard />);
     
     // Check main heading
-    expect(screen.getByText(/WELCOME TO GLOBETALK/i)).toBeInTheDocument();
 
-    // Sidebar elements
-    expect(screen.getByText(/GlobeTalk/i)).toBeInTheDocument();
-    expect(screen.getByText(/Profile/i)).toBeInTheDocument();
-    expect(screen.getByText(/Letters/i)).toBeInTheDocument();
-    expect(screen.getByText(/Logout/i)).toBeInTheDocument();
+  expect(screen.getByText(/WELCOME TO GLOBETALK/i)).toBeInTheDocument();
+
+  // Sidebar elements
+  // There are multiple elements with 'GlobeTalk', so use getAllByText
+  expect(screen.getAllByText(/GlobeTalk/i).length).toBeGreaterThan(0);
+  expect(screen.getByText(/Profile/i)).toBeInTheDocument();
+  // Multiple elements contain 'Letters', so use getAllByText
+  expect(screen.getAllByText(/Letters/i).length).toBeGreaterThan(0);
+  expect(screen.getByText(/Logout/i)).toBeInTheDocument();
   });
 
   test("toggles sidebar", () => {
