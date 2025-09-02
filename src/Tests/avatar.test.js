@@ -1,186 +1,135 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import ProfileSetup from '../app/components/avatar/page';
+// src/Tests/AvatarUsernameGen.test.js
+import { render, screen, fireEvent, act } from "@testing-library/react";
+import AvatarUsernameGen from "../app/components/avatar/page";
+import { auth } from "../app/firebase/auth";
 
-// Mock the fetch API
+// Mock next/router
+const mockPush = jest.fn();
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({ push: mockPush }),
+}));
+
+// Mock auth
+jest.mock("../app/firebase/auth", () => ({
+  auth: { currentUser: { uid: "testUserId" } },
+}));
+
+// Mock global fetch
 global.fetch = jest.fn();
 
-describe('ProfileSetup Component', () => {
-  beforeEach(() => {
-    fetch.mockClear();
-    // Mock initial username fetch
+beforeEach(() => {
+  jest.clearAllMocks();
+  // Default fetch mock for tests that don't override it
+  fetch.mockResolvedValue({
+    json: async () => ({
+      results: [{ login: { username: "mockUser" } }],
+    }),
+    ok: true,
+  });
+  window.alert = jest.fn();
+});
+
+describe("AvatarUsernameGen Component", () => {
+  test("renders correctly with default elements", () => {
+    render(<AvatarUsernameGen />);
+    
+    expect(screen.getByText(/Create Your Avatar/i)).toBeInTheDocument();
+    expect(screen.getByText(/Generated Username/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Generate New Avatar/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Generate Name/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Save New Avatar/i })).toBeInTheDocument();
+  });
+
+  test("generates a username and updates state", async () => {
     fetch.mockResolvedValueOnce({
       json: async () => ({
-        results: [{
-          login: { username: 'testuser123' }
-        }]
-      })
+        results: [{ login: { username: "mockUser" } }],
+      }),
     });
+
+    render(<AvatarUsernameGen />);
+    const genNameButton = screen.getByRole("button", { name: /Generate Name/i });
+
+    await act(async () => {
+      fireEvent.click(genNameButton);
+    });
+
+    expect(await screen.findByText("mockUser")).toBeInTheDocument();
   });
 
-  test('renders all main elements', async () => {
-    render(<ProfileSetup />);
+  test("generates avatar and updates state", () => {
+    render(<AvatarUsernameGen />);
+    const genAvatarButton = screen.getByRole("button", { name: /Generate New Avatar/i });
     
-    // Wait for initial data to load
-    await waitFor(() => {
-      expect(screen.getByText(/testuser123|Generated Username/)).toBeInTheDocument();
-    }, { timeout: 3000 });
-
-    expect(screen.getByText('Avatar Generator')).toBeInTheDocument();
-    expect(screen.getByText('Generate Name')).toBeInTheDocument();
-    expect(screen.getByText('Generate New Avatar')).toBeInTheDocument();
-    expect(screen.getByText('Save New Avatar')).toBeInTheDocument();
+    const avatarBefore = screen.queryByAltText("avatar")?.src;
     
-    // Check for dropdowns and avatar
-    const selects = screen.getAllByRole('combobox');
-    expect(selects).toHaveLength(2);
-    expect(screen.getByAltText('avatar')).toBeInTheDocument();
+    fireEvent.click(genAvatarButton);
+    
+    const avatarAfter = screen.queryByAltText("avatar")?.src;
+    expect(avatarAfter).not.toBe(avatarBefore);
   });
 
-  test('generates username when button clicked', async () => {
-    const user = userEvent.setup();
-    render(<ProfileSetup />);
-    
-    // Wait for initial render
-    await waitFor(() => {
-      expect(screen.getByText(/testuser123/)).toBeInTheDocument();
-    });
-
-    // Mock new username response
-    fetch.mockResolvedValueOnce({
-      json: async () => ({
-        results: [{
-          login: { username: 'newtestuser' }
-        }]
-      })
-    });
-    
-    const generateButton = screen.getByText('Generate Name');
-    await user.click(generateButton);
-    
-    await waitFor(() => {
-      expect(screen.getByText('newtestuser')).toBeInTheDocument();
-    });
+  test("updates hair options when gender changes", () => {
+    render(<AvatarUsernameGen />);
+    // If this fails, ensure the <label> for Gender uses htmlFor or aria-labelledby on the <select> in the component
+    const genderSelect = screen.getByLabelText(/Gender/i);
+    fireEvent.change(genderSelect, { target: { value: "female" } });
+    const hairSelect = screen.getByLabelText(/Hair Style/i);
+    const hairOptions = Array.from(hairSelect.options).map(opt => opt.value);
+    expect(hairOptions).toEqual(expect.arrayContaining(["straight02", "bun", "curly"]));
   });
 
-  test('generates new avatar when button clicked', async () => {
-    const user = userEvent.setup();
-    render(<ProfileSetup />);
-    
-    await waitFor(() => {
-      expect(screen.getByAltText('avatar')).toBeInTheDocument();
+  test("handleConfirm calls API and triggers onSuccess", async () => {
+    const mockOnSuccess = jest.fn();
+    fetch.mockResolvedValueOnce({ ok: true, json: async () => ({}) });
+
+    render(<AvatarUsernameGen onSuccess={mockOnSuccess} />);
+
+    const saveButton = screen.getByRole("button", { name: /Save New Avatar/i });
+
+    await act(async () => {
+      fireEvent.click(saveButton);
     });
 
-    const initialAvatar = screen.getByAltText('avatar').src;
-    const generateButton = screen.getByText('Generate New Avatar');
-    
-    await user.click(generateButton);
-    
-    await waitFor(() => {
-      const newAvatar = screen.getByAltText('avatar').src;
-      expect(newAvatar).not.toBe(initialAvatar);
-    }, { timeout: 3000 });
-  });
-
-  test('changes gender and updates hair options', async () => {
-    const user = userEvent.setup();
-    render(<ProfileSetup />);
-    
-    await waitFor(() => {
-      expect(screen.getByAltText('avatar')).toBeInTheDocument();
-    });
-
-    // Get both dropdowns
-    const selects = screen.getAllByRole('combobox');
-    const genderSelect = selects[0];
-    
-    // Change gender to female
-    await user.selectOptions(genderSelect, 'female');
-    
-    // Verify gender changed by checking the value property
-    await waitFor(() => {
-      expect(genderSelect.value).toBe('female');
-    });
-  });
-
-  test('selects hair style and updates state', async () => {
-    const user = userEvent.setup();
-    render(<ProfileSetup />);
-    
-    await waitFor(() => {
-      expect(screen.getByAltText('avatar')).toBeInTheDocument();
-    });
-
-    // Get both dropdowns
-    const selects = screen.getAllByRole('combobox');
-    const hairSelect = selects[1];
-    
-    // Change hair style
-    await user.selectOptions(hairSelect, 'dreads02');
-    
-    // Verify hair style changed
-    await waitFor(() => {
-      expect(hairSelect.value).toBe('dreads02');
-    });
-  });
-
-  test('saves profile when Save New Avatar clicked', async () => {
-    const user = userEvent.setup();
-    render(<ProfileSetup />);
-    
-    await waitFor(() => {
-      expect(screen.getByAltText('avatar')).toBeInTheDocument();
-    });
-
-    const saveButton = screen.getByText('Save New Avatar');
-    await user.click(saveButton);
-    
-    await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith('/api/users/setup', {
-        method: 'POST',
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/profile/avatar"),
+      expect.objectContaining({
+        method: "POST",
         body: expect.any(String),
-        headers: { 'Content-Type': 'application/json' },
-      });
-    });
+      })
+    );
+    expect(mockOnSuccess).toHaveBeenCalled();
   });
 
-  test('handles API errors gracefully', async () => {
-    // Mock fetch to reject for the initial call
-    fetch.mockRejectedValueOnce(new Error('API error'));
-    
-    render(<ProfileSetup />);
-    
-    // Component should still render with fallback content
-    await waitFor(() => {
-      expect(screen.getByText('Generated Username')).toBeInTheDocument();
-    }, { timeout: 3000 });
-  });
+  test("handleConfirm alerts if user not logged in", async () => {
+    auth.currentUser = null;
+    window.alert = jest.fn();
 
-  test('hair selection affects next avatar generation', async () => {
-    const user = userEvent.setup();
-    render(<ProfileSetup />);
-    
-    await waitFor(() => {
-      expect(screen.getByAltText('avatar')).toBeInTheDocument();
+    render(<AvatarUsernameGen />);
+    const saveButton = screen.getByRole("button", { name: /Save New Avatar/i });
+
+    await act(async () => {
+      fireEvent.click(saveButton);
     });
 
-    const initialAvatar = screen.getByAltText('avatar').src;
-    
-    // Get both dropdowns and change hair style
-    const selects = screen.getAllByRole('combobox');
-    const hairSelect = selects[1];
-    
-    await user.selectOptions(hairSelect, 'theCaesarAndSidePart');
-    
-    // After changing hair, manually generate a new avatar to see the effect
-    const generateButton = screen.getByText('Generate New Avatar');
-    await user.click(generateButton);
-    
-    // Wait for avatar to update
-    await waitFor(() => {
-      const updatedAvatar = screen.getByAltText('avatar').src;
-      expect(updatedAvatar).not.toBe(initialAvatar);
-      expect(updatedAvatar).toContain('theCaesarAndSidePart');
-    }, { timeout: 3000 });
+    expect(window.alert).toHaveBeenCalledWith("User not logged in");
+
+    // Reset currentUser
+    auth.currentUser = { uid: "testUserId" };
+  });
+
+  test("handleConfirm alerts if API fails", async () => {
+    window.alert = jest.fn();
+    fetch.mockResolvedValueOnce({ ok: false, json: async () => ({ error: "fail" }) });
+
+    render(<AvatarUsernameGen />);
+    const saveButton = screen.getByRole("button", { name: /Save New Avatar/i });
+
+    await act(async () => {
+      fireEvent.click(saveButton);
+    });
+
+    // If this fails, check the error handling in the component. It should call alert with the error message from the API response.
+    expect(window.alert).toHaveBeenCalledWith("fail");
   });
 });

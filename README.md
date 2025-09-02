@@ -4,7 +4,7 @@
 
 ---
 
-[![codecov](https://codecov.io/gh/MakomaneTau/GlobeTalk/branch/main/graph/badge.svg)](https://codecov.io/gh/MakomaneTau/GlobeTalk)
+[![codecov](https://codecov.io/gh/usmiso/GlobeTalk/branch/features%2Fcombined/graph/badge.svg?token=WICVUUWN1D)](https://codecov.io/gh/usmiso/GlobeTalk)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
 # Table of contents
