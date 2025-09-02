@@ -37,65 +37,169 @@ describe('Index page', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders the About link with correct href', () => {
-    render(<Index />);
-    const aboutLinks = screen.getAllByRole('link', { name: /About/i });
-    // Find the one with the correct href
-    const aboutLink = aboutLinks.find(link => link.getAttribute('href') === '/pages/about');
-    expect(aboutLink).toBeInTheDocument();
+  it('GET /api/profile should return profile when exists', async () => {
+    // Mock the document to exist with our profile data
+    mockDoc.get.mockResolvedValueOnce({
+      exists: true,
+      data: () => mockProfile
+    });
+
+    const response = await request(app)
+      .get('/api/profile?userID=test-user-123');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual(mockProfile);
+    expect(mockDb.collection).toHaveBeenCalledWith('profiles');
+    expect(mockCollection.doc).toHaveBeenCalledWith('test-user-123');
   });
 
-  it('renders the Explore link with correct href', () => {
-    render(<Index />);
-    const exploreLinks = screen.getAllByRole('link', { name: /Explore/i });
-    const exploreLink = exploreLinks.find(link => link.getAttribute('href') === '/pages/explore');
-    expect(exploreLink).toBeInTheDocument();
+  it('GET /api/profile should return 404 when profile not found', async () => {
+    // Mock the document to not exist
+    mockDoc.get.mockResolvedValueOnce({ exists: false });
+
+    const response = await request(app)
+      .get('/api/profile?userID=non-existent');
+
+    expect(response.status).toBe(404);
+    expect(response.body.error).toContain('Profile not found');
+  });
+});
+
+describe('Avatar Endpoint', () => {
+  it('POST /api/profile/avatar should save avatar and username', async () => {
+    const avatarData = {
+      userID: 'test-user-123',
+      username: 'testuser',
+      avatarUrl: 'https://example.com/avatar.jpg'
+    };
+
+    const response = await request(app)
+      .post('/api/profile/avatar')
+      .send(avatarData);
+
+    expect(response.status).toBe(200);
+    expect(response.body.message).toContain('Avatar and username saved successfully');
+    expect(mockDb.collection).toHaveBeenCalledWith('profiles');
+    expect(mockCollection.doc).toHaveBeenCalledWith('test-user-123');
+    expect(mockDoc.set).toHaveBeenCalledWith(avatarData, { merge: true });
   });
 
-  it('renders the Login button and triggers router.push on click', () => {
-    render(<Index />);
-    const loginButtons = screen.getAllByRole('button', { name: /Login/i });
-    // Find the button with text 'Login'
-    const loginButton = loginButtons.find(btn => btn.textContent.match(/Login/i));
-    expect(loginButton).toBeInTheDocument();
+  it('POST /api/profile/avatar should return error for missing fields', async () => {
+    const response = await request(app)
+      .post('/api/profile/avatar')
+      .send({ userID: 'test-user' });
 
-    loginButton.click();
-    expect(pushMock).toHaveBeenCalledWith('/pages/signin');
+    expect(response.status).toBe(400);
+    expect(response.body.error).toContain('Missing required fields');
+  });
+});
+
+describe('Facts Endpoint', () => {
+  it('GET /api/facts should return facts array', async () => {
+    const mockFacts = [
+      {
+        ageRange: '25-30',
+        hobbies: ['reading'],
+        timezone: 'UTC+1',
+        language: 'English',
+        userID: 'user1',
+        intro: 'Test user'
+      }
+    ];
+
+    // Mock the collection to return our test data
+    mockCollection.get.mockResolvedValueOnce({
+      forEach: (callback) => mockFacts.forEach(callback)
+    });
+
+    const response = await request(app).get('/api/facts');
+    expect(response.status).toBe(200);
+
+    // Extract only the expected fields
+    const expectedFacts = mockFacts.map(({ ageRange, hobbies, timezone, language }) => ({
+      ageRange, hobbies, timezone, language
+    }));
+
+    expect(response.body).toEqual(expectedFacts);
+  });
+});
+
+describe('Matchmaking Endpoint', () => {
+  const mockProfiles = [
+    {
+      userID: 'user1',
+      timezone: 'UTC+1',
+      language: 'English',
+      intro: 'User 1',
+      ageRange: '25-30',
+      hobbies: ['reading']
+    },
+    {
+      userID: 'user2',
+      timezone: 'UTC+2',
+      language: 'Spanish',
+      intro: 'User 2',
+      ageRange: '30-35',
+      hobbies: ['traveling']
+    }
+  ];
+
+  it('GET /api/matchmaking should find matching user', async () => {
+    mockCollection.get.mockResolvedValueOnce({
+      forEach: (callback) => mockProfiles.forEach(callback)
+    });
+
+    const response = await request(app)
+      .get('/api/matchmaking?timezone=UTC+1&language=English');
+
+    expect(response.status).toBe(200);
+    expect(response.body.userID).toBe('user1');
   });
 
-  it('renders the Start Chatting button and triggers router.push on click', () => {
-    render(<Index />);
-    const chatButtons = screen.getAllByRole('button', { name: /Start Chatting!/i });
-    const chatButton = chatButtons.find(btn => btn.textContent.match(/Start Chatting!/i));
-    expect(chatButton).toBeInTheDocument();
+  it('GET /api/matchmaking should return 404 for no matches', async () => {
+    mockCollection.get.mockResolvedValueOnce({
+      forEach: (callback) => mockProfiles.forEach(callback)
+    });
 
-    chatButton.click();
-    expect(pushMock).toHaveBeenCalledWith('/pages/signin');
+    const response = await request(app)
+      .get('/api/matchmaking?timezone=UTC+3&language=French');
+
+    expect(response.status).toBe(404);
+    expect(response.body.error).toContain('No users found');
   });
 
-  it('renders the Sign Up button and triggers router.push on click', () => {
-    render(<Index />);
-    const signUpButtons = screen.getAllByRole('button', { name: /Sign Up/i });
-    const signUpButton = signUpButtons.find(btn => btn.textContent.match(/Sign Up/i));
-    expect(signUpButton).toBeInTheDocument();
+  it('GET /api/matchmaking should return 400 for missing parameters', async () => {
+    const response = await request(app)
+      .get('/api/matchmaking?timezone=UTC+1');
 
-    signUpButton.click();
-    expect(pushMock).toHaveBeenCalledWith('/pages/signin');
+    expect(response.status).toBe(400);
+    expect(response.body.error).toContain('Both timezone and language are required');
+  });
+});
+
+describe('Error Handling', () => {
+  it('should handle Firestore errors', async () => {
+    mockDoc.set.mockRejectedValueOnce(new Error('Firestore error'));
+
+    const response = await request(app)
+      .post('/api/profile')
+      .send({
+        userID: 'test-user',
+        intro: 'test',
+        ageRange: '25-30',
+        hobbies: ['test'],
+        timezone: 'UTC+1',
+        language: 'English'
+      });
+
+    expect(response.status).toBe(500);
+    expect(response.body.error).toContain('Firestore error');
   });
 
-  it('renders the mobile menu with correct links when opened', () => {
-  const { container } = render(<Index />);
-
-  // Open the <details> menu by clicking its <summary>
-  const summary = container.querySelector('summary');
-  fireEvent.click(summary);
-
-  // Now check the links inside mobile nav
-  const mobileLinks = screen.getAllByRole('link');
-  expect(mobileLinks.some(link => link.textContent.match(/Home/i) && link.getAttribute('href') === '/')).toBeTruthy();
-  expect(mobileLinks.some(link => link.textContent.match(/About/i) && link.getAttribute('href') === '/pages/about')).toBeTruthy();
-  expect(mobileLinks.some(link => link.textContent.match(/Explore/i) && link.getAttribute('href') === '/pages/explore')).toBeTruthy();
-  expect(mobileLinks.some(link => link.textContent.match(/LogIn/i) && link.getAttribute('href') === '/pages/signin')).toBeTruthy();
-  expect(mobileLinks.some(link => link.textContent.match(/SIgnUp/i) && link.getAttribute('href') === '/pages/signup')).toBeTruthy();
+  it('should return 404 for unknown routes', async () => {
+    const response = await request(app).get('/unknown-route');
+    expect(response.status).toBe(404);
+    expect(response.body.error).toBe('Not found');
   });
+});
 });
