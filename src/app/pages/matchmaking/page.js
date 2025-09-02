@@ -1,33 +1,27 @@
-
-
 "use client";
-import React, { useState } from 'react';
-import { auth } from '../../firebase/auth';
-
-
-import LANGUAGES_LIST from '../../../../public/assets/languages.js';
+import React, { useState, useEffect } from "react";
+import { auth } from "../../firebase/auth";
+import LANGUAGES_LIST from "../../../../public/assets/languages.js";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
-
 export default function MatchmakingPage() {
   const [timezones, setTimezones] = useState([]);
-  const [timezone, setTimezone] = useState('');
-  const [timezoneSearch, setTimezoneSearch] = useState('');
-  const [selectedLanguage, setSelectedLanguage] = useState('');
-  const [languageSearch, setLanguageSearch] = useState('');
+  const [timezone, setTimezone] = useState("");
+  const [timezoneSearch, setTimezoneSearch] = useState("");
+  const [selectedLanguage, setSelectedLanguage] = useState("");
+  const [languageSearch, setLanguageSearch] = useState("");
   const [match, setMatch] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
-  // Load timezones on mount
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchTimezones = async () => {
       try {
-        const res = await fetch('/Assets/timezones.json');
+        const res = await fetch("/Assets/timezones.json");
         if (res.ok) {
           const data = await res.json();
-          setTimezones(data.filter(tz => tz && tz.value && tz.text));
+          setTimezones(data.filter((tz) => tz && tz.value && tz.text));
         }
       } catch {
         setTimezones([]);
@@ -44,16 +38,17 @@ export default function MatchmakingPage() {
 
   const handleMatch = async () => {
     setLoading(true);
-    setError('');
+    setError("");
     setMatch(null);
     try {
       const user = auth.currentUser;
       const params = new URLSearchParams();
-      if (timezone) params.append('timezone', timezone);
-      if (selectedLanguage) params.append('language', selectedLanguage);
-      if (user && user.uid) params.append('excludeUserID', user.uid);
-  const res = await fetch(`${apiUrl}/api/matchmaking?${params.toString()}`);
-      if (!res.ok) throw new Error((await res.json()).error || 'No match found');
+      if (timezone) params.append("timezone", timezone);
+      if (selectedLanguage) params.append("language", selectedLanguage);
+      if (user && user.uid) params.append("excludeUserID", user.uid);
+
+      const res = await fetch(`${apiUrl}/api/matchmaking?${params.toString()}`);
+      if (!res.ok) throw new Error((await res.json()).error || "No match found");
       setMatch(await res.json());
     } catch (err) {
       setError(err.message);
@@ -65,62 +60,80 @@ export default function MatchmakingPage() {
   return (
     <div className="max-w-xl mx-auto p-6 bg-white rounded shadow mt-10">
       <h1 className="text-2xl font-bold mb-4">Find a Match</h1>
+
       <div className="mb-4">
-        <label className="block mb-1 font-medium">Timezone</label>
+        <label htmlFor="timezone-select" className="block mb-1 font-medium">
+          Timezone
+        </label>
         <input
+          id="timezone-search"
           type="text"
-          className="border rounded px-3 py-2 w-full mb-2"
           placeholder="Search timezone..."
+          className="border rounded px-3 py-2 w-full mb-2"
           value={timezoneSearch}
-          onChange={e => setTimezoneSearch(e.target.value)}
+          onChange={(e) => setTimezoneSearch(e.target.value)}
         />
         <select
+          id="timezone-select"
+          aria-label="Timezone"
           className="border rounded px-3 py-2 w-full"
           value={timezone}
-          onChange={e => setTimezone(e.target.value)}
+          onChange={(e) => setTimezone(e.target.value)}
         >
           <option value="">Select region/timezone</option>
           {timezones
-            .filter(tz => tz.text.toLowerCase().includes(timezoneSearch.toLowerCase()))
+            .filter((tz) => tz.text.toLowerCase().includes(timezoneSearch.toLowerCase()))
             .map((tz, idx) => (
-              <option key={`${tz.value}-${idx}`} value={tz.text}>{tz.text}</option>
-            ))}
-        </select>
-      </div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">Language</label>
-        <input
-          type="text"
-          className="border rounded px-3 py-2 w-full mb-2"
-          placeholder="Search language..."
-          value={languageSearch}
-          onChange={e => setLanguageSearch(e.target.value)}
-        />
-        <select
-          className="border rounded px-3 py-2 w-full"
-          value={selectedLanguage}
-          onChange={e => setSelectedLanguage(e.target.value)}
-        >
-          <option value="">Select a language</option>
-          {languageOptions
-            .filter(lang =>
-              lang.name.toLowerCase().includes(languageSearch.toLowerCase()) ||
-              (lang.nativeName && lang.nativeName.toLowerCase().includes(languageSearch.toLowerCase()))
-            )
-            .map(lang => (
-              <option key={lang.code} value={lang.name}>
-                {lang.name} {lang.nativeName ? `(${lang.nativeName})` : ''}
+              <option key={`${tz.value}-${idx}`} value={tz.text}>
+                {tz.text}
               </option>
             ))}
         </select>
       </div>
+
+      <div className="mb-4">
+        <label htmlFor="language-select" className="block mb-1 font-medium">
+          Language
+        </label>
+        <input
+          id="language-search"
+          type="text"
+          placeholder="Search language..."
+          className="border rounded px-3 py-2 w-full mb-2"
+          value={languageSearch}
+          onChange={(e) => setLanguageSearch(e.target.value)}
+        />
+        <select
+          id="language-select"
+          aria-label="Language"
+          className="border rounded px-3 py-2 w-full"
+          value={selectedLanguage}
+          onChange={(e) => setSelectedLanguage(e.target.value)}
+        >
+          <option value="">Select a language</option>
+          {languageOptions
+            .filter(
+              (lang) =>
+                lang.name.toLowerCase().includes(languageSearch.toLowerCase()) ||
+                (lang.nativeName &&
+                  lang.nativeName.toLowerCase().includes(languageSearch.toLowerCase()))
+            )
+            .map((lang) => (
+              <option key={lang.code} value={lang.name}>
+                {lang.name} {lang.nativeName ? `(${lang.nativeName})` : ""}
+              </option>
+            ))}
+        </select>
+      </div>
+
       <button
         className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         onClick={handleMatch}
         disabled={loading || !timezone || !selectedLanguage}
       >
-        {loading ? 'Matching...' : 'Find Match'}
+        {loading ? "Matching..." : "Find Match"}
       </button>
+
       {error && <div className="text-red-600 mt-4">{error}</div>}
       {match && (
         <div className="mt-6 p-4 border rounded bg-gray-50">
