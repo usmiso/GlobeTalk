@@ -19,6 +19,14 @@ global.fetch = jest.fn();
 
 beforeEach(() => {
   jest.clearAllMocks();
+  // Default fetch mock for tests that don't override it
+  fetch.mockResolvedValue({
+    json: async () => ({
+      results: [{ login: { username: "mockUser" } }],
+    }),
+    ok: true,
+  });
+  window.alert = jest.fn();
 });
 
 describe("AvatarUsernameGen Component", () => {
@@ -63,22 +71,20 @@ describe("AvatarUsernameGen Component", () => {
 
   test("updates hair options when gender changes", () => {
     render(<AvatarUsernameGen />);
-    
+    // If this fails, ensure the <label> for Gender uses htmlFor or aria-labelledby on the <select> in the component
     const genderSelect = screen.getByLabelText(/Gender/i);
     fireEvent.change(genderSelect, { target: { value: "female" } });
-    
     const hairSelect = screen.getByLabelText(/Hair Style/i);
     const hairOptions = Array.from(hairSelect.options).map(opt => opt.value);
-    
     expect(hairOptions).toEqual(expect.arrayContaining(["straight02", "bun", "curly"]));
   });
 
   test("handleConfirm calls API and triggers onSuccess", async () => {
     const mockOnSuccess = jest.fn();
-    fetch.mockResolvedValueOnce({ ok: true });
-    
+    fetch.mockResolvedValueOnce({ ok: true, json: async () => ({}) });
+
     render(<AvatarUsernameGen onSuccess={mockOnSuccess} />);
-    
+
     const saveButton = screen.getByRole("button", { name: /Save New Avatar/i });
 
     await act(async () => {
@@ -123,6 +129,7 @@ describe("AvatarUsernameGen Component", () => {
       fireEvent.click(saveButton);
     });
 
+    // If this fails, check the error handling in the component. It should call alert with the error message from the API response.
     expect(window.alert).toHaveBeenCalledWith("fail");
   });
 });
