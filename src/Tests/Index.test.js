@@ -10,7 +10,6 @@ jest.mock('next/link', () => {
       {children}
     </a>
   );
-});
 
 // ✅ Mock next/image (so tests don’t complain about <Image />)
 jest.mock('next/image', () => (props) => {
