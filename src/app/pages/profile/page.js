@@ -38,7 +38,26 @@ const Profile = () => {
     const [avatarUrl, setAvatarUrl] = useState('');
     const [username, setUsername] = useState('');
     const [mode, setMode] = useState('avatar'); // 'avatar', 'editProfile', 'viewProfile'
+    const [tzDropdownOpen, setTzDropdownOpen] = useState(false);
+    const [langDropdownOpen, setLangDropdownOpen] = useState(false);
     const router = useRouter();
+
+    // Filtered options for dropdowns
+    const filteredTimezones = timezones.filter(tz => tz.text.toLowerCase().includes(timezone.toLowerCase()));
+    const filteredLanguages = languageOptions.filter(lang =>
+        lang.name.toLowerCase().includes(selectedLanguage.toLowerCase()) ||
+        (lang.nativeName && lang.nativeName.toLowerCase().includes(selectedLanguage.toLowerCase()))
+    );
+
+    // Handlers for custom dropdowns
+    const handleTimezoneSelect = (value) => {
+        setTimezone(value);
+        setTzDropdownOpen(false);
+    };
+    const handleLanguageSelect = (code) => {
+        setSelectedLanguage(code);
+        setLangDropdownOpen(false);
+    };
 
     // Fetch profile on mount
     useEffect(() => {
@@ -228,58 +247,73 @@ const Profile = () => {
                             placeholder="Type a hobby and press Enter or comma"
                         />
                     </div>
-                    <div className="mb-4 w-full max-w-md">
+                    {/* Timezone Autocomplete */}
+                    <div className="mb-4 w-full max-w-md relative">
                         <label className="block mb-1 font-medium">Region (Timezone)</label>
                         <input
                             type="text"
                             className="w-full border rounded px-3 py-2 mb-2"
-                            placeholder="Search timezone..."
-                            value={timezoneSearch}
-                            onChange={e => setTimezoneSearch(e.target.value)}
-                        />
-                        <select
-                            className="w-full border rounded px-3 py-2 cursor-pointer"
+                            placeholder="Type timezone..."
                             value={timezone}
-                            onChange={e => setTimezone(e.target.value)}
+                            onChange={e => {
+                                setTimezone(e.target.value);
+                                setTzDropdownOpen(true);
+                            }}
+                            onFocus={() => setTzDropdownOpen(true)}
+                            onBlur={() => setTimeout(() => setTzDropdownOpen(false), 100)}
+                            autoComplete="off"
                             required
-                        >
-                            <option value="">Select region/timezone</option>
-                            {timezones
-                                .filter(tz => tz.text.toLowerCase().includes(timezoneSearch.toLowerCase()))
-                                .map((tz, idx) => (
-                                    <option key={`${tz.value}-${idx}`} value={tz.value}>
+                        />
+                        {tzDropdownOpen && filteredTimezones.length > 0 && (
+                            <ul className="absolute z-10 w-full bg-white border rounded shadow max-h-48 overflow-y-auto mt-1">
+                                {filteredTimezones.map((tz, idx) => (
+                                    <li
+                                        key={`${tz.value}-${idx}`}
+                                        className={`px-3 py-2 hover:bg-blue-100 cursor-pointer ${tz.value === timezone ? 'bg-blue-50 font-bold' : ''}`}
+                                        onMouseDown={() => {
+                                            setTimezone(tz.text);
+                                            setTzDropdownOpen(false);
+                                        }}
+                                    >
                                         {tz.text}
-                                    </option>
+                                    </li>
                                 ))}
-                        </select>
+                            </ul>
+                        )}
                     </div>
-                    <div className="mb-4 w-full max-w-md">
+                    {/* Language Autocomplete */}
+                    <div className="mb-4 w-full max-w-md relative">
                         <label className="block mb-1 font-medium">Language</label>
                         <input
                             type="text"
                             className="w-full border rounded px-3 py-2 mb-2"
-                            placeholder="Search language..."
-                            value={languageSearch}
-                            onChange={e => setLanguageSearch(e.target.value)}
-                        />
-                        <select
-                            className="w-full border rounded px-3 py-2 cursor-pointer"
+                            placeholder="Type language..."
                             value={selectedLanguage}
-                            onChange={handleLanguageChange}
+                            onChange={e => {
+                                setSelectedLanguage(e.target.value);
+                                setLangDropdownOpen(true);
+                            }}
+                            onFocus={() => setLangDropdownOpen(true)}
+                            onBlur={() => setTimeout(() => setLangDropdownOpen(false), 100)}
+                            autoComplete="off"
                             required
-                        >
-                            <option value="">Select a language</option>
-                            {languageOptions
-                                .filter(lang =>
-                                    lang.name.toLowerCase().includes(languageSearch.toLowerCase()) ||
-                                    (lang.nativeName && lang.nativeName.toLowerCase().includes(languageSearch.toLowerCase()))
-                                )
-                                .map(lang => (
-                                    <option key={lang.code} value={lang.code}>
+                        />
+                        {langDropdownOpen && filteredLanguages.length > 0 && (
+                            <ul className="absolute z-10 w-full bg-white border rounded shadow max-h-48 overflow-y-auto mt-1">
+                                {filteredLanguages.map(lang => (
+                                    <li
+                                        key={lang.code}
+                                        className={`px-3 py-2 hover:bg-green-100 cursor-pointer ${lang.name === selectedLanguage ? 'bg-green-50 font-bold' : ''}`}
+                                        onMouseDown={() => {
+                                            setSelectedLanguage(lang.name);
+                                            setLangDropdownOpen(false);
+                                        }}
+                                    >
                                         {lang.name} {lang.nativeName ? `(${lang.nativeName})` : ''}
-                                    </option>
+                                    </li>
                                 ))}
-                        </select>
+                            </ul>
+                        )}
                     </div>
                     <button
                         type="submit"

@@ -54,6 +54,37 @@ app.post('/api/profile', async (req, res) => {
             { userID, intro, ageRange, hobbies, timezone, language },
             { merge: true }
         );
+
+        // Firestore creates collections automatically when a document is added.
+        // Always attempt to add language and timezone if not present.
+        if (language && typeof language === 'string') {
+            const langDocId = encodeURIComponent(language);
+            try {
+                const langRef = db.collection('available_languages').doc(langDocId);
+                const langDoc = await langRef.get();
+                if (!langDoc.exists) {
+                    await langRef.set({ name: language });
+                }
+            } catch (err) {
+                // If collection does not exist, Firestore will create it on set()
+                console.error('Error adding language to available_languages:', err);
+            }
+        }
+
+        if (timezone && typeof timezone === 'string') {
+            const countryDocId = encodeURIComponent(timezone);
+            try {
+                const countryRef = db.collection('available_countries').doc(countryDocId);
+                const countryDoc = await countryRef.get();
+                if (!countryDoc.exists) {
+                    await countryRef.set({ name: timezone });
+                }
+            } catch (err) {
+                // If collection does not exist, Firestore will create it on set()
+                console.error('Error adding timezone to available_countries:', err);
+            }
+        }
+
         res.status(200).json({ message: 'Profile saved successfully' });
     } catch (error) {
         console.error('Error saving profile:', error);
@@ -131,22 +162,44 @@ app.post('/api/profile/avatar', async (req, res) => {
 app.get('/api/matchmaking', async (req, res) => {
     if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
     const { timezone, language, excludeUserID } = req.query;
-    if (!timezone || !language) {
-        return res.status(400).json({ error: 'Both timezone and language are required' });
+    if (!timezone && !language) {
+        return res.status(400).json({ error: 'At least one of timezone or language is required' });
     }
     try {
+        // Get all users the current user has already matched with
+        let matchedUserIDs = new Set();
+        if (excludeUserID) {
+            const matchesSnapshot = await db.collection('matches')
+                .where('users', 'array-contains', excludeUserID).get();
+            matchesSnapshot.forEach(doc => {
+                const usersArr = doc.data().users;
+                usersArr.forEach(uid => {
+                    if (uid !== excludeUserID) matchedUserIDs.add(uid);
+                });
+            });
+        }
+
         const snapshot = await db.collection('profiles').get();
         let users = [];
         snapshot.forEach(doc => {
             const data = doc.data();
             // Exclude the requesting user if excludeUserID is provided
             if (excludeUserID && data.userID === excludeUserID) return;
-            // Match timezone (exact text) and language (exact name)
-            if (
-                data.timezone === timezone &&
-                ((typeof data.language === 'string' && data.language === language) ||
-                    (Array.isArray(data.language) && data.language.includes(language)))
-            ) {
+            // Exclude users already matched with this user
+            if (excludeUserID && matchedUserIDs.has(data.userID)) return;
+            // Prevent matching with self (even if excludeUserID is not set)
+            if (excludeUserID && data.userID && data.userID === excludeUserID) return;
+            // Flexible matching: filter by whichever criteria are provided
+            let timezoneMatch = true;
+            let languageMatch = true;
+            if (timezone) {
+                timezoneMatch = data.timezone === timezone;
+            }
+            if (language) {
+                languageMatch = (typeof data.language === 'string' && data.language === language) ||
+                    (Array.isArray(data.language) && data.language.includes(language));
+            }
+            if (timezoneMatch && languageMatch) {
                 users.push(data);
             }
         });
@@ -156,6 +209,25 @@ app.get('/api/matchmaking', async (req, res) => {
         const randomIndex = Math.floor(Math.random() * users.length);
         const matchedUser = users[randomIndex];
         res.status(200).json(matchedUser);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Create a match only after user clicks 'Proceed to chat'
+app.post('/api/match', async (req, res) => {
+    if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
+    const { userA, userB } = req.body;
+    if (!userA || !userB) {
+        return res.status(400).json({ error: 'Missing user IDs' });
+    }
+    try {
+        const matchKey = [userA, userB].sort().join('_');
+        await db.collection('matches').doc(matchKey).set({
+            users: [userA, userB],
+            timestamp: admin.firestore.FieldValue.serverTimestamp()
+        });
+        res.status(200).json({ message: 'Match created' });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -192,6 +264,38 @@ app.post('/api/profile/edit', async (req, res) => {
         res.status(200).json({ message: 'Profile (edit) saved successfully' });
     } catch (error) {
         console.error('Error saving profile (edit):', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get available languages
+app.get('/api/available_languages', async (req, res) => {
+    if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
+    try {
+        const snapshot = await db.collection('available_languages').get();
+        const languages = [];
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            languages.push({ id: doc.id, ...data });
+        });
+        res.status(200).json(languages);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get available timezones (countries/regions)
+app.get('/api/available_timezones', async (req, res) => {
+    if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
+    try {
+        const snapshot = await db.collection('available_countries').get();
+        const timezones = [];
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            timezones.push({ id: doc.id, ...data });
+        });
+        res.status(200).json(timezones);
+    } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
