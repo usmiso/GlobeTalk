@@ -108,7 +108,7 @@ export default function UserProfile() {
             if (field === 'language') body.languages = languages;
             if (field === 'favorites') body.favorites = favorites;
             if (field === 'facts') body.facts = facts;
-            if (field === 'sayings') body.sayings = sayings;
+            if (field === 'sayings') body.sayings = Array.isArray(sayings) ? sayings : [];
             if (field === 'avatar') { body.avatarUrl = avatarUrl; body.username = username; }
             // Always include timezone for now (or fetch from state if needed)
             body.timezone = timezone;
@@ -123,6 +123,7 @@ export default function UserProfile() {
                 setSaving(false);
                 return;
             }
+            await fetchProfile(user.uid);
             setEditMode((prev) => ({ ...prev, [field]: false }));
         } catch (err) {
             setError("Failed to connect to server.");
@@ -333,40 +334,6 @@ export default function UserProfile() {
                         </>
                     ) : (
                         <p className="text-gray-700 text-sm mb-2">{facts || 'No cultural facts, holidays, etc. yet'}</p>
-                    )}
-                    {/* Sayings */}
-                    <div className="flex justify-between items-center mb-2 mt-4">
-                        <h2 className="text-md font-semibold">Common Sayings</h2>
-                        <button className="text-blue-500 text-xs underline" onClick={() => setEditMode((prev) => ({ ...prev, sayings: !prev.sayings }))}>{editMode.sayings ? 'Cancel' : 'Edit'}</button>
-                    </div>
-                    {editMode.sayings ? (
-                        <>
-                            <div className="flex flex-wrap gap-3 justify-center mb-2">
-                                {sayings.map((saying, i) => (
-                                    <span key={i} className="px-4 py-2 border rounded-lg bg-white shadow-sm">“{saying}”</span>
-                                ))}
-                            </div>
-                            <input
-                                type="text"
-                                value={customSayings}
-                                onChange={e => setCustomSayings(e.target.value)}
-                                onKeyDown={e => {
-                                    if (e.key === 'Enter' && customSayings.trim()) {
-                                        setSayings([...sayings, customSayings.trim()]);
-                                        setCustomSayings('');
-                                    }
-                                }}
-                                placeholder="Add your own saying..."
-                                className="border border-gray-400 rounded-md p-2 text-sm w-full mb-2"
-                            />
-                            <button className="bg-blue-500 text-white px-4 py-1 rounded" onClick={() => handleSaveField('sayings')} disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
-                        </>
-                    ) : (
-                        <div className="flex flex-wrap gap-3 justify-center mb-2">
-                            {sayings.length > 0 ? sayings.map((saying, i) => (
-                                <span key={i} className="px-4 py-2 border rounded-lg bg-white shadow-sm">“{saying}”</span>
-                            )) : <span className="text-gray-400 text-sm">No sayings yet</span>}
-                        </div>
                     )}
                 </section>
             )}

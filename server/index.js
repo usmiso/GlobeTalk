@@ -121,22 +121,22 @@ app.post('/api/profile/avatar', async (req, res) => {
 })
 
 // Update user profile (sayings only)
-app.put('/api/profile/:id', async (req, res) => {
-    if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
+// app.put('/api/profile/:id', async (req, res) => {
+//     if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
 
-    const { sayings } = req.body; // <-- use 'sayings'
+//     const { sayings } = req.body; // <-- use 'sayings'
 
-    if (!sayings) {
-        return res.status(400).json({ error: 'Missing sayings' });
-    }
-    try {
-        await db.collection('profiles').doc(req.params.id).update({ sayings });
-        res.sendStatus(200);
-    } catch (error) {
-        console.error('Error updating profile:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
+//     if (!sayings) {
+//         return res.status(400).json({ error: 'Missing sayings' });
+//     }
+//     try {
+//         await db.collection('profiles').doc(req.params.id).update({ sayings });
+//         res.sendStatus(200);
+//     } catch (error) {
+//         console.error('Error updating profile:', error);
+//         res.status(500).json({ error: error.message });
+//     }
+// });
 
 
 

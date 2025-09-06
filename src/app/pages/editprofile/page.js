@@ -106,7 +106,7 @@ function EditProfile() {
                         setHobbies(data.hobbies || []);
                         setLanguages(data.languages || []);
                         setRegion(data.region || "");
-                        setSayings(data.sayings || []);
+                        // setSayings(data.sayings || []);
                         setUsername(data.username || "");
                         setAvatar(data.avatar || "");
                     }
@@ -178,13 +178,13 @@ function EditProfile() {
             reg.toLowerCase().includes(regionInput.toLowerCase())
         );
 
-    const handleAdd = (e) => {
-        e.preventDefault();
-        if (customSayings.trim() && !sayings.includes(customSayings)) {
-            setSayings([...sayings, customSayings.trim()]);
-            setCustomSayings("");
-        }
-    };
+    // const handleAdd = (e) => {
+    //     e.preventDefault();
+    //     if (customSayings.trim() && !sayings.includes(customSayings)) {
+    //         setSayings([...sayings, customSayings.trim()]);
+    //         setCustomSayings("");
+    //     }
+    // };
 
     const handleSubmitSave = async (e) => {
         e.preventDefault();
@@ -432,22 +432,22 @@ function EditProfile() {
                 </fieldset>
 
                 {/* Common Sayings */}
-                <fieldset className="text-center mx-auto">
-                    <legend className="text-lg font-semibold mb-4">
-                        “Common sayings” <span className="text-sm text-gray-500">(short phrases + meanings)</span>
-                    </legend>
+                {/* <fieldset className="text-center mx-auto"> */}
+                    {/* <legend className="text-lg font-semibold mb-4"> */}
+                        {/* “Common sayings” <span className="text-sm text-gray-500">(short phrases + meanings)</span> */}
+                    {/* </legend> */}
 
                     {/* Existing sayings as chips */}
-                    <div className="flex flex-wrap justify-center mb-4 gap-3">
-                        {sayings.map((saying, i) => (
-                            <span key={i} className="px-4 py-2 border rounded-lg bg-white shadow-sm">
-                                “{saying}”
-                            </span>
-                        ))}
-                    </div>
+                    {/* <div className="flex flex-wrap justify-center mb-4 gap-3"> */}
+                        {/* {sayings.map((saying, i) => ( */}
+                            {/* <span key={i} className="px-4 py-2 border rounded-lg bg-white shadow-sm"> */}
+                                {/* “{saying}” */}
+                            {/* </span> */}
+                        {/* ))} */}
+                    {/* </div> */}
 
                     {/* Input field — press Enter to add */}
-                    <input
+                    {/* <input
                         type="text"
                         value={customSayings}
                         onChange={(e) => setCustomSayings(e.target.value)}
@@ -462,8 +462,8 @@ function EditProfile() {
                         }}
                         placeholder="Add your own saying..."
                         className="border border-gray-400 rounded-md p-2 text-sm w-full"
-                    />
-                </fieldset>
+                    /> */}
+                {/* </fieldset> */}
 
 
                 {/* Save Button */}
