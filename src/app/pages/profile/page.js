@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { auth } from '../../firebase/auth';
 import LANGUAGES_LIST from '../../../../public/assets/languages.js';
 import AvatarUsernameGen from '../../components/avatar/page';
@@ -33,8 +33,27 @@ const Profile = () => {
     const [profileLoaded, setProfileLoaded] = useState(false);
     const [timezones, setTimezones] = useState([]);
     const [selectedLanguage, setSelectedLanguage] = useState('');
-    const [timezoneSearch, setTimezoneSearch] = useState('');
-    const [languageSearch, setLanguageSearch] = useState('');
+    const [timezoneInput, setTimezoneInput] = useState('');
+    const [showTimezoneDropdown, setShowTimezoneDropdown] = useState(false);
+    const [languageInput, setLanguageInput] = useState('');
+    const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
+    const timezoneRef = useRef(null);
+    const languageRef = useRef(null);
+    // Close dropdowns on outside click
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (timezoneRef.current && !timezoneRef.current.contains(event.target)) {
+                setShowTimezoneDropdown(false);
+            }
+            if (languageRef.current && !languageRef.current.contains(event.target)) {
+                setShowLanguageDropdown(false);
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
     const [avatarUrl, setAvatarUrl] = useState('');
     const [username, setUsername] = useState('');
     const [mode, setMode] = useState('avatar'); // 'avatar', 'editProfile', 'viewProfile'
@@ -50,8 +69,7 @@ const Profile = () => {
             }
             try {
                 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-                // const res = await fetch(`${apiUrl}/api/profile?userID=${user.uid}`);
-                const res = await fetch(`http://localhost:5000/api/profile?userID=${user.uid}`);
+                const res = await fetch(`${apiUrl}/api/profile?userID=${user.uid}`);
                 if (res.ok) {
                     const data = await res.json();
                     if (data && data.intro) {
@@ -115,8 +133,16 @@ const Profile = () => {
         setHobbies(hobbies.filter(h => h !== hobby));
     };
 
-    const handleLanguageChange = (e) => {
-        setSelectedLanguage(e.target.value);
+    // Custom dropdown handlers
+    const handleSelectTimezone = (tz) => {
+        setTimezone(tz.value);
+        setTimezoneInput(tz.text);
+        setShowTimezoneDropdown(false);
+    };
+    const handleSelectLanguage = (lang) => {
+        setSelectedLanguage(lang.code);
+        setLanguageInput(lang.name + (lang.nativeName ? ` (${lang.nativeName})` : ''));
+        setShowLanguageDropdown(false);
     };
 
     const handleSubmit = async (e) => {
@@ -137,20 +163,19 @@ const Profile = () => {
 
         try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-            // const res = await fetch(`${apiUrl}/api/profile`, 
-            const res = await fetch(`http://localhost:5000/api/profile`,
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        userID: user.uid,
-                        intro,
-                        ageRange,
-                        hobbies,
-                        timezone: timezoneText,
-                        language: languageName,
-                    }),
-                });
+            const res = await fetch(`${apiUrl}/api/profile`, {
+                // const res = await fetch(`http://localhost:5000/api/profile`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userID: user.uid,
+                    intro,
+                    ageRange,
+                    hobbies,
+                    timezone: timezoneText,
+                    language: languageName,
+                }),
+            });
             if (!res.ok) {
                 const data = await res.json();
                 setError(data.error || 'Failed to save profile.');
@@ -230,56 +255,91 @@ const Profile = () => {
                     </div>
                     <div className="mb-4 w-full max-w-md">
                         <label className="block mb-1 font-medium">Region (Timezone)</label>
-                        <input
-                            type="text"
-                            className="w-full border rounded px-3 py-2 mb-2"
-                            placeholder="Search timezone..."
-                            value={timezoneSearch}
-                            onChange={e => setTimezoneSearch(e.target.value)}
-                        />
-                        <select
-                            className="w-full border rounded px-3 py-2 cursor-pointer"
-                            value={timezone}
-                            onChange={e => setTimezone(e.target.value)}
-                            required
-                        >
-                            <option value="">Select region/timezone</option>
-                            {timezones
-                                .filter(tz => tz.text.toLowerCase().includes(timezoneSearch.toLowerCase()))
-                                .map((tz, idx) => (
-                                    <option key={`${tz.value}-${idx}`} value={tz.value}>
-                                        {tz.text}
-                                    </option>
-                                ))}
-                        </select>
+                        <div className="relative" ref={timezoneRef}>
+                            <input
+                                type="text"
+                                className="w-full border rounded px-3 py-2"
+                                placeholder="Select or type region/timezone"
+                                value={timezoneInput}
+                                onChange={e => {
+                                    setTimezoneInput(e.target.value);
+                                    setTimezone('');
+                                    setShowTimezoneDropdown(true);
+                                }}
+                                onFocus={() => setShowTimezoneDropdown(true)}
+                                onBlur={e => {
+                                    if (!e.target.value) setTimezone('');
+                                }}
+                                required
+                            />
+                            {/* Show placeholder if nothing selected */}
+                            {!timezoneInput && !timezone && (
+                                <span className="absolute left-3 top-2 text-gray-400 pointer-events-none">Select or type region/timezone</span>
+                            )}
+                            {showTimezoneDropdown && (
+                                <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded shadow max-h-40 overflow-y-auto">
+                                    {timezones.filter(tz => tz.text.toLowerCase().includes((timezoneInput || '').toLowerCase())).length === 0 && (
+                                        <li className="px-4 py-2 text-gray-400">No regions found</li>
+                                    )}
+                                    {timezones.filter(tz => tz.text.toLowerCase().includes((timezoneInput || '').toLowerCase())).map((tz, idx) => (
+                                        <li
+                                            key={`${tz.value}-${idx}`}
+                                            className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                                            onMouseDown={() => handleSelectTimezone(tz)}
+                                        >
+                                            {tz.text}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
                     </div>
                     <div className="mb-4 w-full max-w-md">
                         <label className="block mb-1 font-medium">Language</label>
-                        <input
-                            type="text"
-                            className="w-full border rounded px-3 py-2 mb-2"
-                            placeholder="Search language..."
-                            value={languageSearch}
-                            onChange={e => setLanguageSearch(e.target.value)}
-                        />
-                        <select
-                            className="w-full border rounded px-3 py-2 cursor-pointer"
-                            value={selectedLanguage}
-                            onChange={handleLanguageChange}
-                            required
-                        >
-                            <option value="">Select a language</option>
-                            {languageOptions
-                                .filter(lang =>
-                                    lang.name.toLowerCase().includes(languageSearch.toLowerCase()) ||
-                                    (lang.nativeName && lang.nativeName.toLowerCase().includes(languageSearch.toLowerCase()))
-                                )
-                                .map(lang => (
-                                    <option key={lang.code} value={lang.code}>
-                                        {lang.name} {lang.nativeName ? `(${lang.nativeName})` : ''}
-                                    </option>
-                                ))}
-                        </select>
+                        <div className="relative" ref={languageRef}>
+                            <input
+                                type="text"
+                                className="w-full border rounded px-3 py-2"
+                                placeholder="Select or type language"
+                                value={languageInput}
+                                onChange={e => {
+                                    setLanguageInput(e.target.value);
+                                    setSelectedLanguage('');
+                                    setShowLanguageDropdown(true);
+                                }}
+                                onFocus={() => setShowLanguageDropdown(true)}
+                                onBlur={e => {
+                                    if (!e.target.value) setSelectedLanguage('');
+                                }}
+                                required
+                            />
+                            {/* Show placeholder if nothing selected */}
+                            {!languageInput && !selectedLanguage && (
+                                <span className="absolute left-3 top-2 text-gray-400 pointer-events-none">Select or type language</span>
+                            )}
+                            {showLanguageDropdown && (
+                                <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded shadow max-h-40 overflow-y-auto">
+                                    {languageOptions.filter(lang =>
+                                        lang.name.toLowerCase().includes((languageInput || '').toLowerCase()) ||
+                                        (lang.nativeName && lang.nativeName.toLowerCase().includes((languageInput || '').toLowerCase()))
+                                    ).length === 0 && (
+                                            <li className="px-4 py-2 text-gray-400">No languages found</li>
+                                        )}
+                                    {languageOptions.filter(lang =>
+                                        lang.name.toLowerCase().includes((languageInput || '').toLowerCase()) ||
+                                        (lang.nativeName && lang.nativeName.toLowerCase().includes((languageInput || '').toLowerCase()))
+                                    ).map(lang => (
+                                        <li
+                                            key={lang.code}
+                                            className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                                            onMouseDown={() => handleSelectLanguage(lang)}
+                                        >
+                                            {lang.name} {lang.nativeName ? `(${lang.nativeName})` : ''}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
                     </div>
                     <button
                         type="submit"

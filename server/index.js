@@ -37,23 +37,52 @@ app.get('/api/health', (req, res) => {
 });
 
 // Create or update user profile
+// app.post('/api/profile', async (req, res) => {
+//     if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
+
+//     const { userID, intro, ageRange, hobbies, timezone, language } = req.body;
+
+//     console.log('Received profile POST:', req.body);
+
+//     if (!userID || !intro || !ageRange || !hobbies || !timezone || !language) {
+//         return res.status(400).json({ error: 'Missing required fields' });
+//     }
+
+//     try {
+//         // Use merge to avoid overwriting other fields accidentally
+//         await db.collection('profiles').doc(userID).set(
+//             { userID, intro, ageRange, hobbies, timezone, language },
+//             { merge: true }
+//         );
+//         res.status(200).json({ message: 'Profile saved successfully' });
+//     } catch (error) {
+//         console.error('Error saving profile:', error);
+//         res.status(500).json({ error: error.message });
+//     }
+// });
+// Create or update user profile (merged: creation + edit)
+// Create or update user profile
 app.post('/api/profile', async (req, res) => {
     if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
 
-    const { userID, intro, ageRange, hobbies, timezone, language } = req.body;
+    const data = {};
+    Object.entries(req.body).forEach(([key, value]) => {
+        if (value !== undefined && value !== "") {
+            data[key] = value;
+        }
+    });
 
-    console.log('Received profile POST:', req.body);
-
-    if (!userID || !intro || !ageRange || !hobbies || !timezone || !language) {
-        return res.status(400).json({ error: 'Missing required fields' });
+    // Map commonSayings to sayings if present
+    if (data.commonSayings) {
+        data.sayings = data.commonSayings;
+        delete data.commonSayings;
     }
 
+    if (!data.userID) {
+        return res.status(400).json({ error: 'Missing userID' });
+    }
     try {
-        // Use merge to avoid overwriting other fields accidentally
-        await db.collection('profiles').doc(userID).set(
-            { userID, intro, ageRange, hobbies, timezone, language },
-            { merge: true }
-        );
+        await db.collection('profiles').doc(data.userID).set(data, { merge: true });
         res.status(200).json({ message: 'Profile saved successfully' });
     } catch (error) {
         console.error('Error saving profile:', error);
@@ -79,7 +108,6 @@ app.get('/api/profile', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
-
 app.get('/api/facts', async (req, res) => {
     if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
 
@@ -117,12 +145,6 @@ app.post('/api/profile/avatar', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 })
-
-
-
-
-
-
 
 
 // Serve static files (optional)
@@ -165,36 +187,36 @@ app.get('/api/matchmaking', async (req, res) => {
 
 
 //api for edit page specifically
-app.post('/api/profile/edit', async (req, res) => {
-    if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
+// app.post('/api/profile/edit', async (req, res) => {
+//     if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
 
-    const { userID, intro, ageRange, hobbies, region, languages, sayings, username, avatarUrl } = req.body;
+//     const { userID, intro, ageRange, hobbies, region, languages, sayings, username, avatarUrl } = req.body;
 
-    if (!userID) {
-        return res.status(400).json({ error: 'Missing userID' });
-    }
+//     if (!userID) {
+//         return res.status(400).json({ error: 'Missing userID' });
+//     }
 
-    try {
-        await db.collection('profiles').doc(userID).set(
-            {
-                userID,
-                intro: intro || "",
-                ageRange: ageRange || "",
-                hobbies: hobbies || [],
-                region: region || "",
-                languages: languages || [],
-                sayings: sayings || [],
-                username: username || "",
-                avatarUrl: avatarUrl || ""
-            },
-            { merge: true }
-        );
-        res.status(200).json({ message: 'Profile (edit) saved successfully' });
-    } catch (error) {
-        console.error('Error saving profile (edit):', error);
-        res.status(500).json({ error: error.message });
-    }
-});
+//     try {
+//         await db.collection('profiles').doc(userID).set(
+//             {
+//                 userID,
+//                 intro: intro || "",
+//                 ageRange: ageRange || "",
+//                 hobbies: hobbies || [],
+//                 region: region || "",
+//                 languages: languages || [],
+//                 sayings: sayings || [],
+//                 username: username || "",
+//                 avatarUrl: avatarUrl || ""
+//             },
+//             { merge: true }
+//         );
+//         res.status(200).json({ message: 'Profile (edit) saved successfully' });
+//     } catch (error) {
+//         console.error('Error saving profile (edit):', error);
+//         res.status(500).json({ error: error.message });
+//     }
+// });
 
 
 // Catch-all for undefined routes
