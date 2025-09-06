@@ -40,20 +40,22 @@ app.get('/api/health', (req, res) => {
 app.post('/api/profile', async (req, res) => {
     if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
 
-    const { userID, intro, ageRange, hobbies, timezone, language } = req.body;
+    const data = {};
+    Object.entries(req.body).forEach(([key, value]) => {
+        if (value !== undefined) data[key] = value;
+    });
 
-    console.log('Received profile POST:', req.body);
-
-    if (!userID || !intro || !ageRange || !hobbies || !timezone || !language) {
-        return res.status(400).json({ error: 'Missing required fields' });
+    // Map commonSayings to sayings if present
+    if (data.commonSayings) {
+        data.sayings = data.commonSayings;
+        delete data.commonSayings;
     }
 
+    if (!data.userID) {
+        return res.status(400).json({ error: 'Missing userID' });
+    }
     try {
-        // Use merge to avoid overwriting other fields accidentally
-        await db.collection('profiles').doc(userID).set(
-            { userID, intro, ageRange, hobbies, timezone, language },
-            { merge: true }
-        );
+        await db.collection('profiles').doc(data.userID).set(data, { merge: true });
         res.status(200).json({ message: 'Profile saved successfully' });
     } catch (error) {
         console.error('Error saving profile:', error);
@@ -118,8 +120,23 @@ app.post('/api/profile/avatar', async (req, res) => {
     }
 })
 
+// Update user profile (sayings only)
+app.put('/api/profile/:id', async (req, res) => {
+    if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
 
+    const { sayings } = req.body; // <-- use 'sayings'
 
+    if (!sayings) {
+        return res.status(400).json({ error: 'Missing sayings' });
+    }
+    try {
+        await db.collection('profiles').doc(req.params.id).update({ sayings });
+        res.sendStatus(200);
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
 
 
 
@@ -145,7 +162,7 @@ app.get('/api/matchmaking', async (req, res) => {
             if (
                 data.timezone === timezone &&
                 ((typeof data.language === 'string' && data.language === language) ||
-                    (Array.isArray(data.language) && data.language.includes(language)))
+                 (Array.isArray(data.language) && data.language.includes(language)))
             ) {
                 users.push(data);
             }
@@ -162,56 +179,12 @@ app.get('/api/matchmaking', async (req, res) => {
 });
 // app.use('/static', express.static(path.join(__dirname, 'public')));
 
-
-
-//api for edit page specifically
-app.post('/api/profile/edit', async (req, res) => {
-    if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
-
-    const { userID, intro, ageRange, hobbies, region, languages, sayings, username, avatarUrl } = req.body;
-
-    if (!userID) {
-        return res.status(400).json({ error: 'Missing userID' });
-    }
-
-    try {
-        await db.collection('profiles').doc(userID).set(
-            {
-                userID,
-                intro: intro || "",
-                ageRange: ageRange || "",
-                hobbies: hobbies || [],
-                region: region || "",
-                languages: languages || [],
-                sayings: sayings || [],
-                username: username || "",
-                avatarUrl: avatarUrl || ""
-            },
-            { merge: true }
-        );
-        res.status(200).json({ message: 'Profile (edit) saved successfully' });
-    } catch (error) {
-        console.error('Error saving profile (edit):', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-
 // Catch-all for undefined routes
 app.use((req, res) => {
     res.status(404).json({ error: 'Not found' });
 });
 
 // Start server
-
-if (require.main === module) {
-    app.listen(PORT, () => {
-        console.log(`GlobeTalk backend listening on port ${PORT}`);
-    });
-}
-/*
 app.listen(PORT, () => {
     console.log(`GlobeTalk backend listening on port ${PORT}`);
-});*/
-
-module.exports = app;
+});
