@@ -3,7 +3,8 @@ import React, { useState, useEffect } from "react";
 import { auth } from "../../firebase/auth";
 import LANGUAGES_LIST from "../../../../public/assets/languages.js";
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+// API base - prefer NEXT_PUBLIC_API_URL, fallback to localhost:5000 for dev
+const API = typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL : 'http://localhost:5000';
 
 export default function MatchmakingPage() {
   const [timezones, setTimezones] = useState([]);
@@ -47,7 +48,7 @@ export default function MatchmakingPage() {
       if (selectedLanguage) params.append("language", selectedLanguage);
       if (user && user.uid) params.append("excludeUserID", user.uid);
 
-      const res = await fetch(`${apiUrl}/api/matchmaking?${params.toString()}`);
+  const res = await fetch(`${API}/api/matchmaking?${params.toString()}`);
       if (!res.ok) throw new Error((await res.json()).error || "No match found");
       setMatch(await res.json());
     } catch (err) {

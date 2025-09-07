@@ -66,7 +66,7 @@ export default function AvatarUsernameGen({ onSuccess }) {
     }
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      const apiUrl = typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL : 'http://localhost:5000';
       const res = await fetch(`${apiUrl}/api/profile/avatar`,
         // const res = await fetch(`http://localhost:5000/api/profile/avatar`,
         {

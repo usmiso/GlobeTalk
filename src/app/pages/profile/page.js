@@ -6,6 +6,9 @@ import { auth } from '../../firebase/auth';
 import LANGUAGES_LIST from '../../../../public/assets/languages.js';
 import AvatarUsernameGen from '../../components/avatar/page';
 
+// API base - prefer NEXT_PUBLIC_API_URL, fallback to localhost:5000 for dev
+const API = typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL : 'http://localhost:5000';
+
 const languageOptions = Object.entries(LANGUAGES_LIST).map(([code, lang]) => ({
     code,
     name: lang.name,
@@ -67,8 +70,8 @@ const Profile = () => {
                 setLoading(false);
                 return;
             }
-            try {
-                const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+                try {
+                const apiUrl = API;
                 const res = await fetch(`${apiUrl}/api/profile?userID=${user.uid}`);
                 if (res.ok) {
                     const data = await res.json();
@@ -162,7 +165,7 @@ const Profile = () => {
         const timezoneText = tzObj ? tzObj.text : timezone;
 
         try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+            const apiUrl = API;
             const res = await fetch(`${apiUrl}/api/profile`, {
                 // const res = await fetch(`http://localhost:5000/api/profile`, {
                 method: 'POST',

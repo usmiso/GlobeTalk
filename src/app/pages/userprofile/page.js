@@ -5,6 +5,9 @@ import { auth } from "../../firebase/auth";
 import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 
+// API base - prefer NEXT_PUBLIC_API_URL, fallback to localhost:5000 for dev
+const API = typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL : 'http://localhost:5000';
+
 export default function UserProfile() {
 
     const router = useRouter();
@@ -80,8 +83,8 @@ export default function UserProfile() {
 
     const fetchProfile = async (uid) => {
 
-        try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+            try {
+            const apiUrl = API;
             const res = await fetch(`${apiUrl}/api/profile?userID=${uid}`);
             // const res = await fetch(`http://localhost:5000/api/profile?userID=${uid}`);
             // console.log("Fetched language:", data.language);
@@ -231,7 +234,7 @@ export default function UserProfile() {
             });
 
             // const res = await fetch(`http://localhost:5000/api/profile`, {
-            const res = await fetch(`${apiUrl}/api/profile`, {
+            const res = await fetch(`${API}/api/profile`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
