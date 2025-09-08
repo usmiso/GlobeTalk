@@ -25,6 +25,7 @@ export default function UserProfile() {
     const [editingField, setEditingField] = useState(null);
     const [error, setError] = useState('');
     const [saving, setSaving] = useState(false);
+    const [readOnly, setReadOnly] = useState(false);
     const [customHobby, setCustomHobby] = useState("");
     const [customLanguage, setCustomLanguage] = useState("");
     const [allLanguages, setAllLanguages] = useState([]);
@@ -263,6 +264,8 @@ export default function UserProfile() {
 
             await fetchProfile(user.uid);   // refresh data
             setSaving(false);
+            // switch to view mode after successful save
+            setReadOnly(true);
         } catch (err) {
             console.error("Save failed:", err);
             setError('Failed to connect to server.');
@@ -386,34 +389,42 @@ export default function UserProfile() {
                 <h1 className="text-2xl font-bold mb-2">{username}</h1>
                 {/* Age Range */}
                 <section className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl text-center mb-8">
-                    <select
-                        className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
-                        value={ageRange}
-                        onChange={(e) => setAgeRange(e.target.value)}
-                    >
-                        <option value="">Select age range</option>
-                        {ageRanges.map((range, i) => (
-                            <option key={i} value={range}>
-                                {range}
-                            </option>
-                        ))}
-                    </select>
+                    {readOnly ? (
+                        <div className="w-full border border-gray-200 rounded px-3 py-4 mb-3 text-left">{ageRange || 'Not set'}</div>
+                    ) : (
+                        <select
+                            className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
+                            value={ageRange}
+                            onChange={(e) => setAgeRange(e.target.value)}
+                        >
+                            <option value="">Select age range</option>
+                            {ageRanges.map((range, i) => (
+                                <option key={i} value={range}>
+                                    {range}
+                                </option>
+                            ))}
+                        </select>
+                    )}
                 </section>
 
                 {/* Timezone */}
                 <section className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl text-center mb-8">
-                    <select
-                        className="w-full border border-gray-300 rounded px-3 py-2"
-                        value={timezone}
-                        onChange={(e) => setTimezone(e.target.value)}
-                    >
-                        <option value="">Select region/timezone</option>
-                        {Array.isArray(timezones) && timezones.map((tz, i) => (
-                            <option key={`${tz.value}-${i}`} value={tz.value}>
-                                {tz.text}
-                            </option>
-                        ))}
-                    </select>
+                    {readOnly ? (
+                        <div className="w-full border border-gray-200 rounded px-3 py-4">{timezone || 'Not set'}</div>
+                    ) : (
+                        <select
+                            className="w-full border border-gray-300 rounded px-3 py-2"
+                            value={timezone}
+                            onChange={(e) => setTimezone(e.target.value)}
+                        >
+                            <option value="">Select region/timezone</option>
+                            {Array.isArray(timezones) && timezones.map((tz, i) => (
+                                <option key={`${tz.value}-${i}`} value={tz.value}>
+                                    {tz.text}
+                                </option>
+                            ))}
+                        </select>
+                    )}
 
                 </section>
 
@@ -444,12 +455,16 @@ export default function UserProfile() {
                         {/* About Me */}
                         <section className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl text-center mb-8">
                             <h2 className="text-md font-semibold mb-2">About Me</h2>
-                            <textarea
-                                placeholder="Write something about yourself..."
-                                className="w-full border border-gray-300 rounded-md p-4 bg-gray-50"
-                                value={intro}
-                                onChange={(e) => setIntro(e.target.value)}
-                            />
+                            {readOnly ? (
+                                <div className="w-full border border-gray-200 rounded-md p-4 bg-white text-left">{intro || 'No bio yet.'}</div>
+                            ) : (
+                                <textarea
+                                    placeholder="Write something about yourself..."
+                                    className="w-full border border-gray-300 rounded-md p-4 bg-gray-50"
+                                    value={intro}
+                                    onChange={(e) => setIntro(e.target.value)}
+                                />
+                            )}
                         </section>
                         {/* Interests & Hobbies */}
                         <section className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl text-center mb-8">
@@ -463,13 +478,15 @@ export default function UserProfile() {
                                         className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg bg-blue-100 shadow-sm"
                                     >
                                         {hobby}
-                                        <button
-                                            type="button"
-                                            onClick={() => setHobbies(hobbies.filter((h) => h !== hobby))}
-                                            className="text-red-500 hover:text-red-700 font-bold"
-                                        >
-                                            ✕
-                                        </button>
+                                        {!readOnly && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setHobbies(hobbies.filter((h) => h !== hobby))}
+                                                className="text-red-500 hover:text-red-700 font-bold"
+                                            >
+                                                ✕
+                                            </button>
+                                        )}
                                     </span>
                                 ))}
                             </div>
@@ -527,13 +544,15 @@ export default function UserProfile() {
                                         className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg bg-green-100 shadow-sm"
                                     >
                                         {lang}
-                                        <button
-                                            type="button"
-                                            onClick={() => removeLanguage(lang)}
-                                            className="text-red-500 hover:text-red-700 font-bold"
-                                        >
-                                            ✕
-                                        </button>
+                                        {!readOnly && (
+                                            <button
+                                                type="button"
+                                                onClick={() => removeLanguage(lang)}
+                                                className="text-red-500 hover:text-red-700 font-bold"
+                                            >
+                                                ✕
+                                            </button>
+                                        )}
                                     </span>
                                 ))}
                             </div>
@@ -583,12 +602,16 @@ export default function UserProfile() {
 
                             <section className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl text-center mb-8">
                                 <h2 className="text-md font-semibold mb-2">Favorites</h2>
-                                <textarea
-                                    placeholder="Write something about yourself..."
-                                    className="w-full border border-gray-300 rounded-md p-4 bg-gray-50"
-                                    value={favorites}
-                                    onChange={(e) => setFavorites(e.target.value)}
-                                />
+                                {readOnly ? (
+                                    <div className="w-full border border-gray-200 rounded-md p-4 text-left">{favorites || '—'}</div>
+                                ) : (
+                                    <textarea
+                                        placeholder="Write something about yourself..."
+                                        className="w-full border border-gray-300 rounded-md p-4 bg-gray-50"
+                                        value={favorites}
+                                        onChange={(e) => setFavorites(e.target.value)}
+                                    />
+                                )}
                             </section>
 
 
@@ -596,24 +619,32 @@ export default function UserProfile() {
 
                             <section className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl text-center mb-8">
                                 <h2 className="text-md font-semibold mb-2">Facts</h2>
-                                <textarea
-                                    placeholder="Write something about yourself..."
-                                    className="w-full border border-gray-300 rounded-md p-4 bg-gray-50"
-                                    value={facts}
-                                    onChange={(e) => setFacts(e.target.value)}
-                                />
+                                {readOnly ? (
+                                    <div className="w-full border border-gray-200 rounded-md p-4 text-left">{facts || '—'}</div>
+                                ) : (
+                                    <textarea
+                                        placeholder="Write something about yourself..."
+                                        className="w-full border border-gray-300 rounded-md p-4 bg-gray-50"
+                                        value={facts}
+                                        onChange={(e) => setFacts(e.target.value)}
+                                    />
+                                )}
                             </section>
 
                             {/* Common Sayings */}
 
                             <section className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl text-center mb-8">
                                 <h2 className="text-md font-semibold mb-2">Common Sayings</h2>
-                                <textarea
-                                    placeholder="Write something about yourself..."
-                                    className="w-full border border-gray-300 rounded-md p-4 bg-gray-50"
-                                    value={sayings}
-                                    onChange={(e) => setSayings(e.target.value)}
-                                />
+                                {readOnly ? (
+                                    <div className="w-full border border-gray-200 rounded-md p-4 text-left">{sayings && sayings.length ? sayings.join(', ') : '—'}</div>
+                                ) : (
+                                    <textarea
+                                        placeholder="Write something about yourself..."
+                                        className="w-full border border-gray-300 rounded-md p-4 bg-gray-50"
+                                        value={sayings}
+                                        onChange={(e) => setSayings(e.target.value)}
+                                    />
+                                )}
                             </section>
 
                         </>
