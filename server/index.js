@@ -196,6 +196,32 @@ app.post('/api/profile/edit', async (req, res) => {
     }
 });
 
+// Simple API to just receive and store IP address for a user
+app.post('/api/user/ip', async (req, res) => {
+    if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
+
+    try {
+        const { uid, ipAddress } = req.body;
+
+        if (!uid) {
+            return res.status(400).json({ error: 'Missing user ID' });
+        }
+
+        console.log('Storing IP address for user:', { uid, ipAddress });
+
+        // Safely add IP address to the user's profile without affecting other fields
+        await db.collection('users').doc(uid).set({
+            ipAddress: ipAddress || 'unknown',
+            //lastLogin: admin.firestore.FieldValue.serverTimestamp()
+        }, { merge: true }); // merge: true preserves all existing fields
+
+        res.status(200).json({ message: 'IP address stored successfully' });
+    } catch (error) {
+        console.error('Error storing IP address:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
 
 // Catch-all for undefined routes
 app.use((req, res) => {
