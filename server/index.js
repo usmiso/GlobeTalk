@@ -40,18 +40,18 @@ app.get('/api/health', (req, res) => {
 app.post('/api/profile', async (req, res) => {
     if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
 
-    const { userID, intro, ageRange, hobbies, timezone, language } = req.body;
+    const { userID, intro, ageRange, hobbies, timezone, language, country } = req.body;
 
     console.log('Received profile POST:', req.body);
 
-    if (!userID || !intro || !ageRange || !hobbies || !timezone || !language) {
+    if (!userID || !intro || !ageRange || !hobbies || !timezone || !language || !country) {
         return res.status(400).json({ error: 'Missing required fields' });
     }
 
     try {
         // Use merge to avoid overwriting other fields accidentally
         await db.collection('profiles').doc(userID).set(
-            { userID, intro, ageRange, hobbies, timezone, language },
+            { userID, intro, ageRange, hobbies, timezone, language, country },
             { merge: true }
         );
 

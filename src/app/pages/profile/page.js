@@ -4,6 +4,20 @@ import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 import { auth } from '../../firebase/auth';
 import LANGUAGES_LIST from '../../../../public/assets/languages.js';
+import geonamesTimezones from '../../../../public/assets/geonames_timezone.json';
+
+// Parse country.csv into a map { code: name }
+function parseCountryCSV(csv) {
+    const lines = csv.trim().split('\n');
+    const map = {};
+    for (const line of lines) {
+        const [code, ...nameParts] = line.split(',');
+        if (code && nameParts.length) {
+            map[code] = nameParts.join(',').replace(/"/g, '').trim();
+        }
+    }
+    return map;
+}
 import AvatarUsernameGen from '../../components/avatar/page';
 
 const languageOptions = Object.entries(LANGUAGES_LIST).map(([code, lang]) => ({
@@ -23,6 +37,24 @@ const ageRanges = [
 ];
 
 const Profile = () => {
+    const [countryMap, setCountryMap] = useState();
+    const [countryName, setCountryName] = useState('');
+    // Removed country dropdown logic; country is always set by timezone selection
+    // Fetch and parse country.csv on mount
+    useEffect(() => {
+        const fetchCountryCSV = async () => {
+            try {
+                const res = await fetch('/assets/country.csv');
+                if (res.ok) {
+                    const text = await res.text();
+                    setCountryMap(parseCountryCSV(text));
+                }
+            } catch (err) {
+                setCountryMap({});
+            }
+        };
+        fetchCountryCSV();
+    }, []);
     const [intro, setIntro] = useState('');
     const [ageRange, setAgeRange] = useState('');
     const [hobbyInput, setHobbyInput] = useState('');
@@ -43,15 +75,27 @@ const Profile = () => {
     const router = useRouter();
 
     // Filtered options for dropdowns
-    const filteredTimezones = timezones.filter(tz => tz.text.toLowerCase().includes(timezone.toLowerCase()));
+    const filteredTimezones = timezones.filter(tz =>
+        tz.timezone_id.toLowerCase().includes(timezone.toLowerCase()) ||
+        (tz.gmt_offset !== undefined && (`GMT${tz.gmt_offset >= 0 ? '+' : ''}${tz.gmt_offset}`).includes(timezone))
+    );
     const filteredLanguages = languageOptions.filter(lang =>
         lang.name.toLowerCase().includes(selectedLanguage.toLowerCase()) ||
         (lang.nativeName && lang.nativeName.toLowerCase().includes(selectedLanguage.toLowerCase()))
     );
 
     // Handlers for custom dropdowns
-    const handleTimezoneSelect = (value) => {
-        setTimezone(value);
+    // When selecting a timezone, also set the country code for saving
+    const [selectedCountryCode, setSelectedCountryCode] = useState('');
+    const handleTimezoneSelect = (tzObj) => {
+        setTimezone(tzObj.timezone_id);
+        setSelectedCountryCode(tzObj.country_code);
+        // Set countryName from countryMap using country code
+        if (countryMap && tzObj.country_code && countryMap[tzObj.country_code]) {
+            setCountryName(countryMap[tzObj.country_code]);
+        } else {
+            setCountryName('');
+        }
         setTzDropdownOpen(false);
     };
     const handleLanguageSelect = (code) => {
@@ -70,7 +114,6 @@ const Profile = () => {
             try {
                 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
                 const res = await fetch(`${apiUrl}/api/profile?userID=${user.uid}`);
-                //const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/profile?userID=${user.uid}`);
                 if (res.ok) {
                     const data = await res.json();
                     if (data && data.intro) {
@@ -81,6 +124,15 @@ const Profile = () => {
                         setSelectedLanguage(data.language || '');
                         setAvatarUrl(data.avatarUrl || '');
                         setUsername(data.username || '');
+                        // Set countryName from timezone's country code
+                        if (data.timezone && countryMap) {
+                            const tzObj = geonamesTimezones.find(tz => tz.timezone_id === data.timezone);
+                            if (tzObj && tzObj.country_code && countryMap[tzObj.country_code]) {
+                                setCountryName(countryMap[tzObj.country_code]);
+                            } else {
+                                setCountryName('');
+                            }
+                        }
                         setProfileLoaded(true);
                         setMode('viewProfile');
                     } else {
@@ -95,23 +147,19 @@ const Profile = () => {
             setLoading(false);
         };
         fetchProfile();
-    }, []);
+    }, [countryMap]);
 
-    // Fetch timezones
+    // Fetch timezones from geonames_timezone.json
     useEffect(() => {
-        const fetchTimezones = async () => {
-            try {
-                const res = await fetch('/Assets/timezones.json');
-                if (res.ok) {
-                    const data = await res.json();
-                    const validZones = data.filter(tz => tz && tz.value && tz.text);
-                    setTimezones(validZones);
-                }
-            } catch (err) {
-                setTimezones([]);
-            }
-        };
-        fetchTimezones();
+        // Only keep entries with timezone_id and country_code
+        const validZones = geonamesTimezones.filter(
+            tz => tz.timezone_id && tz.country_code
+        ).map(tz => ({
+            timezone_id: tz.timezone_id,
+            country_code: tz.country_code,
+            gmt_offset: tz.gmt_offset
+        }));
+        setTimezones(validZones);
     }, []);
 
     // Add hobby
@@ -151,12 +199,18 @@ const Profile = () => {
             return;
         }
         const languageName = LANGUAGES_LIST[selectedLanguage]?.name || selectedLanguage;
-        const tzObj = timezones.find(tz => tz.value === timezone);
-        const timezoneText = tzObj ? tzObj.text : timezone;
+        // Find the selected timezone object
+        const tzObj = timezones.find(tz => tz.timezone_id === timezone);
+        // Always use country code from timezone selection to look up country name
+        let countryToSave = '';
+        if (tzObj && tzObj.country_code && countryMap && countryMap[tzObj.country_code]) {
+            countryToSave = countryMap[tzObj.country_code];
+        }
+        // Displayed timezone string: e.g. "Africa/Johannesburg (GMT+2)"
+        const timezoneDisplay = tzObj ? `${tzObj.timezone_id} (GMT${tzObj.gmt_offset >= 0 ? '+' : ''}${tzObj.gmt_offset})` : timezone;
 
         try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-            // const res = await fetch(`${apiUrl}/api/profile`, 
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/profile`,
                 {
                     method: 'POST',
@@ -166,8 +220,9 @@ const Profile = () => {
                         intro,
                         ageRange,
                         hobbies,
-                        timezone: timezoneText,
+                        timezone: timezoneDisplay,
                         language: languageName,
+                        country: countryToSave,
                     }),
                 });
             if (!res.ok) {
@@ -199,6 +254,17 @@ const Profile = () => {
 
     // Profile edit mode
     if (mode === 'editProfile') {
+                    {/* Country Name (Read-only, set by timezone) */}
+                    <div className="mb-4 w-full max-w-md">
+                        <label className="block mb-1 font-medium">Country</label>
+                        <input
+                            type="text"
+                            className="w-full border rounded px-3 py-2 mb-2 bg-gray-100 cursor-not-allowed"
+                            value={countryName}
+                            readOnly
+                            tabIndex={-1}
+                        />
+                    </div>
         return (
             <main className="flex flex-col items-center justify-center min-h-screen">
                 <h1 className="text-2xl mb-6">Profile</h1>
@@ -247,7 +313,7 @@ const Profile = () => {
                             placeholder="Type a hobby and press Enter or comma"
                         />
                     </div>
-                    {/* Timezone Autocomplete */}
+                    {/* Timezone Autocomplete (geonames) */}
                     <div className="mb-4 w-full max-w-md relative">
                         <label className="block mb-1 font-medium">Region (Timezone)</label>
                         <input
@@ -268,14 +334,12 @@ const Profile = () => {
                             <ul className="absolute z-10 w-full bg-white border rounded shadow max-h-48 overflow-y-auto mt-1">
                                 {filteredTimezones.map((tz, idx) => (
                                     <li
-                                        key={`${tz.value}-${idx}`}
-                                        className={`px-3 py-2 hover:bg-blue-100 cursor-pointer ${tz.value === timezone ? 'bg-blue-50 font-bold' : ''}`}
-                                        onMouseDown={() => {
-                                            setTimezone(tz.text);
-                                            setTzDropdownOpen(false);
-                                        }}
+                                        key={`${tz.timezone_id}-${idx}`}
+                                        className={`px-3 py-2 hover:bg-blue-100 cursor-pointer ${tz.timezone_id === timezone ? 'bg-blue-50 font-bold' : ''}`}
+                                        onMouseDown={() => handleTimezoneSelect(tz)}
                                     >
-                                        {tz.text}
+                                        {tz.timezone_id} (GMT{tz.gmt_offset >= 0 ? '+' : ''}{tz.gmt_offset})
+                                        {countryMap && countryMap[tz.country_code] ? ` - ${countryMap[tz.country_code]}` : ''}
                                     </li>
                                 ))}
                             </ul>
@@ -328,6 +392,10 @@ const Profile = () => {
 
     // Profile view mode
     if (mode === 'viewProfile') {
+                    <div className="mb-4 w-full">
+                        <span className="block font-medium">Country:</span>
+                        <span className="block text-gray-700 mt-1">{countryName}</span>
+                    </div>
         return (
             <main className="flex flex-col items-center justify-center min-h-screen">
                 <h1 className="text-2xl mb-6">Profile</h1>
@@ -366,8 +434,11 @@ const Profile = () => {
                         <span className="block font-medium">Region (Timezone):</span>
                         <span className="block text-gray-700 mt-1">
                             {(() => {
-                                const tzObj = timezones.find(tz => tz.value === timezone);
-                                return tzObj ? tzObj.text : timezone;
+                                const tzObj = timezones.find(tz => tz.timezone_id === timezone);
+                                if (tzObj) {
+                                    return `${tzObj.timezone_id} (GMT${tzObj.gmt_offset >= 0 ? '+' : ''}${tzObj.gmt_offset})${countryMap && countryMap[tzObj.country_code] ? ` - ${countryMap[tzObj.country_code]}` : ''}`;
+                                }
+                                return timezone;
                             })()}
                         </span>
                     </div>
