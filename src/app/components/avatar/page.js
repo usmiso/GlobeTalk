@@ -107,7 +107,7 @@ export default function AvatarUsernameGen({ onSuccess }) {
     >
       {/* Main Card */}
       <div
-        className="shadow-xl rounded-2xl p-6 w-full max-w-md flex flex-col items-center space-y-5 transition-all"
+        className="shadow-xl rounded-2xl p-6 w-full max-w-3xl flex flex-col items-center space-y-5 transition-all"
         style={{
           backgroundColor: theme.cardBg,
           border: `1px solid ${theme.borderLight}`,
