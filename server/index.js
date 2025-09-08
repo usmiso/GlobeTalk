@@ -205,22 +205,49 @@ app.get('/api/matchmaking', async (req, res) => {
 app.get('/api/chats/:chatId/messages', async (req, res) => {
     if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
     const { chatId } = req.params;
+    // optional auth header; if present we'll verify to know requester uid
+    let requesterUid = null;
+    const authHeader = req.headers.authorization || req.headers.Authorization || '';
+    if (authHeader) {
+        const parts = String(authHeader).split(' ');
+        const token = parts && parts.length > 1 ? parts[1] : null;
+        if (token && admin.apps.length) {
+            try {
+                const decoded = await admin.auth().verifyIdToken(token);
+                requesterUid = decoded.uid;
+            } catch (err) {
+                // ignore token verification errors for reads; treat as anonymous
+                console.warn('Message list: token verify failed', err && err.message);
+            }
+        }
+    }
+
     try {
         const msgsSnap = await db.collection('chats').doc(chatId).collection('messages').orderBy('createdAt', 'asc').get();
-        const messages = msgsSnap.docs.map(d => {
+        const now = new Date();
+        const messages = [];
+        for (const d of msgsSnap.docs) {
             const data = d.data();
-            return {
-                id: d.id,
-                text: data.text,
-                sender: data.sender,
-                recipient: data.recipient,
-                createdAt: data.createdAt ? data.createdAt.toDate().toISOString() : null,
-                deliverAt: data.deliverAt ? (data.deliverAt.toDate ? data.deliverAt.toDate().toISOString() : (new Date(data.deliverAt)).toISOString()) : null,
-                delayMs: data.delayMs || null,
-                delayLabel: data.delayLabel || null,
-                meta: data.meta || null,
-            };
-        });
+            const deliverAt = data.deliverAt && data.deliverAt.toDate ? data.deliverAt.toDate() : (data.deliverAt ? new Date(data.deliverAt) : null);
+            const isSender = requesterUid && data.sender === requesterUid;
+            const isDeliverable = !deliverAt || deliverAt <= now;
+            // Only include the message if it's deliverable now or the requester is the sender
+            if (isDeliverable || isSender) {
+                messages.push({
+                    id: d.id,
+                    text: data.text,
+                    sender: data.sender,
+                    recipient: data.recipient,
+                    createdAt: data.createdAt ? data.createdAt.toDate().toISOString() : null,
+                    deliverAt: deliverAt ? deliverAt.toISOString() : null,
+                    delayMs: data.delayMs || null,
+                    delayLabel: data.delayLabel || null,
+                    meta: data.meta || null,
+                });
+            } else {
+                // omit message for recipients until deliverAt
+            }
+        }
         res.status(200).json(messages);
     } catch (error) {
         console.error('Error fetching chat messages', error);
@@ -228,12 +255,48 @@ app.get('/api/chats/:chatId/messages', async (req, res) => {
     }
 });
 
-// GET chats for a user (list chat docs where participants contains userID)
+// GET chats for a user: prefer profile.chatIds when available, fall back to where('participants', 'array-contains')
 app.get('/api/chats', async (req, res) => {
     if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
     const { userID } = req.query;
     if (!userID) return res.status(400).json({ error: 'Missing userID' });
     try {
+        // Try to read chatIds from the user's profile document first
+        try {
+            const profileDoc = await db.collection('profiles').doc(userID).get();
+            if (profileDoc.exists) {
+                const profileData = profileDoc.data() || {};
+                if (Array.isArray(profileData.chatIds) && profileData.chatIds.length > 0) {
+                    const chats = [];
+                    for (const chatId of profileData.chatIds) {
+                        const doc = await db.collection('chats').doc(chatId).get();
+                        if (!doc.exists) continue;
+                        const data = doc.data() || {};
+                        // get last message (if any)
+                        let lastMessage = null;
+                        try {
+                            const msgsSnap = await db.collection('chats').doc(chatId).collection('messages').orderBy('createdAt', 'desc').limit(1).get();
+                            if (!msgsSnap.empty) {
+                                const m = msgsSnap.docs[0].data();
+                                lastMessage = {
+                                    text: m.text || '',
+                                    sender: m.sender || null,
+                                    createdAt: m.createdAt ? m.createdAt.toDate().toISOString() : null,
+                                };
+                            }
+                        } catch (e) {
+                            // ignore per-chat message read errors
+                        }
+                        chats.push({ chatId, participants: data.participants || [], lastMessage });
+                    }
+                    return res.status(200).json(chats);
+                }
+            }
+        } catch (pfErr) {
+            console.warn('Failed reading profile.chatIds', pfErr);
+        }
+
+        // Fallback: query chats collection by participants array
         const snaps = await db.collection('chats').where('participants', 'array-contains', userID).get();
         const chats = [];
         for (const doc of snaps.docs) {
@@ -287,6 +350,13 @@ app.post('/api/chats/:chatId/messages', authenticateToken, async (req, res) => {
         });
         // ensure chat participants set
         await db.collection('chats').doc(chatId).set({ participants: [sender, recipient] }, { merge: true });
+        // ensure profiles reference this chatId so users only see chats they participate in
+        try {
+            await db.collection('profiles').doc(sender).set({ chatIds: admin.firestore.FieldValue.arrayUnion(chatId) }, { merge: true });
+            await db.collection('profiles').doc(recipient).set({ chatIds: admin.firestore.FieldValue.arrayUnion(chatId) }, { merge: true });
+        } catch (pfErr) {
+            console.warn('Failed updating profile chatIds', pfErr);
+        }
         res.status(201).json({ id: docRef.id });
     } catch (error) {
         console.error('Error creating chat message', error);
