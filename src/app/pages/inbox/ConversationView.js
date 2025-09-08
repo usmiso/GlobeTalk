@@ -11,6 +11,9 @@ export default function ConversationView({ chatId, currentUser, otherUserId, del
   const editorRef = useRef();
   const containerRef = useRef();
   const scheduledTimersRef = React.useRef([]);
+  const autoScrollRef = useRef(true);
+  const initialLoadRef = useRef(true);
+  const prevCountRef = useRef(0);
   // canonical demo users (seeded messages should use these profiles)
   const USER_A = 'vAVstGYbfsh8HL0GtAQSqt1GSvJ2';
   const USER_B = 'YEYbsnLkxKOg7LgLpg1W5nQuFdr1';
@@ -46,8 +49,9 @@ export default function ConversationView({ chatId, currentUser, otherUserId, del
   const res = await fetch(`${API}/api/chats/${encodeURIComponent(chatId)}/messages`);
         if (!res.ok) throw new Error('failed fetching messages');
         const msgs = await res.json();
-        if (!mounted) return;
-        setMessages(msgs);
+  if (!mounted) return;
+  const prevCount = prevCountRef.current || 0;
+  setMessages(msgs);
         // clear any previously scheduled timers
         try { scheduledTimersRef.current.forEach(t => clearTimeout(t)); } catch (_) {}
         scheduledTimersRef.current = [];
@@ -65,7 +69,15 @@ export default function ConversationView({ chatId, currentUser, otherUserId, del
             }
           }
         });
-        setTimeout(() => containerRef.current?.scrollTo({ top: containerRef.current.scrollHeight, behavior: 'smooth' }), 50);
+        // Only auto-scroll on initial load, or if user is at bottom AND new messages arrived
+        const newCount = Array.isArray(msgs) ? msgs.length : 0;
+        const hasNew = newCount > prevCount;
+        const doScroll = initialLoadRef.current || (autoScrollRef.current && hasNew);
+        if (doScroll) {
+          setTimeout(() => containerRef.current?.scrollTo({ top: containerRef.current.scrollHeight, behavior: 'smooth' }), 50);
+        }
+        initialLoadRef.current = false;
+        prevCountRef.current = newCount;
 
         if (!msgs || msgs.length === 0) {
           // ask server to seed canonical messages
@@ -84,6 +96,21 @@ export default function ConversationView({ chatId, currentUser, otherUserId, del
     fetchMessages();
     pollId = setInterval(fetchMessages, 2000);
 
+    // attach scroll listener to detect user position
+    const el = containerRef.current;
+    function onScroll() {
+      if (!el) return;
+      // consider near-bottom within 100px as 'at bottom'
+      const threshold = 100;
+      const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
+      autoScrollRef.current = atBottom;
+    }
+    if (el) {
+      el.addEventListener('scroll', onScroll, { passive: true });
+      // initialize autoScroll flag
+      onScroll();
+    }
+
     // ensure chat doc participants via server (best-effort)
     (async () => {
       try {
@@ -96,7 +123,8 @@ export default function ConversationView({ chatId, currentUser, otherUserId, del
     return () => {
       mounted = false;
       if (pollId) clearInterval(pollId);
-  try { scheduledTimersRef.current.forEach(t => clearTimeout(t)); } catch (_) {}
+      try { scheduledTimersRef.current.forEach(t => clearTimeout(t)); } catch (_) {}
+      if (el) el.removeEventListener('scroll', onScroll);
     };
   }, [chatId, currentUser, otherUserId]);
 
@@ -119,6 +147,8 @@ export default function ConversationView({ chatId, currentUser, otherUserId, del
   if (editorRef.current) editorRef.current.innerHTML = '';
       // refresh messages after send
   try { const r = await fetch(`${API}/api/chats/${encodeURIComponent(chatId)}/messages`); if (r.ok) setMessages(await r.json()); } catch (_) {}
+  // force scroll for sender so they see the sent message
+  try { containerRef.current?.scrollTo({ top: containerRef.current.scrollHeight, behavior: 'smooth' }); autoScrollRef.current = true; } catch (_) {}
     } catch (err) {
       console.error('sendMessage err', err);
     }
@@ -143,11 +173,8 @@ export default function ConversationView({ chatId, currentUser, otherUserId, del
         <div>
           <h3 className="font-semibold">Conversation</h3>
           <div className="text-xs text-gray-500">Between {currentUser ? currentUser.slice(0,8) : 'signed out'} and {otherUserId.slice(0,8)}</div>
-          <div className="text-xs text-gray-400">(debug uid: {auth.currentUser?.uid || 'none'})</div>
         </div>
-        <div>
-          <button onClick={reseedMessages} className="text-sm px-3 py-1 border rounded bg-white">Reseed messages</button>
-        </div>
+  <div />
       </div>
 
       <div ref={containerRef} className="flex-1 overflow-auto p-6 space-y-6 bg-gray-50">
@@ -178,9 +205,9 @@ export default function ConversationView({ chatId, currentUser, otherUserId, del
                     </div>
                     <div className="text-xs opacity-80">{deliverAt ? formatDate(deliverAt) : ''}</div>
                   </div>
-                  <div className="px-4 py-6 bg-gradient-to-tr from-white to-zinc-50 text-sm text-gray-500">
-                    This letter will be delivered after {deliverLabel}.
-                  </div>
+                          <div className="px-4 py-6 bg-gradient-to-tr from-white to-zinc-50 text-sm text-gray-500">
+                            Scheduled: {deliverLabel}
+                          </div>
                 </div>
               </div>
             );

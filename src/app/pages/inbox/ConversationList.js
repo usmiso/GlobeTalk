@@ -89,7 +89,7 @@ export default function ConversationList({ chatId, currentUser, otherUserId }) {
                     <span className="inline-block">📍</span>
                     <span>{prof.timezone || 'Unknown'}</span>
                   </div>
-                  <div className="text-sm text-gray-600 mt-2 truncate">{c.lastMessage?.text || "I'd love to hear about your local festivals!"}</div>
+                  <div className="text-sm text-gray-600 mt-2 truncate">{c.lastMessage?.text || ''}</div>
                 </div>
               </div>
             );
