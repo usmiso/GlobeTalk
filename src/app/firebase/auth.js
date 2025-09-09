@@ -12,9 +12,6 @@ import { collection, query, where, getDocs } from "firebase/firestore";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { sendEmailVerification } from "firebase/auth";
 
-
-//const auth = getAuth(app);
-
 // Email/password signup
 export async function signUp(email, password) {
   try {
@@ -47,7 +44,7 @@ export async function signIn(email, password) {
   }
 }
 
-
+// Google signin
 export async function signInWithGoogle() {
   try {
     const provider = new GoogleAuthProvider();
@@ -72,7 +69,6 @@ export async function signInWithGoogle() {
   }
 }
 
-
 // Forgot password
 export async function forgotPassword(email) {
   try {
@@ -83,4 +79,15 @@ export async function forgotPassword(email) {
   }
 }
 
-export { auth };
+// Sign out
+export async function signOutUser() {
+  try {
+    await signOut(auth);
+    return true;
+  } catch (error) {
+    throw error;
+  }
+}
+
+export { auth, onAuthStateChanged };
+

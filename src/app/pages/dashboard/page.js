@@ -1,10 +1,20 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { signOutUser } from "../../firebase/auth"; // make sure this path is correct
 
 export default function Dashboard() {
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  const handleLogout = async () => {
+    try {
+      await signOutUser(); // call Firebase logout
+      router.push("/"); // redirect to home after logout
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -14,7 +24,7 @@ export default function Dashboard() {
           className="flex flex-col justify-between transition-all duration-300"
           style={{
             backgroundColor: "#6492BD",
-            width: "13rem", 
+            width: "13rem",
           }}
         >
           {/* GlobeTalk & Toggle */}
@@ -32,7 +42,7 @@ export default function Dashboard() {
 
             <button
               onClick={() => setSidebarOpen(false)}
-              className="p-1 sm:p-1 rounded  text-black font-bold text-sm sm:text-base mb-2 sm:mb-0"
+              className="p-1 sm:p-1 rounded text-black font-bold text-sm sm:text-base mb-2 sm:mb-0"
             >
               ☰
             </button>
@@ -42,7 +52,7 @@ export default function Dashboard() {
           <div className="flex flex-col justify-between h-full p-2 sm:p-3">
             <nav className="space-y-1 sm:space-y-2">
               <button
-                onClick={() => router.push("/pages/profile")}
+                onClick={() => router.push("/pages/userprofile")}
                 className="flex items-center gap-1 sm:gap-2 p-1 sm:p-2 rounded w-full text-left text-xs sm:text-sm lg:text-base"
               >
                 <img
@@ -54,7 +64,7 @@ export default function Dashboard() {
               </button>
 
               <button
-                onClick={() => router.push("/pages/letters")}
+                onClick={() => router.push("/pages/dashboard")}
                 className="flex items-center gap-1 sm:gap-2 p-1 sm:p-2 rounded w-full text-left text-xs sm:text-sm lg:text-base"
               >
                 <img
@@ -67,7 +77,7 @@ export default function Dashboard() {
             </nav>
 
             <button
-              onClick={() => router.push("/")}
+              onClick={handleLogout}
               className="flex items-center gap-1 sm:gap-2 p-1 sm:p-2 rounded w-full text-left text-xs sm:text-sm lg:text-base mt-2 sm:mt-4"
             >
               <img
@@ -87,7 +97,7 @@ export default function Dashboard() {
         {!sidebarOpen && (
           <button
             onClick={() => setSidebarOpen(true)}
-            className="absolute top-2 sm:top-4 left-2 sm:left-4 p-1 sm:p-2 rounded  hover:bg-gray-300 text-black font-bold text-sm sm:text-base z-50"
+            className="absolute top-2 sm:top-4 left-2 sm:left-4 p-1 sm:p-2 rounded hover:bg-gray-300 text-black font-bold text-sm sm:text-base z-50"
           >
             ☰
           </button>
@@ -103,21 +113,14 @@ export default function Dashboard() {
             Your Journey
           </h3>
           <div className="flex items-start gap-1 sm:gap-2 flex-wrap">
-            <img
-              src="/images/journeys.png"
-              alt="Profile"
-              className="w-10 h-10 sm:w-12 sm:h-12 object-cover mt-1"
-            />
             <ul className="space-y-1 sm:space-y-2 text-gray-700 text-xs sm:text-sm lg:text-base">
-              <li>Countries Connected: 3</li>
-              <li>Letters Sent: 12</li>
-              <li>Longest Friendship: 45 days</li>
+              Nothing to show yet
             </ul>
           </div>
         </div>
 
         {/* Letters Card */}
-        <div className="bg-white shadow-md rounded-2xl p-12 sm:p-12  mb-2 sm:mb-4 lg:mb-6">
+        <div className="bg-white shadow-md rounded-2xl p-12 sm:p-12 mb-2 sm:mb-4 lg:mb-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1 sm:gap-2">
             <div className="flex items-center gap-1 sm:gap-2">
               <img
@@ -131,7 +134,7 @@ export default function Dashboard() {
             </div>
 
             <button
-              onClick={() => router.push("/pages/find-pal")}
+              onClick={() => router.push("/pages/matchmaking")}
               className="text-blue-600 font-semibold hover:underline text-xs sm:text-sm lg:text-base mt-1 sm:mt-0"
             >
               Find A Pal →
