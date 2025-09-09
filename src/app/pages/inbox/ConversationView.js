@@ -1,10 +1,39 @@
 import React, { useEffect, useRef, useState } from 'react';
+import Modal from 'react-modal';
+import jsPDF from 'jspdf';
+
+// helper to format Firestore Timestamp or Date
+function formatDate(ts) {
+  if (!ts) return '';
+  const d = ts.toDate ? ts.toDate() : ts instanceof Date ? ts : new Date(ts);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}/${m}/${day}`;
+}
+  // Download a single message as PDF
+  function handleDownloadPDF(m) {
+    const doc = new jsPDF();
+    const sender = m.sender || '';
+    const date = m.createdAt ? formatDate(m.createdAt) : '';
+    const text = m.text || '';
+    doc.setFontSize(16);
+    doc.text(`From: ${sender}`, 10, 20);
+    doc.setFontSize(12);
+    doc.text(`Date: ${date}`, 10, 30);
+    doc.text('Message:', 10, 40);
+    doc.text(text, 10, 50);
+    doc.save(`letter_${m.id || 'message'}.pdf`);
+  }
 import { auth } from '../../firebase/auth';
 
 // API base - prefer NEXT_PUBLIC_API_URL, fallback to localhost:5000 for dev
 const API = typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL : 'http://localhost:5000';
 
 export default function ConversationView({ chatId, currentUser, otherUserId, delayMs = 12 * 60 * 60 * 1000, delayLabel = '12 hr' }) {
+  const [isComposeOpen, setIsComposeOpen] = useState(false);
+  const [composeSubject, setComposeSubject] = useState('');
+  const [composeBody, setComposeBody] = useState('');
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
   const [editorHtml, setEditorHtml] = useState('');
@@ -79,14 +108,7 @@ export default function ConversationView({ chatId, currentUser, otherUserId, del
         initialLoadRef.current = false;
         prevCountRef.current = newCount;
 
-        if (!msgs || msgs.length === 0) {
-          // ask server to seed canonical messages
-          await fetch(`${API}/api/chats/${encodeURIComponent(chatId)}/seed`, { method: 'POST' });
-          // re-fetch once seeded
-          const res2 = await fetch(`${API}/api/chats/${encodeURIComponent(chatId)}/messages`);
-          const msgs2 = await res2.json();
-          if (mounted) setMessages(msgs2);
-        }
+  // Remove logic that hides or reseeds messages if none exist
       } catch (e) {
         console.error('fetchMessages err', e);
       }
@@ -130,25 +152,42 @@ export default function ConversationView({ chatId, currentUser, otherUserId, del
 
   async function sendMessage(e) {
     e && e.preventDefault();
-  // Use editorHtml if present, otherwise fallback to plain text
-  const payloadText = (editorHtml && editorHtml.replace(/^(<p>|<div>)|(<\/p>|<\/div>)$/g, '').trim()) || text.trim();
-  if (!payloadText) return;
+    // Use composeBody if modal is open, otherwise fallback to editorHtml/text
+    const payloadText = isComposeOpen
+      ? composeBody.trim()
+      : (editorHtml && editorHtml.replace(/^(<p>|<div>)|(<\/p>|<\/div>)$/g, '').trim()) || text.trim();
+    if (!payloadText) return;
     try {
-      // prefer SDK auth uid as authoritative
       const senderUid = auth.currentUser?.uid || currentUser || null;
       const token = senderUid ? await auth.currentUser.getIdToken() : null;
-  const payload = { text: payloadText, sender: senderUid, recipient: otherUserId, delayMs, delayLabel };
-  const res = await fetch(`${API}/api/chats/${encodeURIComponent(chatId)}/messages`, {
+      const now = new Date();
+      const deliverAtDate = delayMs ? new Date(now.getTime() + Number(delayMs)) : now;
+      const optimisticMsg = {
+        id: `optimistic-${Date.now()}`,
+        text: payloadText,
+        subject: isComposeOpen ? composeSubject : '',
+        sender: senderUid,
+        recipient: otherUserId,
+        createdAt: now.toISOString(),
+        deliverAt: deliverAtDate.toISOString(),
+        delayMs,
+        delayLabel,
+        meta: { type: 'letter' },
+      };
+      setMessages(prev => [...prev, optimisticMsg]);
+      setText('');
+      setEditorHtml('');
+      setComposeSubject('');
+      setComposeBody('');
+      setIsComposeOpen(false);
+      if (editorRef.current) editorRef.current.innerHTML = '';
+      const payload = { text: payloadText, subject: optimisticMsg.subject, sender: senderUid, recipient: otherUserId, delayMs, delayLabel };
+      const res = await fetch(`${API}/api/chats/${encodeURIComponent(chatId)}/messages`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(payload)
       });
       if (!res.ok) throw new Error('send failed');
-  setText('');
-  setEditorHtml('');
-  if (editorRef.current) editorRef.current.innerHTML = '';
-      // refresh messages after send
-  try { const r = await fetch(`${API}/api/chats/${encodeURIComponent(chatId)}/messages`); if (r.ok) setMessages(await r.json()); } catch (_) {}
-  // force scroll for sender so they see the sent message
-  try { containerRef.current?.scrollTo({ top: containerRef.current.scrollHeight, behavior: 'smooth' }); autoScrollRef.current = true; } catch (_) {}
+      try { const r = await fetch(`${API}/api/chats/${encodeURIComponent(chatId)}/messages`); if (r.ok) setMessages(await r.json()); } catch (_) {}
+      try { containerRef.current?.scrollTo({ top: containerRef.current.scrollHeight, behavior: 'smooth' }); autoScrollRef.current = true; } catch (_) {}
     } catch (err) {
       console.error('sendMessage err', err);
     }
@@ -172,9 +211,14 @@ export default function ConversationView({ chatId, currentUser, otherUserId, del
       <div className="p-4 border-b flex items-center justify-between gap-4">
         <div>
           <h3 className="font-semibold">Conversation</h3>
-          <div className="text-xs text-gray-500">Between {currentUser ? currentUser.slice(0,8) : 'signed out'} and {otherUserId.slice(0,8)}</div>
+          {/* Only show participants if both are present and not demo/default */}
+          {chatId && currentUser && otherUserId &&
+            currentUser !== 'vAVstGYbfsh8HL0GtAQSqt1GSvJ2' &&
+            otherUserId !== 'YEYbsnLkxKOg7LgLpg1W5nQuFdr1' && (
+              <div className="text-xs text-gray-500">Between {currentUser.slice(0,8)} and {otherUserId.slice(0,8)}</div>
+            )}
         </div>
-  <div />
+        <div />
       </div>
 
       <div ref={containerRef} className="flex-1 overflow-auto p-6 space-y-6 bg-gray-50">
@@ -182,7 +226,7 @@ export default function ConversationView({ chatId, currentUser, otherUserId, del
           <div className="text-center text-sm text-gray-500">No messages yet — send the first letter.</div>
         )}
 
-        {messages.map((m) => {
+  {messages.map((m) => {
           // authoritative sender uid is the SDK auth currentUser when available
           const senderUid = auth.currentUser?.uid || currentUser || null;
           const mine = m.sender === senderUid;
@@ -191,42 +235,43 @@ export default function ConversationView({ chatId, currentUser, otherUserId, del
           const deliverAt = m.deliverAt ? new Date(m.deliverAt) : null;
           const now = new Date();
           const deliveredForReceiver = !deliverAt || deliverAt <= now;
+          const deliverLabel = m.delayLabel || (deliverAt ? formatDate(deliverAt) : 'Scheduled');
 
-          // if the message is not from me and not yet delivered, show placeholder to receiver
-          if (!mine && !deliveredForReceiver) {
-            const deliverLabel = m.delayLabel || (deliverAt ? formatDate(deliverAt) : 'Scheduled');
-            return (
-              <div key={m.id} className="max-w-3xl mx-auto self-start">
-                <div className="rounded-lg p-0 overflow-hidden shadow bg-white border">
-                  <div className="flex items-center justify-between px-4 py-2 bg-white">
-                    <div className="flex items-center gap-2 text-sm font-medium">
-                      <span className="inline-block">🔒</span>
-                      <span>Letter locked</span>
-                    </div>
-                    <div className="text-xs opacity-80">{deliverAt ? formatDate(deliverAt) : ''}</div>
-                  </div>
-                          <div className="px-4 py-6 bg-gradient-to-tr from-white to-zinc-50 text-sm text-gray-500">
-                            Scheduled: {deliverLabel}
-                          </div>
-                </div>
-              </div>
-            );
-          }
-
-          // otherwise show the message (sender always sees their own messages immediately)
+          // Always show the message
           return (
             <div key={m.id} className={`max-w-3xl mx-auto ${mine ? 'self-end' : 'self-start'}`}>
               <div className={`rounded-lg p-0 overflow-hidden shadow ${mine ? 'bg-blue-600 text-white' : 'bg-white border'}`}>
                 <div className={`flex items-center justify-between px-4 py-2 ${mine ? 'bg-blue-700/90' : 'bg-white'}`}>
                   <div className="flex items-center gap-2 text-sm font-medium">
-                    <span className="inline-block">✉️</span>
-                    <span>{mine ? 'To my pen pal' : 'From your pen pal'}</span>
+                    {(!mine && !deliveredForReceiver) ? (
+                      <>
+                        <span className="inline-block">🔒</span>
+                        <span>Letter locked</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="inline-block">✉️</span>
+                        <span>{mine ? 'To my pen pal' : 'From your pen pal'}</span>
+                      </>
+                    )}
                   </div>
                   <div className="text-xs opacity-80">{formatDate(m.createdAt)}</div>
                 </div>
 
                 <div className={`px-4 py-6 ${mine ? '' : 'bg-gradient-to-tr from-white to-zinc-50'}`}>
-                  <div className="text-sm whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: sanitizeHtml(m.text) }} />
+                  {(!mine && !deliveredForReceiver) ? (
+                    <div className="text-sm text-gray-500">Scheduled: {deliverLabel}</div>
+                  ) : (
+                    <>
+                      <div className="text-sm whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: sanitizeHtml(m.text) }} />
+                      <button
+                        className="mt-2 px-3 py-1 bg-gray-200 rounded text-xs hover:bg-gray-300"
+                        onClick={() => handleDownloadPDF(m)}
+                      >
+                        Download PDF
+                      </button>
+                    </>
+                  )}
                 </div>
 
                 <div className={`px-4 py-2 text-xs ${mine ? 'text-blue-100' : 'text-gray-400'} border-t`}>
@@ -238,54 +283,73 @@ export default function ConversationView({ chatId, currentUser, otherUserId, del
         })}
       </div>
 
-      <form onSubmit={sendMessage} className="p-4 border-t">
-        <div className="flex gap-3">
-          <div className="flex-1">
-            <div className="border rounded p-2 bg-white">
-              <div className="mb-2 flex items-center gap-2">
-                <button type="button" onClick={() => document.execCommand('bold')} className="px-2 py-1 border rounded">B</button>
-                <button type="button" onClick={() => document.execCommand('italic')} className="px-2 py-1 border rounded">I</button>
-                <button type="button" onClick={() => document.execCommand('underline')} className="px-2 py-1 border rounded">U</button>
-                <select onChange={(e) => document.execCommand('fontSize', false, e.target.value)} defaultValue="3" className="border rounded px-1">
-                  <option value="2">Small</option>
-                  <option value="3">Normal</option>
-                  <option value="4">Large</option>
-                  <option value="5">XL</option>
-                </select>
-                <select onChange={(e) => document.execCommand('fontName', false, e.target.value)} defaultValue="Arial" className="border rounded px-1">
-                  <option>Arial</option>
-                  <option>Georgia</option>
-                  <option>Times New Roman</option>
-                  <option>Courier New</option>
-                </select>
-              </div>
-              <div
-                ref={editorRef}
-                contentEditable
-                suppressContentEditableWarning={true}
-                role="textbox"
-                className="min-h-[96px] outline-none"
-                onInput={(e) => setEditorHtml(e.currentTarget.innerHTML)}
-                onPaste={(e) => {
-                  // simple paste cleanup: paste as plain text to avoid injected markup
-                  e.preventDefault();
-                  const text = (e.clipboardData || window.clipboardData).getData('text');
-                  document.execCommand('insertText', false, text);
-                }}
+      <div className="p-4 border-t flex justify-end">
+        <button
+          className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700"
+          onClick={() => setIsComposeOpen(true)}
+        >
+          Compose
+        </button>
+      </div>
+
+      <Modal
+        isOpen={isComposeOpen}
+        onRequestClose={() => setIsComposeOpen(false)}
+        className="fixed inset-0 flex items-center justify-center z-50"
+        overlayClassName="fixed inset-0 bg-black bg-opacity-30 z-40"
+        ariaHideApp={false}
+        shouldCloseOnOverlayClick={true}
+      >
+        <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl p-12 relative border border-gray-200 min-h-[500px] flex flex-col justify-between">
+          <button
+            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+            onClick={() => setIsComposeOpen(false)}
+          >
+            ×
+          </button>
+          <h3 className="text-lg font-semibold mb-4">New Letter</h3>
+          <form onSubmit={sendMessage} autoComplete="off">
+            <div className="mb-3">
+              <label className="block text-sm text-gray-600 mb-1">To</label>
+              <input
+                type="text"
+                value={otherUserId}
+                disabled
+                className="w-full border rounded px-2 py-1 bg-gray-100"
               />
             </div>
-          </div>
-          <div className="flex flex-col">
-            <button
-              type="submit"
-              className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-60"
-              disabled={!((editorHtml && editorHtml.replace(/<[^>]*>/g, '').trim()) || text.trim())}
-            >
-              Send
-            </button>
-          </div>
+            <div className="mb-3">
+              <label className="block text-sm text-gray-600 mb-1">Subject</label>
+              <input
+                type="text"
+                value={composeSubject}
+                onChange={e => setComposeSubject(e.target.value)}
+                className="w-full border rounded px-2 py-1"
+                placeholder="Subject (optional)"
+              />
+            </div>
+            <div className="mb-3">
+              <label className="block text-sm text-gray-600 mb-1">Message</label>
+              <textarea
+                value={composeBody}
+                onChange={e => setComposeBody(e.target.value)}
+                className="w-full border rounded px-2 py-1 min-h-[96px]"
+                placeholder="Write your letter..."
+                required
+              />
+            </div>
+            <div className="flex justify-end mt-6">
+              <button
+                type="submit"
+                className="bg-blue-600 text-white px-6 py-2 rounded shadow hover:bg-blue-700 text-base"
+                disabled={!composeBody.trim()}
+              >
+                Send
+              </button>
+            </div>
+          </form>
         </div>
-      </form>
+      </Modal>
     </div>
   );
 }

@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { db } from '../../firebase/config';
-import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+// ...existing imports...
 
 // API base - prefer NEXT_PUBLIC_API_URL, fallback to localhost:5000 for dev
 const API = typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL : 'http://localhost:5000';
 
-export default function ConversationList({ chatId, currentUser, otherUserId }) {
+export default function ConversationList({ chatId, currentUser }) {
   const [chats, setChats] = useState([]); // { chatId, participants, lastMessage }
   const [profiles, setProfiles] = useState({}); // map userID -> profile
+  const [otherUserId, setOtherUserId] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
+  // Load chats and profiles
   useEffect(() => {
     let mounted = true;
     async function loadChats() {
@@ -18,16 +21,15 @@ export default function ConversationList({ chatId, currentUser, otherUserId }) {
         if (!res.ok) throw new Error('failed fetching chats');
         const data = await res.json();
         if (!mounted) return;
-        setChats(data);
+        // Only set real chats, no synthetic fallback
+        setChats(Array.isArray(data) ? data : []);
 
-        // fetch participant profiles in parallel (include currentUser for clarity)
+        // fetch participant profiles in parallel
         const otherIds = new Set();
         data.forEach(c => {
           (c.participants || []).forEach(p => { otherIds.add(p); });
         });
-        // ensure currentUser and otherUserId included
         if (currentUser) otherIds.add(currentUser);
-        if (otherUserId) otherIds.add(otherUserId);
         const profilesMap = {};
         await Promise.all(Array.from(otherIds).map(async (id) => {
           try {
@@ -37,35 +39,62 @@ export default function ConversationList({ chatId, currentUser, otherUserId }) {
           } catch (e) { profilesMap[id] = { userID: id }; }
         }));
         if (mounted) setProfiles(profilesMap);
-        // If there were no chats returned, but we have a current chatId/otherUserId, show a fallback entry
-        if (mounted && Array.isArray(data) && data.length === 0 && otherUserId && chatId) {
-          // ensure profile for otherUserId is present
-          if (!profilesMap[otherUserId]) {
-            try {
-              const r = await fetch(`${API}/api/profile?userID=${encodeURIComponent(otherUserId)}`);
-              if (r.ok) profilesMap[otherUserId] = await r.json();
-              else profilesMap[otherUserId] = { userID: otherUserId };
-            } catch (e) {
-              profilesMap[otherUserId] = { userID: otherUserId };
-            }
-            if (mounted) setProfiles({ ...profilesMap });
-          }
-          const synthetic = { chatId, participants: [currentUser, otherUserId], lastMessage: null };
-          if (mounted) setChats([synthetic]);
-        }
       } catch (e) {
         console.error('loadChats err', e);
       }
     }
     loadChats();
-  // Poll every 5 minutes to avoid excessive GET requests (5000ms was too frequent)
-  const iv = setInterval(loadChats, 300000);
+    const iv = setInterval(loadChats, 300000);
     return () => { mounted = false; clearInterval(iv); };
   }, [currentUser]);
+
+  // Create new chat
+  const handleCreateChat = async () => {
+    if (!otherUserId) {
+      setError('Please enter a user ID');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`${API}/api/chats`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentUserId: currentUser, otherUserId }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setOtherUserId('');
+        // Optionally reload chats
+        setTimeout(() => {
+          // Give backend a moment to update
+          window.location.reload();
+        }, 500);
+      } else {
+        setError(data.error || 'Failed to create chat');
+      }
+    } catch (err) {
+      setError('Network error');
+    }
+    setLoading(false);
+  };
 
   return (
     <div className="p-4">
       <div className="bg-white rounded-lg">
+        <div style={{ marginBottom: 16 }}>
+          <input
+            type="text"
+            placeholder="Enter user ID to chat with"
+            value={otherUserId}
+            onChange={e => setOtherUserId(e.target.value)}
+            disabled={loading}
+          />
+          <button onClick={handleCreateChat} disabled={loading} style={{ marginLeft: 8 }}>
+            Start Chat
+          </button>
+          {error && <div style={{ color: 'red', marginTop: 8 }}>{error}</div>}
+        </div>
         <div className="px-4 py-3 border-b">
           <div className="flex items-center justify-between">
             <div className="font-semibold">Your Pen Pals</div>
@@ -75,13 +104,13 @@ export default function ConversationList({ chatId, currentUser, otherUserId }) {
 
         <div className="p-2">
           {chats.map(c => {
-            const other = (c.participants || []).find(p => p !== currentUser) || otherUserId;
+            const other = (c.participants || []).find(p => p !== currentUser);
             const prof = profiles[other] || {};
             const meProf = profiles[currentUser] || {};
             return (
               <div key={c.chatId} className="flex items-start gap-3 p-3 rounded hover:bg-sky-50 cursor-pointer">
                 <div className="w-12 h-12 rounded-full bg-sky-100 flex items-center justify-center text-sky-700 font-semibold">
-                  {prof.username ? prof.username.slice(0,2).toUpperCase() : (other.slice(0,2) || '??')}
+                  {prof.username ? prof.username.slice(0,2).toUpperCase() : (other ? other.slice(0,2) : '??')}
                 </div>
                 <div className="flex-1">
                   <div className="font-medium">{meProf.username ? `${meProf.username} ↔ ${prof.username || other}` : `${currentUser} ↔ ${prof.username || other}`}</div>

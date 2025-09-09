@@ -25,6 +25,33 @@ try {
     admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
     });
+
+// API endpoint to create a new chat
+app.post('/api/chats', async (req, res) => {
+    if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
+    const { currentUserId, otherUserId } = req.body;
+    if (!currentUserId || !otherUserId) {
+        return res.status(400).json({ error: 'Missing user IDs' });
+    }
+    try {
+        // Deterministic chatID based on sorted user IDs
+        const ids = [currentUserId, otherUserId].sort();
+        const chatId = ids.join('_');
+        const chatDocRef = db.collection('chats').doc(chatId);
+        const chatDoc = await chatDocRef.get();
+        if (chatDoc.exists) {
+            return res.status(200).json({ chatId });
+        }
+        // Create chat document if not found
+        await chatDocRef.set({
+            participants: ids,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        res.status(201).json({ chatId });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 } catch (e) {
     console.warn('Firebase Admin SDK not initialized. serviceAccountKey.json missing or env var not set.');
 }

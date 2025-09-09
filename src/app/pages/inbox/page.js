@@ -18,6 +18,9 @@ export default function InboxPage() {
 
 	// delay options (label + ms)
 	const DELAYS = [
+		{ label: "10 sec", ms: 10 * 1000 },
+		{ label: "15 sec", ms: 15 * 1000 },
+		{ label: "20 sec", ms: 20 * 1000 },
 		{ label: "1 min", ms: 60 * 1000 },
 		{ label: "1 hr", ms: 60 * 60 * 1000 },
 		{ label: "5 hr", ms: 5 * 60 * 60 * 1000 },
