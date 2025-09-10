@@ -322,6 +322,21 @@ app.get('/api/available_timezones', async (req, res) => {
 });
 
 
+// Get a chat by chatId
+app.get('/api/chat', async (req, res) => {
+    if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
+    const { chatId } = req.query;
+    if (!chatId) return res.status(400).json({ error: 'Missing chatId' });
+
+    try {
+        const doc = await db.collection('chats').doc(chatId).get();
+        if (!doc.exists) return res.status(404).json({ error: 'Chat not found' });
+        res.status(200).json(doc.data());
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Catch-all for undefined routes
 app.use((req, res) => {
     res.status(404).json({ error: 'Not found' });
