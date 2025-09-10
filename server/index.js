@@ -223,11 +223,32 @@ app.post('/api/match', async (req, res) => {
     }
     try {
         const matchKey = [userA, userB].sort().join('_');
+        // 1. Create match document
         await db.collection('matches').doc(matchKey).set({
             users: [userA, userB],
             timestamp: admin.firestore.FieldValue.serverTimestamp()
         });
-        res.status(200).json({ message: 'Match created' });
+
+        // 2. Create chat document with chatId = matchKey
+        const chatDocRef = db.collection('chats').doc(matchKey);
+        await chatDocRef.set({
+            chatId: matchKey,
+            users: [userA, userB],
+            messages: [],
+            createdAt: admin.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+
+        // 3. Add chatId to both user profiles' chats array (create if not exists)
+        const userARef = db.collection('profiles').doc(userA);
+        const userBRef = db.collection('profiles').doc(userB);
+
+        // Use arrayUnion to avoid duplicates
+        await Promise.all([
+            userARef.set({ chats: admin.firestore.FieldValue.arrayUnion(matchKey) }, { merge: true }),
+            userBRef.set({ chats: admin.firestore.FieldValue.arrayUnion(matchKey) }, { merge: true })
+        ]);
+
+        res.status(200).json({ message: 'Match and chat created', chatId: matchKey });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
