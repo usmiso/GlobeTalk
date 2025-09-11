@@ -5,11 +5,80 @@ import { auth } from "../../firebase/auth";
 import { onAuthStateChanged } from "firebase/auth";
 
 const Inbox = () => {
+  // PDF download handler
+  const handleDownloadPDF = (msg, isSender, recipientName) => {
+    import('jspdf').then(({ jsPDF }) => {
+      const doc = new jsPDF();
+      const margin = 20;
+      let y = margin;
+      doc.setFont('times', 'normal');
+      doc.setFontSize(12);
+      // Date at top right
+      const dateStr = msg.deliveryTime ? new Date(msg.deliveryTime).toLocaleDateString() : '';
+      doc.text(dateStr, 180, y);
+      y += 16;
+      // Greeting and signature logic
+      let greetingName, signatureName;
+      if (isSender) {
+        greetingName = recipientName;
+        signatureName = 'You';
+      } else {
+        greetingName = 'You';
+        signatureName = (openChat.userProfiles && openChat.userProfiles.find(u => u.uid === msg.sender)?.username || msg.sender);
+      }
+      // Greeting
+      doc.setFontSize(14);
+      doc.text(`Dear ${greetingName},`, margin, y);
+      y += 12;
+      // Message body
+      doc.setFontSize(12);
+      const lines = doc.splitTextToSize(msg.text, 170);
+      doc.text(lines, margin, y);
+      y += lines.length * 7 + 12;
+      // Closing
+      doc.setFontSize(13);
+      doc.text('Kind regards,', margin, y);
+      y += 10;
+      doc.setFontSize(12);
+      doc.text(signatureName, margin, y);
+      // Save PDF
+      doc.save(`Letter_${dateStr}.pdf`);
+    });
+  };
   const router = useRouter();
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [openChat, setOpenChat] = useState(null);
+  const [messageText, setMessageText] = useState("");
+  const [sending, setSending] = useState(false);
+  const [deliveryDelay, setDeliveryDelay] = useState(60); // seconds, default 1 min
+
+  // Polling for open chat messages every 3 seconds
+  useEffect(() => {
+    if (!openChat || !openChat.chatId) return;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    let isMounted = true;
+    const fetchMessages = async () => {
+      try {
+        const res = await fetch(`${apiUrl}/api/chat?chatId=${encodeURIComponent(openChat.chatId)}`);
+        if (!res.ok) return;
+        const chat = await res.json();
+        if (isMounted && chat && chat.messages) {
+          setOpenChat(prev => prev ? { ...prev, messages: chat.messages } : prev);
+        }
+      } catch (err) {
+        // Ignore polling errors for smoothness
+      }
+    };
+    const interval = setInterval(fetchMessages, 3000);
+    // Fetch immediately on open
+    fetchMessages();
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [openChat?.chatId]);
 
   useEffect(() => {
     let unsubscribe;
@@ -102,19 +171,111 @@ const Inbox = () => {
             <h3>Chat with: {openChat.userProfiles && currentUserID && openChat.userProfiles.filter(u => u.uid !== currentUserID).map(u => u.username).join(', ')}</h3>
             <div style={{ minHeight: 200, background: '#fafafa', padding: 12, borderRadius: 6, marginBottom: 12 }}>
               {openChat.messages && openChat.messages.length > 0 ? (
-                <ul>
-                  {openChat.messages.map((msg, i) => (
-                    <li key={i} style={{ marginBottom: 8 }}>
-                      <strong>{msg.sender === currentUserID ? 'You' : (openChat.userProfiles && openChat.userProfiles.find(u => u.uid === msg.sender)?.username || msg.sender)}:</strong> {msg.text}
-                    </li>
-                  ))}
-                </ul>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {openChat.messages.map((msg, i) => {
+                    // Delivery logic
+                    const now = Date.now();
+                    const deliveryTime = msg.deliveryTime ? new Date(msg.deliveryTime).getTime() : 0;
+                    const isDelivered = now >= deliveryTime;
+                    const isSender = msg.sender === currentUserID;
+                    const recipientName = openChat.userProfiles && currentUserID && openChat.userProfiles.filter(u => u.uid !== currentUserID).map(u => u.username).join(', ');
+                    return (
+                      <div key={i} style={{
+                        alignSelf: isSender ? 'flex-end' : 'flex-start',
+                        background: isSender ? '#1976d2' : '#fff',
+                        color: isSender ? '#fff' : '#222',
+                        borderRadius: 8,
+                        padding: '10px 16px',
+                        maxWidth: '70%',
+                        boxShadow: '0 1px 4px rgba(0,0,0,0.07)',
+                        position: 'relative',
+                      }}>
+                        {/* Locked message logic */}
+                        {!isDelivered ? (
+                          <div>
+                            <strong style={{ color: isSender ? '#fff' : '#1976d2' }}>Letter locked</strong>
+                            <div style={{ fontSize: 13, marginTop: 4 }}>
+                              This letter will be delivered after {Math.ceil((deliveryTime - now)/1000/60)} min.
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <div style={{ fontWeight: 500 }}>{isSender ? 'To my pen pal' : 'From pen pal'}</div>
+                            <div style={{ margin: '6px 0' }}>{msg.text}</div>
+                            <button
+                              style={{ marginTop: 8, background: '#fff', color: '#1976d2', border: '1px solid #1976d2', borderRadius: 4, padding: '4px 10px', cursor: 'pointer', fontWeight: 500 }}
+                              onClick={() => handleDownloadPDF(msg, isSender, recipientName)}
+                            >
+                              Download PDF
+                            </button>
+                          </>
+                        )}
+                        <div style={{ fontSize: 12, opacity: 0.7, marginTop: 6, textAlign: 'right' }}>
+                          {msg.deliveryTime ? new Date(msg.deliveryTime).toLocaleDateString() : ''}
+                          <br/>
+                          {isDelivered ? `Delivered` : `Locked`}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               ) : (
                 <div>No messages yet.</div>
               )}
             </div>
-            {/* Placeholder for message input, not implemented */}
-            <div style={{ color: '#888' }}><em>Message sending not implemented here.</em></div>
+            {/* Message input */}
+            <form
+              onSubmit={async e => {
+                e.preventDefault();
+                if (!messageText.trim() || sending) return;
+                setSending(true);
+                try {
+                  // Compose message object
+                  const newMsg = {
+                    sender: currentUserID,
+                    text: messageText,
+                    deliveryTime: Date.now() + deliveryDelay * 1000,
+                  };
+                  // Send to backend (replace with your API endpoint)
+                  const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+                  const res = await fetch(`${apiUrl}/api/chat/send`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chatId: openChat.chatId, message: newMsg }),
+                  });
+                  if (!res.ok) throw new Error('Failed to send message');
+                  // Optionally, update UI immediately
+                  setOpenChat(prev => ({
+                    ...prev,
+                    messages: [...(prev.messages || []), newMsg],
+                  }));
+                  setMessageText("");
+                } catch (err) {
+                  alert(err.message);
+                } finally {
+                  setSending(false);
+                }
+              }}
+              style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8 }}
+            >
+              <input
+                type="text"
+                value={messageText}
+                onChange={e => setMessageText(e.target.value)}
+                placeholder="Write a letter..."
+                style={{ flex: 1, padding: '8px 12px', borderRadius: 6, border: '1px solid #ccc' }}
+                disabled={sending}
+              />
+              <button type="submit" style={{ background: '#1976d2', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 18px', fontWeight: 500 }} disabled={sending}>
+                Send
+              </button>
+              <select value={deliveryDelay} onChange={e => setDeliveryDelay(Number(e.target.value))} style={{ marginLeft: 8, borderRadius: 6, padding: '6px' }}>
+                <option value={60}>1 min</option>
+                <option value={600}>10 min</option>
+                <option value={3600}>1 hr</option>
+                <option value={43200}>12 hr</option>
+              </select>
+            </form>
           </div>
         ) : (
           <div style={{ color: '#888' }}>Select a chat to view messages.</div>

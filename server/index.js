@@ -337,6 +337,25 @@ app.get('/api/chat', async (req, res) => {
     }
 });
 
+// Add a message to a chat
+app.post('/api/chat/send', async (req, res) => {
+    if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
+    const { chatId, message } = req.body;
+    if (!chatId || !message || !message.sender || !message.text || !message.deliveryTime) {
+        return res.status(400).json({ error: 'Missing required fields (chatId, message)' });
+    }
+    try {
+        const chatRef = db.collection('chats').doc(chatId);
+        // Use arrayUnion to append the message
+        await chatRef.update({
+            messages: admin.firestore.FieldValue.arrayUnion(message)
+        });
+        res.status(200).json({ message: 'Message sent successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Catch-all for undefined routes
 app.use((req, res) => {
     res.status(404).json({ error: 'Not found' });
