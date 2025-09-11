@@ -75,10 +75,14 @@ const Profile = () => {
     const router = useRouter();
 
     // Filtered options for dropdowns
-    const filteredTimezones = timezones.filter(tz =>
-        tz.timezone_id.toLowerCase().includes(timezone.toLowerCase()) ||
-        (tz.gmt_offset !== undefined && (`GMT${tz.gmt_offset >= 0 ? '+' : ''}${tz.gmt_offset}`).includes(timezone))
-    );
+    const filteredTimezones = timezones.filter(tz => {
+        const countryName = countryMap && tz.country_code ? countryMap[tz.country_code].toLowerCase() : '';
+        return (
+            tz.timezone_id.toLowerCase().includes(timezone.toLowerCase()) ||
+            (tz.gmt_offset !== undefined && (`GMT${tz.gmt_offset >= 0 ? '+' : ''}${tz.gmt_offset}`).includes(timezone)) ||
+            (countryName && countryName.includes(timezone.toLowerCase()))
+        );
+    });
     const filteredLanguages = languageOptions.filter(lang =>
         lang.name.toLowerCase().includes(selectedLanguage.toLowerCase()) ||
         (lang.nativeName && lang.nativeName.toLowerCase().includes(selectedLanguage.toLowerCase()))
@@ -223,6 +227,7 @@ const Profile = () => {
                         timezone: timezoneDisplay,
                         language: languageName,
                         country: countryToSave,
+                        countryCode: tzObj?.country_code || '', // Save country code as well if needed
                     }),
                 });
             if (!res.ok) {
