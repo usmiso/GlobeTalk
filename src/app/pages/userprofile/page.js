@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 import { auth } from "../../firebase/auth";
 import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
+import Dashboard from "../dashboard/page";
+import Link from "next/link";
 
 // API base - prefer NEXT_PUBLIC_API_URL, fallback to localhost:5000 for dev
 const API = typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL : 'http://localhost:5000';
@@ -84,7 +86,7 @@ export default function UserProfile() {
 
     const fetchProfile = async (uid) => {
 
-            try {
+        try {
             const apiUrl = API;
             const res = await fetch(`${apiUrl}/api/profile?userID=${uid}`);
             // const res = await fetch(`http://localhost:5000/api/profile?userID=${uid}`);
@@ -284,118 +286,92 @@ export default function UserProfile() {
 
     return (
 
+
         <div className="flex min-h-screen bg-gray-100">
-            {
-                sidebarOpen && (
-                    <aside
-                        className="flex flex-col justify-between transition-all duration-300"
-                        style={{
-                            backgroundColor: "#6492BD",
-                            width: "13rem",
-                        }}
-                    >
-                        {/* GlobeTalk & Toggle */}
-                        <div className="flex flex-row items-start p-2 sm:gap-15 sm:p-5">
-                            <div className="flex items-center gap-1 sm:gap-2 mb-2 sm:mb-3">
-                                <img
-                                    src="/images/globe.png"
-                                    alt="GlobeTalk Logo"
-                                    className="w-5 h-5 sm:w-6 sm:h-6 object-cover"
-                                />
-                                <p className="text-xs sm:text-sm lg:text-base font-bold text-black">
-                                    GlobeTalk
-                                </p>
-                            </div>
 
-                            <button
-                                onClick={() => setSidebarOpen(false)}
-                                className="p-1 sm:p-1 rounded  text-black font-bold text-sm sm:text-base mb-2 sm:mb-0"
-                            >
-                                ☰
-                            </button>
+
+            <main className="flex flex-col items-center w-full min-h-screen py-2 px-4 bg-gray-50">
+
+                <header className="w-full bg-white border-b border-gray-200 px-4 flex items-center justify-between">
+                    {/* Left - Logo */}
+                    <div className="flex items-center gap-2">
+                        <img src="/images/globe.png" alt="GlobeTalk Logo" className="w-6 h-6" />
+                        <span className="font-bold text-lg">GlobeTalk</span>
+                    </div>
+
+                    {/* Right - Nav Links */}
+                    <nav className="flex items-center gap-10 mb-3 mt-2">
+
+                        <Link
+                            href="/pages/dashboard"
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
+                        >
+                            Dashboard
+                        </Link>
+
+
+                        <Link href="/pages/matchmaking" className="flex items-center gap-1 text-gray-700 hover:text-black text-sm">
+
+                            Match
+                        </Link>
+
+                        <Link href="/pages/inbox"
+                            className="flex items-center gap-1 text-gray-700 hover:text-black text-sm">
+
+                            Inbox
+                        </Link>
+
+                        <Link href="explore" className="flex items-center gap-1 text-gray-700 hover:text-black text-sm">
+
+                            Explore
+                        </Link>
+
+                        <Link href="settings" className="flex items-center gap-1 text-gray-700 hover:text-black text-sm">
+
+                            Settings
+                        </Link>
+                    </nav>
+                </header>
+
+                {/* Profile Card */}
+                <div className="bg-white w-full max-w-3xl flex flex-col gap-6 rounded-xl border border-gray-200 p-6 mt-5 shadow-sm">
+
+                    {/* Avatar */}
+                    <div className="flex flex-col items-center">
+                        <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden mb-4">
+                            {avatarUrl ? (
+                                <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+                            ) : (
+                                <span className="flex items-center justify-center h-full text-gray-400 text-sm">
+                                    No Avatar
+                                </span>
+                            )}
                         </div>
 
-                        {/* Menu */}
-                        <div className="flex flex-col justify-between h-full p-2 sm:p-3">
-                            <nav className="space-y-1 sm:space-y-2">
-                                <button
-                                    onClick={() => router.push("/pages/dashboard")}
-                                    className="flex items-center gap-1 sm:gap-2 p-1 sm:p-2 rounded w-full text-left text-xs sm:text-sm lg:text-base"
-                                >
-                                    <img
-                                        src="/images/icons8-dashboard-48.png"
-                                        alt="dashboard"
-                                        className="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-cover"
-                                    />
-                                    Dashboard
-                                </button>
+                        {/* Display Name */}
+                        <h1 className="text-2xl font-bold mb-2">{username}</h1>
+                    </div>
 
-                                <button
-                                    // onClick={() => router.push("/pages/dashboard")}
-                                    className="flex items-center gap-1 sm:gap-2 p-1 sm:p-2 rounded w-full text-left text-xs sm:text-sm lg:text-base"
-                                >
-                                    <img
-                                        src="/images/letters.png"
-                                        alt="Letters"
-                                        className="w-5 h-5 sm:w-6 sm:h-7 rounded-full object-cover"
-                                    />
-                                    Letters
-                                </button>
-                            </nav>
 
-                            <button
-                                onClick={() => router.push("/")}
-                                className="flex items-center gap-1 sm:gap-2 p-1 sm:p-2 rounded w-full text-left text-xs sm:text-sm lg:text-base mt-2 sm:mt-4"
-                            >
-                                <img
-                                    src="/images/logout.png"
-                                    alt="Logout"
-                                    className="w-5 h-5 sm:w-6 sm:h-6 object-cover"
-                                />
-                                Logout
-                            </button>
-                        </div>
-                    </aside>
-                )
-            }
 
-            <main className=" w-screen flex flex-col items-center justify-center min-h-screen py-8 px-4">
-                <button
-                    className="w-48 bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition mt-2 self-end-safe"
-                    onClick={() => router.push('/pages/editprofile')}
-                >
-                    EditProfile
-                </button>
-                {/* Avatar */}
+                    {/* Bio */}
+                    <section>
+                        <h2 className="text-md font-semibold mb-2">Bio</h2>
+                        <textarea
+                            placeholder="Write something about yourself..."
+                            value={intro}
+                            onChange={(e) => setIntro(e.target.value)}
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-50"
+                        />
+                    </section>
 
-                {!sidebarOpen && (
-                    <button
-                        onClick={() => setSidebarOpen(true)}
-                        className="absolute top-2 sm:top-4 left-2 sm:left-4 p-1 sm:p-2 rounded  hover:bg-gray-300 text-black font-bold text-sm sm:text-base z-50"
-                    >
-                        ☰
-                    </button>
-                )}
-                <div className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 rounded-full mb-8">
-
-                    {avatarUrl ? (
-                        <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
-                    ) : (
-                        <span className="text-gray-400 text-sm flex items-center justify-center h-full">No Avatar</span>
-                    )}
-
-                </div>
-                {/* Username + Age + Region */}
-                <h1 className="text-2xl font-bold mb-2">{username}</h1>
-                {/* Age Range */}
-                <section className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl text-center mb-8">
-                    {readOnly ? (
-                        <div className="w-full border border-gray-200 rounded px-3 py-4 mb-3 text-left">{ageRange || 'Not set'}</div>
-                    ) : (
+                    {/* Age Range */}
+                    <section>
+                        <h2 className="text-md font-semibold mb-2">Age Range</h2>
                         <select
-                            className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
                             value={ageRange}
                             onChange={(e) => setAgeRange(e.target.value)}
+                            className="w-full border border-gray-300 rounded-md px-3 py-2"
                         >
                             <option value="">Select age range</option>
                             {ageRanges.map((range, i) => (
@@ -404,265 +380,173 @@ export default function UserProfile() {
                                 </option>
                             ))}
                         </select>
-                    )}
-                </section>
+                    </section>
 
-                {/* Timezone */}
-                <section className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl text-center mb-8">
-                    {readOnly ? (
-                        <div className="w-full border border-gray-200 rounded px-3 py-4">{timezone || 'Not set'}</div>
-                    ) : (
+                    {/* Languages */}
+                    <section>
+                        <h2 className="text-md font-semibold mb-2">Languages</h2>
+
+                        {/* Chips */}
+                        <div className="flex flex-wrap gap-2 mb-3">
+                            {language.map((lang, i) => (
+                                <span
+                                    key={i}
+                                    className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 text-sm border"
+                                >
+                                    {lang}
+                                    <button
+                                        type="button"
+                                        onClick={() => removeLanguage(lang)}
+                                        className="text-gray-500 hover:text-red-600"
+                                    >
+                                        ✕
+                                    </button>
+                                </span>
+                            ))}
+                        </div>
+
+                        {/* Dropdown */}
                         <select
-                            className="w-full border border-gray-300 rounded px-3 py-2"
-                            value={timezone}
-                            onChange={(e) => setTimezone(e.target.value)}
+                            value={selectedLang}
+                            onChange={handleSelectedLang}
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 mb-2"
                         >
-                            <option value="">Select region/timezone</option>
-                            {Array.isArray(timezones) && timezones.map((tz, i) => (
-                                <option key={`${tz.value}-${i}`} value={tz.value}>
-                                    {tz.text}
+                            <option value="">Select a language</option>
+                            {filteredLangs.map((lang, i) => (
+                                <option key={i} value={lang}>
+                                    {lang}
                                 </option>
                             ))}
                         </select>
-                    )}
 
-                </section>
+                        {/* Custom input */}
+                        <input
+                            type="text"
+                            value={customLanguage}
+                            onChange={(e) => setCustomLanguage(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    const lang = customLanguage.trim();
+                                    if (lang && !language.includes(lang)) {
+                                        setLanguage([...language, lang]);
+                                    }
+                                    setCustomLanguage("");
+                                }
+                            }}
+                            placeholder="Or type your own and press Enter"
+                            className="w-full border border-gray-300 rounded-md px-3 py-2"
+                        />
+                    </section>
 
+                    {/* Interests & Hobbies */}
+                    <section>
+                        <h2 className="text-md font-semibold mb-2">Interests & Hobbies</h2>
 
-                <div className="flex space-x-6 border-b w-full max-w-sm justify-center mb-6">
-                    <button
-                        onClick={() => setActiveTab("about")}
-                        className={`px-3 py-1 text-sm font-medium ${activeTab === "about"
-                            ? "text-black border-b-2 border-blue-400"
-                            : "text-gray-600 hover:text-black"
-                            }`}
-                    >
-                        About
-                    </button>
-
-                    <button
-                        onClick={() => setActiveTab("cultural")}
-                        className={`px-3 py-1 text-sm font-medium ${activeTab === "cultural"
-                            ? "text-black border-b-2 border-blue-400"
-                            : "text-gray-600 hover:text-black"
-                            }`}
-                    >
-                        Cultural & Facts
-                    </button>
-                </div>
-                {activeTab === "about" && (
-                    <>
-                        {/* About Me */}
-                        <section className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl text-center mb-8">
-                            <h2 className="text-md font-semibold mb-2">About Me</h2>
-                            {readOnly ? (
-                                <div className="w-full border border-gray-200 rounded-md p-4 bg-white text-left">{intro || 'No bio yet.'}</div>
-                            ) : (
-                                <textarea
-                                    placeholder="Write something about yourself..."
-                                    className="w-full border border-gray-300 rounded-md p-4 bg-gray-50"
-                                    value={intro}
-                                    onChange={(e) => setIntro(e.target.value)}
-                                />
-                            )}
-                        </section>
-                        {/* Interests & Hobbies */}
-                        <section className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl text-center mb-8">
-                            <h2 className="text-md font-semibold mb-3">Interests & Hobbies</h2>
-
-                            {/* Selected hobbies as chips */}
-                            <div className="flex flex-wrap justify-center gap-3 mb-3">
-                                {hobbies.map((hobby, i) => (
-                                    <span
-                                        key={i}
-                                        className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg bg-blue-100 shadow-sm"
+                        {/* Chips */}
+                        <div className="flex flex-wrap gap-2 mb-3">
+                            {hobbies.map((hobby, i) => (
+                                <span
+                                    key={i}
+                                    className="flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-sm border"
+                                >
+                                    {hobby}
+                                    <button
+                                        type="button"
+                                        onClick={() => setHobbies(hobbies.filter((h) => h !== hobby))}
+                                        className="text-gray-500 hover:text-red-600"
                                     >
-                                        {hobby}
-                                        {!readOnly && (
-                                            <button
-                                                type="button"
-                                                onClick={() => setHobbies(hobbies.filter((h) => h !== hobby))}
-                                                className="text-red-500 hover:text-red-700 font-bold"
-                                            >
-                                                ✕
-                                            </button>
-                                        )}
-                                    </span>
-                                ))}
-                            </div>
+                                        ✕
+                                    </button>
+                                </span>
+                            ))}
+                        </div>
 
-                            {/* Dropdown of predefined hobbies */}
-                            <select
-                                className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
-                                onChange={(e) => {
-                                    const hobby = e.target.value;
+                        {/* Dropdown */}
+                        <select
+                            onChange={(e) => {
+                                const hobby = e.target.value;
+                                if (hobby && !hobbies.includes(hobby)) {
+                                    setHobbies([...hobbies, hobby]);
+                                }
+                                e.target.value = "";
+                            }}
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 mb-2"
+                        >
+                            <option value="">Select a hobby</option>
+                            {allHobbies.map((hobby, i) => (
+                                <option key={i} value={hobby}>
+                                    {hobby}
+                                </option>
+                            ))}
+                        </select>
+
+                        {/* Custom input */}
+                        <input
+                            type="text"
+                            value={customHobby}
+                            onChange={(e) => setCustomHobby(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    const hobby = customHobby.trim();
                                     if (hobby && !hobbies.includes(hobby)) {
                                         setHobbies([...hobbies, hobby]);
                                     }
-                                    e.target.value = ""; // reset dropdown
-                                }}
-                            >
-                                <option value="">Select a hobby</option>
-                                {allHobbies.map((hobby, i) => (
-                                    <option key={i} value={hobby}>
-                                        {hobby}
-                                    </option>
-                                ))}
-                            </select>
+                                    setCustomHobby("");
+                                }
+                            }}
+                            placeholder="Or type your own and press Enter"
+                            className="w-full border border-gray-300 rounded-md px-3 py-2"
+                        />
+                    </section>
 
-                            {/* Add custom hobby */}
-                            <input
-                                type="text"
-                                value={customHobby}
-                                onChange={(e) => setCustomHobby(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                        e.preventDefault();
-                                        const hobby = customHobby.trim();
-                                        if (hobby && !hobbies.includes(hobby)) {
-                                            setHobbies([...hobbies, hobby]);
-                                        }
-                                        setCustomHobby(""); // clear input
-                                    }
-                                }}
-                                placeholder="Or type your own and press Enter"
-                                className="w-full border border-gray-400 rounded-md p-2 text-sm"
-                            />
-                        </section>
+                    {/* Favorites */}
+                    <section>
+                        <h2 className="text-md font-semibold mb-2">Favorites</h2>
+                        <textarea
+                            placeholder="List your favorites..."
+                            value={favorites}
+                            onChange={(e) => setFavorites(e.target.value)}
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-50"
+                        />
+                    </section>
 
+                    {/* Facts */}
+                    <section>
+                        <h2 className="text-md font-semibold mb-2">Facts</h2>
+                        <textarea
+                            placeholder="Fun facts about your country or region..."
+                            value={facts}
+                            onChange={(e) => setFacts(e.target.value)}
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-50"
+                        />
+                    </section>
 
+                    {/* Common Sayings */}
+                    <section>
+                        <h2 className="text-md font-semibold mb-2">Common Sayings</h2>
+                        <textarea
+                            placeholder="Any favourite catchphrases?"
+                            value={sayings}
+                            onChange={(e) => setSayings(e.target.value)}
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-50"
+                        />
+                    </section>
 
-                        {/* Language Preference */}
-                        <section className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl text-center mb-8">
-                            <h2 className="text-md font-semibold mb-3">Language Preference</h2>
-
-                            {/* Selected languages as chips */}
-                            <div className="flex flex-wrap justify-center gap-3 mb-3">
-                                {language.map((lang, i) => (
-                                    <span
-                                        key={i}
-                                        className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg bg-green-100 shadow-sm"
-                                    >
-                                        {lang}
-                                        {!readOnly && (
-                                            <button
-                                                type="button"
-                                                onClick={() => removeLanguage(lang)}
-                                                className="text-red-500 hover:text-red-700 font-bold"
-                                            >
-                                                ✕
-                                            </button>
-                                        )}
-                                    </span>
-                                ))}
-                            </div>
-
-                            {/* Dropdown of predefined languages */}
-                            <select
-                                className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
-                                value={selectedLang}
-                                onChange={handleSelectedLang}
-                            >
-                                <option value="">Select a language</option>
-                                {filteredLangs.map((lang, i) => (
-                                    <option key={i} value={lang}>
-                                        {lang}
-                                    </option>
-                                ))}
-                            </select>
-
-                            {/* Add custom language */}
-                            <input
-                                type="text"
-                                value={customLanguage}
-                                onChange={(e) => setCustomLanguage(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                        e.preventDefault();
-                                        const lang = customLanguage.trim();
-                                        if (lang && !language.includes(lang)) {
-                                            setLanguage([...language, lang]);
-                                        }
-                                        setCustomLanguage(""); // clear input
-                                    }
-                                }}
-                                placeholder="Or type your own and press Enter"
-                                className="w-full border border-gray-400 rounded-md p-2 text-sm"
-                            />
-                        </section>
-
-                    </>
-                )
-                }
-
-                {
-                    activeTab === "cultural" && (
-                        <>
-                            {/* Favorites */}
-
-                            <section className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl text-center mb-8">
-                                <h2 className="text-md font-semibold mb-2">Favorites</h2>
-                                {readOnly ? (
-                                    <div className="w-full border border-gray-200 rounded-md p-4 text-left">{favorites || '—'}</div>
-                                ) : (
-                                    <textarea
-                                        placeholder="Write something about yourself..."
-                                        className="w-full border border-gray-300 rounded-md p-4 bg-gray-50"
-                                        value={favorites}
-                                        onChange={(e) => setFavorites(e.target.value)}
-                                    />
-                                )}
-                            </section>
-
-
-                            {/* Facts */}
-
-                            <section className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl text-center mb-8">
-                                <h2 className="text-md font-semibold mb-2">Facts</h2>
-                                {readOnly ? (
-                                    <div className="w-full border border-gray-200 rounded-md p-4 text-left">{facts || '—'}</div>
-                                ) : (
-                                    <textarea
-                                        placeholder="Write something about yourself..."
-                                        className="w-full border border-gray-300 rounded-md p-4 bg-gray-50"
-                                        value={facts}
-                                        onChange={(e) => setFacts(e.target.value)}
-                                    />
-                                )}
-                            </section>
-
-                            {/* Common Sayings */}
-
-                            <section className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl text-center mb-8">
-                                <h2 className="text-md font-semibold mb-2">Common Sayings</h2>
-                                {readOnly ? (
-                                    <div className="w-full border border-gray-200 rounded-md p-4 text-left">{sayings && sayings.length ? sayings.join(', ') : '—'}</div>
-                                ) : (
-                                    <textarea
-                                        placeholder="Write something about yourself..."
-                                        className="w-full border border-gray-300 rounded-md p-4 bg-gray-50"
-                                        value={sayings}
-                                        onChange={(e) => setSayings(e.target.value)}
-                                    />
-                                )}
-                            </section>
-
-                        </>
-
-                    )
-                }
-
-                {/* Save button */}
-                <div className="mt-3">
-                    <button
-                        type="button"
-                        onClick={(e) => handleSubmitSave(e)}
-                        className="bg-blue-500 text-white px-6 py-2 rounded"
-                    >
-                        Save Changes
-                    </button>
+                    {/* Save Button */}
+                    <div className="flex justify-end">
+                        <button
+                            type="button"
+                            onClick={handleSubmitSave}
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-md"
+                        >
+                            Save Changes
+                        </button>
+                    </div>
                 </div>
-            </main >
+            </main>
+
         </div >
     );
 }
