@@ -139,6 +139,12 @@ export default function Dashboard() {
             >
               Find A Pal →
             </button>
+            <button
+              onClick={() => router.push("/pages/explorer")}
+              className="text-blue-600 font-semibold hover:underline text-xs sm:text-sm lg:text-base mt-1 sm:mt-0"
+            >
+              Cutural Explorer →
+            </button>
           </div>
         </div>
 
