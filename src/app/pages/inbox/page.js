@@ -5,11 +5,80 @@ import { auth } from "../../firebase/auth";
 import { onAuthStateChanged } from "firebase/auth";
 
 const Inbox = () => {
+  // PDF download handler
+  const handleDownloadPDF = (msg, isSender, recipientName) => {
+    import('jspdf').then(({ jsPDF }) => {
+      const doc = new jsPDF();
+      const margin = 20;
+      let y = margin;
+      doc.setFont('times', 'normal');
+      doc.setFontSize(12);
+      // Date at top right
+      const dateStr = msg.deliveryTime ? new Date(msg.deliveryTime).toLocaleDateString() : '';
+      doc.text(dateStr, 180, y);
+      y += 16;
+      // Greeting and signature logic
+      let greetingName, signatureName;
+      if (isSender) {
+        greetingName = recipientName;
+        signatureName = 'You';
+      } else {
+        greetingName = 'You';
+        signatureName = (openChat.userProfiles && openChat.userProfiles.find(u => u.uid === msg.sender)?.username || msg.sender);
+      }
+      // Greeting
+      doc.setFontSize(14);
+      doc.text(`Dear ${greetingName},`, margin, y);
+      y += 12;
+      // Message body
+      doc.setFontSize(12);
+      const lines = doc.splitTextToSize(msg.text, 170);
+      doc.text(lines, margin, y);
+      y += lines.length * 7 + 12;
+      // Closing
+      doc.setFontSize(13);
+      doc.text('Kind regards,', margin, y);
+      y += 10;
+      doc.setFontSize(12);
+      doc.text(signatureName, margin, y);
+      // Save PDF
+      doc.save(`Letter_${dateStr}.pdf`);
+    });
+  };
   const router = useRouter();
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [openChat, setOpenChat] = useState(null);
+  const [messageText, setMessageText] = useState("");
+  const [sending, setSending] = useState(false);
+  const [deliveryDelay, setDeliveryDelay] = useState(60); // seconds, default 1 min
+
+  // Polling for open chat messages every 3 seconds
+  useEffect(() => {
+    if (!openChat || !openChat.chatId) return;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    let isMounted = true;
+    const fetchMessages = async () => {
+      try {
+        const res = await fetch(`${apiUrl}/api/chat?chatId=${encodeURIComponent(openChat.chatId)}`);
+        if (!res.ok) return;
+        const chat = await res.json();
+        if (isMounted && chat && chat.messages) {
+          setOpenChat(prev => prev ? { ...prev, messages: chat.messages } : prev);
+        }
+      } catch (err) {
+        // Ignore polling errors for smoothness
+      }
+    };
+    const interval = setInterval(fetchMessages, 3000);
+    // Fetch immediately on open
+    fetchMessages();
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [openChat?.chatId]);
 
   useEffect(() => {
     let unsubscribe;
@@ -82,92 +151,137 @@ const Inbox = () => {
   const currentUserID = currentUser ? currentUser.uid : null;
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-
-
-      <main className="flex flex-col items-center w-full min-h-screen py-2 px-4 bg-gray-50">
-
-        <header className="w-full bg-white border-b border-gray-200 px-4 flex items-center justify-between">
-          {/* Left - Logo */}
-          <div className="flex items-center gap-2">
-            <img src="/images/globe.png" alt="GlobeTalk Logo" className="w-6 h-6" />
-            <span className="font-bold text-lg">GlobeTalk</span>
-          </div>
-
-          {/* Right - Nav Links */}
-          <nav className="flex items-center gap-10 mb-3 mt-2">
-
-            <Link
-              href="/pages/dashboard"
-              className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
-            >
-              Dashboard
-            </Link>
-
-
-            <Link href="/pages/matchmaking" className="flex items-center gap-1 text-gray-700 hover:text-black text-sm">
-
-              Match
-            </Link>
-
-            <Link href="/pages/inbox"
-              className="flex items-center gap-1 text-gray-700 hover:text-black text-sm">
-
-              Inbox
-            </Link>
-
-            <Link href="explore" className="flex items-center gap-1 text-gray-700 hover:text-black text-sm">
-
-              Explore
-            </Link>
-
-            <Link href="settings" className="flex items-center gap-1 text-gray-700 hover:text-black text-sm">
-
-              Settings
-            </Link>
-          </nav>
-        </header>
-        <div style={{ display: 'flex', gap: 32 }}>
-          {/* Left: Chat List */}
-          <div style={{ flex: 1, minWidth: 250 }}>
-            <h2>Your Chats</h2>
-            <ul>
-              {chats.map((chat, idx) => (
-                <li key={chat.chatId || idx} style={{ marginBottom: 12, background: openChat && openChat.chatId === chat.chatId ? '#f0f0f0' : undefined, cursor: 'pointer', padding: 8, borderRadius: 4 }}
-                  onClick={() => setOpenChat(chat)}>
-                  <strong>Chat with:</strong> {chat.userProfiles && currentUserID && chat.userProfiles.filter(u => u.uid !== currentUserID).map(u => u.username).join(', ')}<br />
-                  <button onClick={e => { e.stopPropagation(); router.push(`/chat/${chat.chatId}`); }}>Open Chat</button>
-                </li>
-              ))}
-            </ul>
-          </div>
-          {/* Right: Open Chat */}
-          <div style={{ flex: 2, minWidth: 300, borderLeft: '1px solid #ddd', paddingLeft: 24 }}>
-            {openChat ? (
-              <div>
-                <h3>Chat with: {openChat.userProfiles && currentUserID && openChat.userProfiles.filter(u => u.uid !== currentUserID).map(u => u.username).join(', ')}</h3>
-                <div style={{ minHeight: 200, background: '#fafafa', padding: 12, borderRadius: 6, marginBottom: 12 }}>
-                  {openChat.messages && openChat.messages.length > 0 ? (
-                    <ul>
-                      {openChat.messages.map((msg, i) => (
-                        <li key={i} style={{ marginBottom: 8 }}>
-                          <strong>{msg.sender === currentUserID ? 'You' : (openChat.userProfiles && openChat.userProfiles.find(u => u.uid === msg.sender)?.username || msg.sender)}:</strong> {msg.text}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <div>No messages yet.</div>
-                  )}
+    <div style={{ display: 'flex', gap: 32 }}>
+      {/* Left: Chat List */}
+      <div style={{ flex: 1, minWidth: 250 }}>
+        <h2>Your Chats</h2>
+        <ul>
+          {chats.map((chat, idx) => (
+            <li key={chat.chatId || idx} style={{marginBottom: 12, background: openChat && openChat.chatId === chat.chatId ? '#f0f0f0' : undefined, cursor: 'pointer', padding: 8, borderRadius: 4 }}
+                onClick={() => setOpenChat(chat)}>
+              <strong>Chat with:</strong> {chat.userProfiles && currentUserID && chat.userProfiles.filter(u => u.uid !== currentUserID).map(u => u.username).join(', ')}<br/>
+              <button onClick={e => { e.stopPropagation(); router.push(`/chat/${chat.chatId}`); }}>Open Chat</button>
+            </li>
+          ))}
+        </ul>
+      </div>
+      {/* Right: Open Chat */}
+      <div style={{ flex: 2, minWidth: 300, borderLeft: '1px solid #ddd', paddingLeft: 24 }}>
+        {openChat ? (
+          <div>
+            <h3>Chat with: {openChat.userProfiles && currentUserID && openChat.userProfiles.filter(u => u.uid !== currentUserID).map(u => u.username).join(', ')}</h3>
+            <div style={{ minHeight: 200, background: '#fafafa', padding: 12, borderRadius: 6, marginBottom: 12 }}>
+              {openChat.messages && openChat.messages.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {openChat.messages.map((msg, i) => {
+                    // Delivery logic
+                    const now = Date.now();
+                    const deliveryTime = msg.deliveryTime ? new Date(msg.deliveryTime).getTime() : 0;
+                    const isDelivered = now >= deliveryTime;
+                    const isSender = msg.sender === currentUserID;
+                    const recipientName = openChat.userProfiles && currentUserID && openChat.userProfiles.filter(u => u.uid !== currentUserID).map(u => u.username).join(', ');
+                    return (
+                      <div key={i} style={{
+                        alignSelf: isSender ? 'flex-end' : 'flex-start',
+                        background: isSender ? '#1976d2' : '#fff',
+                        color: isSender ? '#fff' : '#222',
+                        borderRadius: 8,
+                        padding: '10px 16px',
+                        maxWidth: '70%',
+                        boxShadow: '0 1px 4px rgba(0,0,0,0.07)',
+                        position: 'relative',
+                      }}>
+                        {/* Locked message logic */}
+                        {!isDelivered ? (
+                          <div>
+                            <strong style={{ color: isSender ? '#fff' : '#1976d2' }}>Letter locked</strong>
+                            <div style={{ fontSize: 13, marginTop: 4 }}>
+                              This letter will be delivered after {Math.ceil((deliveryTime - now)/1000/60)} min.
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <div style={{ fontWeight: 500 }}>{isSender ? 'To my pen pal' : 'From pen pal'}</div>
+                            <div style={{ margin: '6px 0' }}>{msg.text}</div>
+                            <button
+                              style={{ marginTop: 8, background: '#fff', color: '#1976d2', border: '1px solid #1976d2', borderRadius: 4, padding: '4px 10px', cursor: 'pointer', fontWeight: 500 }}
+                              onClick={() => handleDownloadPDF(msg, isSender, recipientName)}
+                            >
+                              Download PDF
+                            </button>
+                          </>
+                        )}
+                        <div style={{ fontSize: 12, opacity: 0.7, marginTop: 6, textAlign: 'right' }}>
+                          {msg.deliveryTime ? new Date(msg.deliveryTime).toLocaleDateString() : ''}
+                          <br/>
+                          {isDelivered ? `Delivered` : `Locked`}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-                {/* Placeholder for message input, not implemented */}
-                <div style={{ color: '#888' }}><em>Message sending not implemented here.</em></div>
-              </div>
-            ) : (
-              <div style={{ color: '#888' }}>Select a chat to view messages.</div>
-            )}
+              ) : (
+                <div>No messages yet.</div>
+              )}
+            </div>
+            {/* Message input */}
+            <form
+              onSubmit={async e => {
+                e.preventDefault();
+                if (!messageText.trim() || sending) return;
+                setSending(true);
+                try {
+                  // Compose message object
+                  const newMsg = {
+                    sender: currentUserID,
+                    text: messageText,
+                    deliveryTime: Date.now() + deliveryDelay * 1000,
+                  };
+                  // Send to backend (replace with your API endpoint)
+                  const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+                  const res = await fetch(`${apiUrl}/api/chat/send`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chatId: openChat.chatId, message: newMsg }),
+                  });
+                  if (!res.ok) throw new Error('Failed to send message');
+                  // Optionally, update UI immediately
+                  setOpenChat(prev => ({
+                    ...prev,
+                    messages: [...(prev.messages || []), newMsg],
+                  }));
+                  setMessageText("");
+                } catch (err) {
+                  alert(err.message);
+                } finally {
+                  setSending(false);
+                }
+              }}
+              style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8 }}
+            >
+              <input
+                type="text"
+                value={messageText}
+                onChange={e => setMessageText(e.target.value)}
+                placeholder="Write a letter..."
+                style={{ flex: 1, padding: '8px 12px', borderRadius: 6, border: '1px solid #ccc' }}
+                disabled={sending}
+              />
+              <button type="submit" style={{ background: '#1976d2', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 18px', fontWeight: 500 }} disabled={sending}>
+                Send
+              </button>
+              <select value={deliveryDelay} onChange={e => setDeliveryDelay(Number(e.target.value))} style={{ marginLeft: 8, borderRadius: 6, padding: '6px' }}>
+                <option value={60}>1 min</option>
+                <option value={600}>10 min</option>
+                <option value={3600}>1 hr</option>
+                <option value={43200}>12 hr</option>
+              </select>
+            </form>
           </div>
-        </div>
-      </main>
+        ) : (
+          <div style={{ color: '#888' }}>Select a chat to view messages.</div>
+        )}
+      </div>
     </div>
   );
 }
