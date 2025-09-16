@@ -117,7 +117,8 @@ const Profile = () => {
             }
             try {
                 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-                const res = await fetch(`${apiUrl}/api/profile?userID=${user.uid}`);
+                // const res = await fetch(`${apiUrl}/api/profile?userID=${user.uid}`);
+                const res = await fetch(`http//localhost/api/profile?userID=${user.uid}`);
                 if (res.ok) {
                     const data = await res.json();
                     if (data && data.intro) {
@@ -215,7 +216,8 @@ const Profile = () => {
 
         try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/profile`,
+            // const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/profile`,
+            const res = await fetch(`http://localhost:5000/api/profile`,
                 {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -259,17 +261,17 @@ const Profile = () => {
 
     // Profile edit mode
     if (mode === 'editProfile') {
-                    {/* Country Name (Read-only, set by timezone) */}
-                    <div className="mb-4 w-full max-w-md">
-                        <label className="block mb-1 font-medium">Country</label>
-                        <input
-                            type="text"
-                            className="w-full border rounded px-3 py-2 mb-2 bg-gray-100 cursor-not-allowed"
-                            value={countryName}
-                            readOnly
-                            tabIndex={-1}
-                        />
-                    </div>
+        {/* Country Name (Read-only, set by timezone) */ }
+        <div className="mb-4 w-full max-w-md">
+            <label className="block mb-1 font-medium">Country</label>
+            <input
+                type="text"
+                className="w-full border rounded px-3 py-2 mb-2 bg-gray-100 cursor-not-allowed"
+                value={countryName}
+                readOnly
+                tabIndex={-1}
+            />
+        </div>
         return (
             <main className="flex flex-col items-center justify-center min-h-screen">
                 <h1 className="text-2xl mb-6">Profile</h1>
@@ -397,10 +399,10 @@ const Profile = () => {
 
     // Profile view mode
     if (mode === 'viewProfile') {
-                    <div className="mb-4 w-full">
-                        <span className="block font-medium">Country:</span>
-                        <span className="block text-gray-700 mt-1">{countryName}</span>
-                    </div>
+        <div className="mb-4 w-full">
+            <span className="block font-medium">Country:</span>
+            <span className="block text-gray-700 mt-1">{countryName}</span>
+        </div>
         return (
             <main className="flex flex-col items-center justify-center min-h-screen">
                 <h1 className="text-2xl mb-6">Profile</h1>
