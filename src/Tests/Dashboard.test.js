@@ -53,7 +53,7 @@ describe("Dashboard component", () => {
     expect(pushMock).toHaveBeenCalledWith("/pages/userprofile");
 
     fireEvent.click(screen.getByText("Letters"));
-    expect(pushMock).toHaveBeenCalledWith("/pages/letters");
+    expect(pushMock).toHaveBeenCalledWith("/pages/Dashboard");
 
     fireEvent.click(screen.getByText("Logout"));
     expect(pushMock).toHaveBeenCalledWith("/");

@@ -1,63 +1,127 @@
 "use client";
+import React, { useEffect, useState } from 'react';
+import { useRouter } from "next/navigation";
+import { auth } from "../../firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 
-import React, { useMemo, useState } from "react";
-import ConversationList from "./ConversationList";
-import ConversationView from "./ConversationView";
-import { useAuth } from "../../components/AuthContext";
+const Inbox = () => {
+  const router = useRouter();
+  const [chats, setChats] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [openChat, setOpenChat] = useState(null);
 
-export default function InboxPage() {
-	// Use demo profiles instead of raw user accounts
-	const USER_A = "vAVstGYbfsh8HL0GtAQSqt1GSvJ2";
-	const USER_B = "YEYbsnLkxKOg7LgLpg1W5nQuFdr1";
+  useEffect(() => {
+    let unsubscribe;
+    setLoading(true);
+    setError(null);
 
-	const { user } = useAuth();
-	// if logged in, use real uid; fallback to USER_A for local testing
-	const currentUser = user?.uid || USER_A;
-	const otherUser = currentUser === USER_A ? USER_B : USER_A;
-	const chatId = useMemo(() => [USER_A, USER_B].sort().join("_"), []);
+    // Helper to fetch profile and chats, and usernames for chat partners
+    const fetchProfile = async (uid) => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+        const res = await fetch(`${apiUrl}/api/profile?userID=${uid}`);
+        if (!res.ok) throw new Error('Failed to fetch user profile');
+        const data = await res.json();
+        const chatIds = data.chats || [];
+        if (chatIds.length === 0) {
+          setChats([]);
+          setLoading(false);
+          return;
+        }
+        // Fetch all chat documents in parallel
+        const chatDocs = await Promise.all(
+          chatIds.map(async (chatId) => {
+            const chatRes = await fetch(`${apiUrl}/api/chat?chatId=${encodeURIComponent(chatId)}`);
+            if (!chatRes.ok) return null;
+            const chat = await chatRes.json();
+            // Fetch usernames for all users in this chat (except current user)
+            if (chat && chat.users) {
+              const userProfiles = await Promise.all(
+                chat.users.map(async (uid) => {
+                  if (uid === data.userID) return { uid, username: "You" };
+                  const userRes = await fetch(`${apiUrl}/api/profile?userID=${uid}`);
+                  if (!userRes.ok) return { uid, username: uid };
+                  const userData = await userRes.json();
+                  return { uid, username: userData.username || uid };
+                })
+              );
+              chat.userProfiles = userProfiles;
+            }
+            return chat;
+          })
+        );
+        setChats(chatDocs.filter(Boolean));
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-	// delay options (label + ms)
-	const DELAYS = [
-		{ label: "1 min", ms: 60 * 1000 },
-		{ label: "1 hr", ms: 60 * 60 * 1000 },
-		{ label: "5 hr", ms: 5 * 60 * 60 * 1000 },
-		{ label: "12 hr", ms: 12 * 60 * 60 * 1000 },
-		{ label: "1 day", ms: 24 * 60 * 60 * 1000 },
-	];
-	const [selectedDelay, setSelectedDelay] = useState(DELAYS[3]); // default 12 hr
+    unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        setError('User not logged in.');
+        setLoading(false);
+        return;
+      }
+      fetchProfile(user.uid);
+    });
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
 
-	return (
-		<div className="min-h-screen bg-gray-50 p-6">
-			<div className="max-w-6xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
-				<div className="flex items-center justify-between p-4 border-b">
-					<h2 className="text-xl font-semibold">Inbox — Letter chat demo</h2>
-					<div className="flex items-center gap-4">
-						<label className="text-sm text-gray-600">Delivery delay</label>
-						<select
-							value={selectedDelay.label}
-							onChange={(e) => setSelectedDelay(DELAYS.find((d) => d.label === e.target.value))}
-							className="border rounded px-3 py-1"
-						>
-							{DELAYS.map((d) => (
-								<option key={d.label} value={d.label}>
-									{d.label}
-								</option>
-							))}
-						</select>
-					</div>
-				</div>
+  if (loading) return <div>Loading chats...</div>;
+  if (error) return <div style={{color: 'red'}}>Error: {error}</div>;
+  if (!chats.length) return <div>No chats found.</div>;
 
-				<div className="flex">
-					<div className="w-80 border-r">
-						<ConversationList chatId={chatId} currentUser={currentUser} otherUserId={otherUser} />
-					</div>
+  // Get current userID from auth (for filtering display)
+  const currentUser = auth.currentUser;
+  const currentUserID = currentUser ? currentUser.uid : null;
 
-					<div className="flex-1">
-						<ConversationView chatId={chatId} currentUser={currentUser} otherUserId={otherUser} delayMs={selectedDelay.ms} delayLabel={selectedDelay.label} />
-					</div>
-				</div>
-			</div>
-		</div>
-	);
+  return (
+    <div style={{ display: 'flex', gap: 32 }}>
+      {/* Left: Chat List */}
+      <div style={{ flex: 1, minWidth: 250 }}>
+        <h2>Your Chats</h2>
+        <ul>
+          {chats.map((chat, idx) => (
+            <li key={chat.chatId || idx} style={{marginBottom: 12, background: openChat && openChat.chatId === chat.chatId ? '#f0f0f0' : undefined, cursor: 'pointer', padding: 8, borderRadius: 4 }}
+                onClick={() => setOpenChat(chat)}>
+              <strong>Chat with:</strong> {chat.userProfiles && currentUserID && chat.userProfiles.filter(u => u.uid !== currentUserID).map(u => u.username).join(', ')}<br/>
+              <button onClick={e => { e.stopPropagation(); router.push(`/chat/${chat.chatId}`); }}>Open Chat</button>
+            </li>
+          ))}
+        </ul>
+      </div>
+      {/* Right: Open Chat */}
+      <div style={{ flex: 2, minWidth: 300, borderLeft: '1px solid #ddd', paddingLeft: 24 }}>
+        {openChat ? (
+          <div>
+            <h3>Chat with: {openChat.userProfiles && currentUserID && openChat.userProfiles.filter(u => u.uid !== currentUserID).map(u => u.username).join(', ')}</h3>
+            <div style={{ minHeight: 200, background: '#fafafa', padding: 12, borderRadius: 6, marginBottom: 12 }}>
+              {openChat.messages && openChat.messages.length > 0 ? (
+                <ul>
+                  {openChat.messages.map((msg, i) => (
+                    <li key={i} style={{ marginBottom: 8 }}>
+                      <strong>{msg.sender === currentUserID ? 'You' : (openChat.userProfiles && openChat.userProfiles.find(u => u.uid === msg.sender)?.username || msg.sender)}:</strong> {msg.text}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div>No messages yet.</div>
+              )}
+            </div>
+            {/* Placeholder for message input, not implemented */}
+            <div style={{ color: '#888' }}><em>Message sending not implemented here.</em></div>
+          </div>
+        ) : (
+          <div style={{ color: '#888' }}>Select a chat to view messages.</div>
+        )}
+      </div>
+    </div>
+  );
 }
 
+export default Inbox;
