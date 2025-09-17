@@ -54,6 +54,8 @@ const Inbox = () => {
   const [messageText, setMessageText] = useState("");
   const [sending, setSending] = useState(false);
   const [deliveryDelay, setDeliveryDelay] = useState(60); // seconds, default 1 min
+  // Gmail-style compose modal state
+  const [composeOpen, setComposeOpen] = useState(false);
   // Report modal state
   const [reportModal, setReportModal] = useState({ open: false, msg: null });
   const [reportReason, setReportReason] = useState('Spam or scam');
@@ -189,8 +191,8 @@ const Inbox = () => {
     }
   };
 
-  return (
-    <div style={{ display: 'flex', gap: 32 }}>
+    return (
+      <div style={{ display: 'flex', gap: 32, height: '100vh', minHeight: 0 }}>
       {/* Left: Chat List */}
       <div style={{ flex: 1, minWidth: 250 }}>
         <h2>Your Chats</h2>
@@ -205,126 +207,261 @@ const Inbox = () => {
         </ul>
       </div>
       {/* Right: Open Chat */}
-      <div style={{ flex: 2, minWidth: 300, borderLeft: '1px solid #ddd', paddingLeft: 24 }}>
+      <div style={{
+        flex: 2,
+        minWidth: 300,
+        borderLeft: '1px solid #ddd',
+        paddingLeft: 24,
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        minHeight: 0,
+      }}>
         {openChat ? (
-          <div>
-            <h3>Chat with: {openChat.userProfiles && currentUserID && openChat.userProfiles.filter(u => u.uid !== currentUserID).map(u => u.username).join(', ')}</h3>
-            <div style={{ minHeight: 200, background: '#fafafa', padding: 12, borderRadius: 6, marginBottom: 12 }}>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            flex: 1,
+            minHeight: 0,
+            height: '100%',
+          }}>
+            <h3 style={{ flex: '0 0 auto' }}>
+              Chat with: {openChat.userProfiles && currentUserID && openChat.userProfiles.filter(u => u.uid !== currentUserID).map(u => u.username).join(', ')}
+            </h3>
+            <div style={{
+              flex: 1,
+              minHeight: 0,
+              maxHeight: 'none',
+              background: '#fafafa',
+              padding: 12,
+              borderRadius: 6,
+              marginBottom: 0,
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 12,
+            }}>
               {openChat.messages && openChat.messages.length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {openChat.messages.map((msg, i) => {
-                    // Delivery logic
-                    const now = Date.now();
-                    const deliveryTime = msg.deliveryTime ? new Date(msg.deliveryTime).getTime() : 0;
-                    const isDelivered = now >= deliveryTime;
-                    const isSender = msg.sender === currentUserID;
-                    const recipientName = openChat.userProfiles && currentUserID && openChat.userProfiles.filter(u => u.uid !== currentUserID).map(u => u.username).join(', ');
-                    return (
-                      <div key={i} style={{
-                        alignSelf: isSender ? 'flex-end' : 'flex-start',
-                        background: isSender ? '#1976d2' : '#fff',
-                        color: isSender ? '#fff' : '#222',
-                        borderRadius: 8,
-                        padding: '10px 16px',
-                        maxWidth: '70%',
-                        boxShadow: '0 1px 4px rgba(0,0,0,0.07)',
-                        position: 'relative',
-                      }}>
-                        {/* Locked message logic */}
-                        {!isDelivered ? (
-                          <div>
-                            <strong style={{ color: isSender ? '#fff' : '#1976d2' }}>Letter locked</strong>
-                            <div style={{ fontSize: 13, marginTop: 4 }}>
-                              This letter will be delivered after {Math.ceil((deliveryTime - now) / 1000 / 60)} min.
-                            </div>
+                openChat.messages.map((msg, i) => {
+                  // Delivery logic
+                  const now = Date.now();
+                  const deliveryTime = msg.deliveryTime ? new Date(msg.deliveryTime).getTime() : 0;
+                  const isDelivered = now >= deliveryTime;
+                  const isSender = msg.sender === currentUserID;
+                  const recipientName = openChat.userProfiles && currentUserID && openChat.userProfiles.filter(u => u.uid !== currentUserID).map(u => u.username).join(', ');
+                  return (
+                    <div key={i} style={{
+                      alignSelf: isSender ? 'flex-end' : 'flex-start',
+                      background: isSender ? '#1976d2' : '#fff',
+                      color: isSender ? '#fff' : '#222',
+                      borderRadius: 8,
+                      padding: '10px 16px',
+                      maxWidth: '70%',
+                      boxShadow: '0 1px 4px rgba(0,0,0,0.07)',
+                      position: 'relative',
+                    }}>
+                      {/* Locked message logic */}
+                      {!isDelivered ? (
+                        <div>
+                          <strong style={{ color: isSender ? '#fff' : '#1976d2' }}>Letter locked</strong>
+                          <div style={{ fontSize: 13, marginTop: 4 }}>
+                            This letter will be delivered after {Math.ceil((deliveryTime - now) / 1000 / 60)} min.
                           </div>
-                        ) : (
-                          <>
-                            <div style={{ fontWeight: 500 }}>{isSender ? 'To my pen pal' : 'From pen pal'}</div>
-                            <div style={{ margin: '6px 0' }}>{msg.text}</div>
-                            <button
-                              style={{ marginTop: 8, background: '#fff', color: '#1976d2', border: '1px solid #1976d2', borderRadius: 4, padding: '4px 10px', cursor: 'pointer', fontWeight: 500 }}
-                              onClick={() => handleDownloadPDF(msg, isSender, recipientName)}
-                            >
-                              Download PDF
-                            </button>
-                            {/* Report button for delivered messages not sent by current user */}
-                            {!isSender && (
-                              <button
-                                style={{ marginTop: 8, marginLeft: 8, background: '#fff', color: '#d32f2f', border: '1px solid #d32f2f', borderRadius: 4, padding: '4px 10px', cursor: 'pointer', fontWeight: 500 }}
-                                onClick={() => handleReportMessage(msg)}
-                              >
-                                Report
-                              </button>
-                            )}
-                          </>
-                        )}
-                        <div style={{ fontSize: 12, opacity: 0.7, marginTop: 6, textAlign: 'right' }}>
-                          {msg.deliveryTime ? new Date(msg.deliveryTime).toLocaleDateString() : ''}
-                          <br />
-                          {isDelivered ? `Delivered` : `Locked`}
                         </div>
+                      ) : (
+                        <>
+                          <div style={{ fontWeight: 500 }}>{isSender ? 'To my pen pal' : 'From pen pal'}</div>
+                          <div style={{ margin: '6px 0' }}>{msg.text}</div>
+                          <button
+                            style={{ marginTop: 8, background: '#fff', color: '#1976d2', border: '1px solid #1976d2', borderRadius: 4, padding: '4px 10px', cursor: 'pointer', fontWeight: 500 }}
+                            onClick={() => handleDownloadPDF(msg, isSender, recipientName)}
+                          >
+                            Download PDF
+                          </button>
+                          {/* Report button for delivered messages not sent by current user */}
+                          {!isSender && (
+                            <button
+                              style={{ marginTop: 8, marginLeft: 8, background: '#fff', color: '#d32f2f', border: '1px solid #d32f2f', borderRadius: 4, padding: '4px 10px', cursor: 'pointer', fontWeight: 500 }}
+                              onClick={() => handleReportMessage(msg)}
+                            >
+                              Report
+                            </button>
+                          )}
+                        </>
+                      )}
+                      <div style={{ fontSize: 12, opacity: 0.7, marginTop: 6, textAlign: 'right' }}>
+                        {msg.deliveryTime ? new Date(msg.deliveryTime).toLocaleDateString() : ''}
+                        <br />
+                        {isDelivered ? `Delivered` : `Locked`}
                       </div>
-                    );
-                  })}
-                </div>
+                    </div>
+                  );
+                })
               ) : (
                 <div>No messages yet.</div>
               )}
             </div>
-            {/* Message input */}
-            <form
-              onSubmit={async e => {
-                e.preventDefault();
-                if (!messageText.trim() || sending) return;
-                setSending(true);
-                try {
-                  // Compose message object
-                  const newMsg = {
-                    sender: currentUserID,
-                    text: messageText,
-                    deliveryTime: Date.now() + deliveryDelay * 1000,
-                  };
-                  // Send to backend (replace with your API endpoint)
-                  const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-                  const res = await fetch(`${apiUrl}/api/chat/send`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ chatId: openChat.chatId, message: newMsg }),
-                  });
-                  if (!res.ok) throw new Error('Failed to send message');
-                  // Optionally, update UI immediately
-                  setOpenChat(prev => ({
-                    ...prev,
-                    messages: [...(prev.messages || []), newMsg],
-                  }));
-                  setMessageText("");
-                } catch (err) {
-                  alert(err.message);
-                } finally {
-                  setSending(false);
-                }
-              }}
-              style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8 }}
-            >
-              <input
-                type="text"
-                value={messageText}
-                onChange={e => setMessageText(e.target.value)}
-                placeholder="Write a letter..."
-                style={{ flex: 1, padding: '8px 12px', borderRadius: 6, border: '1px solid #ccc' }}
-                disabled={sending}
-              />
-              <button type="submit" style={{ background: '#1976d2', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 18px', fontWeight: 500 }} disabled={sending}>
-                Send
+            {/* Gmail-style Compose Button - fixed at bottom */}
+            <div style={{
+              position: 'sticky',
+              bottom: 0,
+              left: 0,
+              width: '100%',
+              background: 'rgba(250,250,250,0.95)',
+              paddingTop: 12,
+              paddingBottom: 8,
+              display: 'flex',
+              justifyContent: 'flex-end',
+              zIndex: 10,
+              flex: '0 0 auto',
+            }}>
+              <button
+                onClick={() => setComposeOpen(true)}
+                style={{
+                  background: '#fff',
+                  color: '#1976d2',
+                  border: '1px solid #1976d2',
+                  borderRadius: 6,
+                  padding: '8px 18px',
+                  fontWeight: 500,
+                  boxShadow: '0 2px 8px rgba(25,118,210,0.08)',
+                  cursor: 'pointer',
+                }}
+              >
+                Write a Letter
               </button>
-              <select value={deliveryDelay} onChange={e => setDeliveryDelay(Number(e.target.value))} style={{ marginLeft: 8, borderRadius: 6, padding: '6px' }}>
-                <option value={60}>1 min</option>
-                <option value={600}>10 min</option>
-                <option value={3600}>1 hr</option>
-                <option value={43200}>12 hr</option>
-              </select>
-            </form>
+            </div>
+            {/* Compose Modal */}
+            {composeOpen && (
+              <div style={{
+                position: 'fixed',
+                bottom: 32,
+                right: 32,
+                zIndex: 1200,
+                background: '#fff',
+                borderRadius: 12,
+                boxShadow: '0 4px 32px rgba(0,0,0,0.18)',
+                minWidth: 350,
+                maxWidth: 420,
+                width: '90vw',
+                padding: 0,
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+              }}>
+                {/* Header */}
+                <div style={{
+                  background: '#1976d2',
+                  color: '#fff',
+                  padding: '14px 20px',
+                  fontWeight: 600,
+                  fontSize: 17,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}>
+                  <span>New Letter</span>
+                  <button
+                    onClick={() => setComposeOpen(false)}
+                    style={{ background: 'none', border: 'none', color: '#fff', fontSize: 22, cursor: 'pointer', fontWeight: 400 }}
+                    aria-label="Close compose"
+                  >×</button>
+                </div>
+                {/* Body */}
+                <form
+                  onSubmit={async e => {
+                    e.preventDefault();
+                    if (!messageText.trim() || sending) return;
+                    setSending(true);
+                    try {
+                      // Compose message object
+                      const newMsg = {
+                        sender: currentUserID,
+                        text: messageText,
+                        deliveryTime: Date.now() + deliveryDelay * 1000,
+                      };
+                      // Send to backend (replace with your API endpoint)
+                      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+                      const res = await fetch(`${apiUrl}/api/chat/send`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ chatId: openChat.chatId, message: newMsg }),
+                      });
+                      if (!res.ok) throw new Error('Failed to send message');
+                      // Optionally, update UI immediately
+                      setOpenChat(prev => ({
+                        ...prev,
+                        messages: [...(prev.messages || []), newMsg],
+                      }));
+                      setMessageText("");
+                      setComposeOpen(false);
+                    } catch (err) {
+                      alert(err.message);
+                    } finally {
+                      setSending(false);
+                    }
+                  }}
+                  style={{ display: 'flex', flexDirection: 'column', gap: 0, padding: 20 }}
+                >
+                  <label style={{ fontWeight: 500, marginBottom: 6, color: '#333' }}>To:</label>
+                  <div style={{
+                    background: '#f5f5f5',
+                    borderRadius: 6,
+                    padding: '7px 12px',
+                    marginBottom: 12,
+                    fontSize: 15,
+                    color: '#1976d2',
+                  }}>
+                    {openChat.userProfiles && currentUserID && openChat.userProfiles.filter(u => u.uid !== currentUserID).map(u => u.username).join(', ')}
+                  </div>
+                  <textarea
+                    value={messageText}
+                    onChange={e => setMessageText(e.target.value)}
+                    placeholder="Write your letter here..."
+                    rows={7}
+                    style={{
+                      resize: 'vertical',
+                      borderRadius: 8,
+                      border: '1px solid #bbb',
+                      padding: '10px 14px',
+                      fontSize: 15,
+                      marginBottom: 14,
+                      minHeight: 90,
+                    }}
+                    disabled={sending}
+                  />
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div>
+                      <label style={{ fontWeight: 500, fontSize: 14, marginRight: 8 }}>Delivery:</label>
+                      <select value={deliveryDelay} onChange={e => setDeliveryDelay(Number(e.target.value))} style={{ borderRadius: 6, padding: '6px', fontSize: 14 }}>
+                        <option value={60}>1 min</option>
+                        <option value={600}>10 min</option>
+                        <option value={3600}>1 hr</option>
+                        <option value={43200}>12 hr</option>
+                      </select>
+                    </div>
+                    <button
+                      type="submit"
+                      style={{
+                        background: '#1976d2',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 6,
+                        padding: '8px 22px',
+                        fontWeight: 500,
+                        fontSize: 15,
+                        boxShadow: '0 1px 6px rgba(25,118,210,0.10)',
+                        cursor: sending ? 'not-allowed' : 'pointer',
+                        opacity: sending ? 0.7 : 1,
+                      }}
+                      disabled={sending}
+                    >
+                      Send
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
           </div>
         ) : (
           <div style={{ color: '#888' }}>Select a chat to view messages.</div>
