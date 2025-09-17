@@ -326,6 +326,10 @@ export default function UserProfile() {
                             Explore
                         </Link>
 
+                        <Link href="/pages/userprofile" className="text-sm text-gray-700 hover:text-black">
+                            Me
+                        </Link>
+                        
                         <Link href="settings" className="flex items-center gap-1 text-gray-700 hover:text-black text-sm">
 
                             Settings

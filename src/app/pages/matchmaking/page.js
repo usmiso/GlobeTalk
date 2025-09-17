@@ -8,6 +8,9 @@ const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
 export default function MatchmakingPage() {
   const router = useRouter();
+  const { chatId } = useParams();
+  const [chat, setChat] = useState(null);
+  const [messageText, setMessageText] = useState("");
   const [timezones, setTimezones] = useState([]);
   const [timezone, setTimezone] = useState("");
   const [timezoneSearch, setTimezoneSearch] = useState("");
@@ -27,7 +30,8 @@ export default function MatchmakingPage() {
     if (!auth.currentUser || !match || !match.userID) return;
     setProceeding(true);
     try {
-      const res = await fetch(`${apiUrl}/api/match`, {
+      // const res = await fetch(`${apiUrl}/api/match`, {
+      const res = await fetch(`http://localhost:5000/api/match`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userA: auth.currentUser.uid, userB: match.userID })
@@ -73,8 +77,10 @@ export default function MatchmakingPage() {
   useEffect(() => {
     const fetchAvailable = async () => {
       try {
-        const tzRes = await fetch(`${apiUrl}/api/available_timezones`);
-        const langRes = await fetch(`${apiUrl}/api/available_languages`);
+        // const tzRes = await fetch(`${apiUrl}/api/available_timezones`);
+        // const langRes = await fetch(`${apiUrl}/api/available_languages`);
+        const tzRes = await fetch(`http://localhost:5000/api/available_timezones`);
+        const langRes = await fetch(`http://localhost:5000/api/available_languages`);
         const tzData = tzRes.ok ? await tzRes.json() : [];
         const langData = langRes.ok ? await langRes.json() : [];
         setTimezones(Array.isArray(tzData) ? tzData : []);
@@ -105,7 +111,8 @@ export default function MatchmakingPage() {
         return;
       }
 
-      const res = await fetch(`${apiUrl}/api/matchmaking?${params.toString()}`);
+      // const res = await fetch(`${apiUrl}/api/matchmaking?${params.toString()}`);
+      const res = await fetch(`http://localhost:5000/api/matchmaking?${params.toString()}`);
       if (!res.ok) throw new Error((await res.json()).error || "No match found");
       setMatch(await res.json());
     } catch (err) {
@@ -115,6 +122,15 @@ export default function MatchmakingPage() {
     }
   };
 
+   useEffect(() => {
+    async function loadChat() {
+      const res = await fetch(`/api/chat?chatId=${chatId}`);
+      const data = await res.json();
+      setChat(data);
+    }
+    loadChat();
+  }, [chatId]);
+
   return (
     <div className="max-w-xl mx-auto p-6 bg-white rounded shadow mt-10">
       <h1 className="text-2xl font-bold mb-4">Find a Match</h1>
@@ -123,7 +139,7 @@ export default function MatchmakingPage() {
         <div className="text-gray-600 text-sm">Use the search boxes below to filter users by timezone, country, or both. You can leave one blank to filter by only one criterion.</div>
       </div>
 
-  <div className="mb-4 relative" ref={timezoneOptionsRef}>
+      <div className="mb-4 relative" ref={timezoneOptionsRef}>
         <label htmlFor="timezone-search" className="block mb-1 font-medium">
           Timezone
         </label>
@@ -179,7 +195,7 @@ export default function MatchmakingPage() {
         )}
       </div>
 
-  <div className="mb-4 relative" ref={languageOptionsRef}>
+      <div className="mb-4 relative" ref={languageOptionsRef}>
         <label htmlFor="language-search" className="block mb-1 font-medium">
           Language
         </label>
