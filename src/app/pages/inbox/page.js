@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from 'react';
+import LoadingScreen from '../../components/LoadingScreen';
 import { useRouter } from "next/navigation";
 import { auth } from "../../firebase/auth";
 import { onAuthStateChanged } from "firebase/auth";
@@ -53,6 +54,10 @@ const Inbox = () => {
   const [messageText, setMessageText] = useState("");
   const [sending, setSending] = useState(false);
   const [deliveryDelay, setDeliveryDelay] = useState(60); // seconds, default 1 min
+  // Report modal state
+  const [reportModal, setReportModal] = useState({ open: false, msg: null });
+  const [reportReason, setReportReason] = useState('Spam or scam');
+  const [reportOther, setReportOther] = useState('');
 
   // Polling for open chat messages every 3 seconds
   useEffect(() => {
@@ -141,13 +146,48 @@ const Inbox = () => {
     };
   }, []);
 
-  if (loading) return <div>Loading chats...</div>;
-  if (error) return <div style={{color: 'red'}}>Error: {error}</div>;
+  if (loading) return <LoadingScreen />;
+  if (error) return <div style={{ color: 'red' }}>Error: {error}</div>;
   if (!chats.length) return <div>No chats found.</div>;
 
   // Get current userID from auth (for filtering display)
   const currentUser = auth.currentUser;
   const currentUserID = currentUser ? currentUser.uid : null;
+
+  // Open report modal
+  const handleReportMessage = (msg) => {
+    setReportModal({ open: true, msg });
+    setReportReason('Spam or scam');
+    setReportOther('');
+  };
+
+  // Submit report
+  const submitReport = async () => {
+    if (!reportModal.msg) return;
+    let reasonToSend = reportReason === 'Other' ? reportOther.trim() : reportReason;
+    if (!reasonToSend) {
+      alert('Please provide a reason.');
+      return;
+    }
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const res = await fetch(`${apiUrl}/api/chat/report`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chatId: openChat.chatId,
+          message: reportModal.msg,
+          reporter: currentUserID,
+          reason: reasonToSend
+        })
+      });
+      if (!res.ok) throw new Error('Failed to report message');
+      alert('Message reported. Thank you for your feedback.');
+      setReportModal({ open: false, msg: null });
+    } catch (err) {
+      alert('Error reporting message: ' + err.message);
+    }
+  };
 
   return (
     <div style={{ display: 'flex', gap: 32 }}>
@@ -156,9 +196,9 @@ const Inbox = () => {
         <h2>Your Chats</h2>
         <ul>
           {chats.map((chat, idx) => (
-            <li key={chat.chatId || idx} style={{marginBottom: 12, background: openChat && openChat.chatId === chat.chatId ? '#f0f0f0' : undefined, cursor: 'pointer', padding: 8, borderRadius: 4 }}
-                onClick={() => setOpenChat(chat)}>
-              <strong>Chat with:</strong> {chat.userProfiles && currentUserID && chat.userProfiles.filter(u => u.uid !== currentUserID).map(u => u.username).join(', ')}<br/>
+            <li key={chat.chatId || idx} style={{ marginBottom: 12, background: openChat && openChat.chatId === chat.chatId ? '#f0f0f0' : undefined, cursor: 'pointer', padding: 8, borderRadius: 4 }}
+              onClick={() => setOpenChat(chat)}>
+              <strong>Chat with:</strong> {chat.userProfiles && currentUserID && chat.userProfiles.filter(u => u.uid !== currentUserID).map(u => u.username).join(', ')}<br />
               <button onClick={e => { e.stopPropagation(); router.push(`/chat/${chat.chatId}`); }}>Open Chat</button>
             </li>
           ))}
@@ -195,7 +235,7 @@ const Inbox = () => {
                           <div>
                             <strong style={{ color: isSender ? '#fff' : '#1976d2' }}>Letter locked</strong>
                             <div style={{ fontSize: 13, marginTop: 4 }}>
-                              This letter will be delivered after {Math.ceil((deliveryTime - now)/1000/60)} min.
+                              This letter will be delivered after {Math.ceil((deliveryTime - now) / 1000 / 60)} min.
                             </div>
                           </div>
                         ) : (
@@ -208,11 +248,20 @@ const Inbox = () => {
                             >
                               Download PDF
                             </button>
+                            {/* Report button for delivered messages not sent by current user */}
+                            {!isSender && (
+                              <button
+                                style={{ marginTop: 8, marginLeft: 8, background: '#fff', color: '#d32f2f', border: '1px solid #d32f2f', borderRadius: 4, padding: '4px 10px', cursor: 'pointer', fontWeight: 500 }}
+                                onClick={() => handleReportMessage(msg)}
+                              >
+                                Report
+                              </button>
+                            )}
                           </>
                         )}
                         <div style={{ fontSize: 12, opacity: 0.7, marginTop: 6, textAlign: 'right' }}>
                           {msg.deliveryTime ? new Date(msg.deliveryTime).toLocaleDateString() : ''}
-                          <br/>
+                          <br />
                           {isDelivered ? `Delivered` : `Locked`}
                         </div>
                       </div>
@@ -281,6 +330,79 @@ const Inbox = () => {
           <div style={{ color: '#888' }}>Select a chat to view messages.</div>
         )}
       </div>
+      {/* Report Modal */}
+      {reportModal.open && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(0,0,0,0.25)',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          <div style={{
+            background: '#fff',
+            borderRadius: 10,
+            padding: 28,
+            minWidth: 320,
+            boxShadow: '0 2px 16px rgba(0,0,0,0.18)',
+            maxWidth: '90vw',
+          }}>
+            <h3 style={{ marginTop: 0 }}>Report Message</h3>
+            <div style={{ marginBottom: 12, fontSize: 15, color: '#333' }}>
+              <strong>Message:</strong>
+              <div style={{ background: '#f5f5f5', borderRadius: 6, padding: '8px 12px', marginTop: 4, marginBottom: 8 }}>{reportModal.msg?.text}</div>
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <label htmlFor="report-reason" style={{ fontWeight: 500 }}>Reason:</label><br />
+              <select
+                id="report-reason"
+                value={reportReason}
+                onChange={e => setReportReason(e.target.value)}
+                style={{ width: '100%', padding: '7px 8px', borderRadius: 6, border: '1px solid #bbb', marginTop: 4 }}
+              >
+                <option>Spam or scam</option>
+                <option>Harassment or bullying</option>
+                <option>Inappropriate content</option>
+                <option>Hate speech or discrimination</option>
+                <option>Impersonation</option>
+                <option>Other</option>
+              </select>
+            </div>
+            {reportReason === 'Other' && (
+              <div style={{ marginBottom: 12 }}>
+                <label htmlFor="report-other" style={{ fontWeight: 500 }}>Describe your complaint:</label><br />
+                <textarea
+                  id="report-other"
+                  value={reportOther}
+                  onChange={e => setReportOther(e.target.value)}
+                  rows={3}
+                  style={{ width: '100%', borderRadius: 6, border: '1px solid #bbb', marginTop: 4, padding: '7px 8px' }}
+                  placeholder="Enter details..."
+                />
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+              <button
+                onClick={() => setReportModal({ open: false, msg: null })}
+                style={{ background: '#eee', color: '#333', border: 'none', borderRadius: 6, padding: '7px 18px', fontWeight: 500, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitReport}
+                style={{ background: '#d32f2f', color: '#fff', border: 'none', borderRadius: 6, padding: '7px 18px', fontWeight: 500, cursor: 'pointer' }}
+              >
+                Submit Report
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

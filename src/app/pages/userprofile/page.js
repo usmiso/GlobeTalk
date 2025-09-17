@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { auth } from "../../firebase/auth";
 import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
+import LoadingScreen from '../../components/LoadingScreen';
 
 export default function UserProfile() {
     const router = useRouter();
@@ -67,12 +68,8 @@ export default function UserProfile() {
         setLoading(false);
     };
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center min-h-screen">
-                Loading...
-            </div>
-        );
+    if (loading) { 
+        return <LoadingScreen />;
     }
 
     return (

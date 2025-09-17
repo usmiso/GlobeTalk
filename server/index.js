@@ -337,6 +337,7 @@ app.get('/api/chat', async (req, res) => {
     }
 });
 
+
 // Add a message to a chat
 app.post('/api/chat/send', async (req, res) => {
     if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
@@ -353,6 +354,36 @@ app.post('/api/chat/send', async (req, res) => {
         res.status(200).json({ message: 'Message sent successfully' });
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+});
+
+// Report a message in a chat
+app.post('/api/chat/report', async (req, res) => {
+    if (!db) {
+        console.error('[REPORT] Firestore not initialized');
+        return res.status(500).json({ error: 'Firestore not initialized' });
+    }
+    const { chatId, message, reporter, reason } = req.body;
+    console.log('[REPORT] Incoming report:', { chatId, message, reporter, reason });
+    if (!chatId || !message || !reporter) {
+        console.warn('[REPORT] Missing required fields', { chatId, message, reporter });
+        return res.status(400).json({ error: 'Missing required fields (chatId, message, reporter)' });
+    }
+    try {
+        // Compose report document
+        const reportDoc = {
+            chatId,
+            message,
+            reporter,
+            reason: reason || '',
+            reportedAt: Date.now()
+        };
+        await db.collection('reports').add(reportDoc);
+        console.log('[REPORT] Report saved to reports collection.');
+        res.status(200).json({ message: 'Report submitted successfully' });
+    } catch (error) {
+        console.error('[REPORT] Error saving report:', error);
+        res.status(500).json({ error: error.message, stack: error.stack });
     }
 });
 

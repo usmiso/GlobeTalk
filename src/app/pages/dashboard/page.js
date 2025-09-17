@@ -64,6 +64,18 @@ export default function Dashboard() {
                 />
                 Letters
               </button>
+
+              <button
+                onClick={() => router.push("/pages/inbox")}
+                className="flex items-center gap-1 sm:gap-2 p-1 sm:p-2 rounded w-full text-left text-xs sm:text-sm lg:text-base"
+              >
+                <img
+                  src="/images/inbox.png"
+                  alt="Inbox"
+                  className="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-cover"
+                />
+                Inbox
+              </button>
             </nav>
 
             <button
