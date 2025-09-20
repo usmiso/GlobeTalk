@@ -65,13 +65,13 @@ export async function signInWithGoogle(ipAddress) {
         userId: user.uid,
         email: user.email,
         createdAt: new Date(),
-        lastIP: ipAddress || null,
+        ipAddress: ipAddress || null,
       });
       return { isNewUser: true, user };
     } else {
-      // Existing user → Always update lastIP
+      // Existing user → Always update ipAddress
       await updateDoc(userDocRef, {
-        lastIP: ipAddress || null,
+        ipAddress: ipAddress || null,
       });
       return { isNewUser: false, user };
     }
