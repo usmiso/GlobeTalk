@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Sidebar from "@/app/components/Sidebar";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -8,90 +9,7 @@ export default function Dashboard() {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar */}
-      {sidebarOpen && (
-        <aside
-          className="flex flex-col justify-between transition-all duration-300"
-          style={{
-            backgroundColor: "#6492BD",
-            width: "13rem",
-          }}
-        >
-          {/* GlobeTalk & Toggle */}
-          <div className="flex flex-row items-start p-2 sm:gap-15 sm:p-5">
-            <div className="flex items-center gap-1 sm:gap-2 mb-2 sm:mb-3">
-              <img
-                src="/images/globe.png"
-                alt="GlobeTalk Logo"
-                className="w-5 h-5 sm:w-6 sm:h-6 object-cover"
-              />
-              <p className="text-xs sm:text-sm lg:text-base font-bold text-black">
-                GlobeTalk
-              </p>
-            </div>
-
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="p-1 sm:p-1 rounded  text-black font-bold text-sm sm:text-base mb-2 sm:mb-0"
-            >
-              ☰
-            </button>
-          </div>
-
-          {/* Menu */}
-          <div className="flex flex-col justify-between h-full p-2 sm:p-3">
-            <nav className="space-y-1 sm:space-y-2">
-              <button
-                onClick={() => router.push("/pages/userprofile")}
-                className="flex items-center gap-1 sm:gap-2 p-1 sm:p-2 rounded w-full text-left text-xs sm:text-sm lg:text-base"
-              >
-                <img
-                  src="/images/profilelogo.png"
-                  alt="Profile"
-                  className="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-cover"
-                />
-                Profile
-              </button>
-
-              <button
-                onClick={() => router.push("/pages/dashboard")}
-                className="flex items-center gap-1 sm:gap-2 p-1 sm:p-2 rounded w-full text-left text-xs sm:text-sm lg:text-base"
-              >
-                <img
-                  src="/images/letters.png"
-                  alt="Letters"
-                  className="w-5 h-5 sm:w-6 sm:h-7 rounded-full object-cover"
-                />
-                Letters
-              </button>
-
-              <button
-                onClick={() => router.push("/pages/inbox")}
-                className="flex items-center gap-1 sm:gap-2 p-1 sm:p-2 rounded w-full text-left text-xs sm:text-sm lg:text-base"
-              >
-                <img
-                  src="/images/inbox.png"
-                  alt="Inbox"
-                  className="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-cover"
-                />
-                Inbox
-              </button>
-            </nav>
-
-            <button
-              onClick={() => router.push("/")}
-              className="flex items-center gap-1 sm:gap-2 p-1 sm:p-2 rounded w-full text-left text-xs sm:text-sm lg:text-base mt-2 sm:mt-4"
-            >
-              <img
-                src="/images/logout.png"
-                alt="Logout"
-                className="w-5 h-5 sm:w-6 sm:h-6 object-cover"
-              />
-              Logout
-            </button>
-          </div>
-        </aside>
-      )}
+      <Sidebar />
 
       {/* Main content */}
       <main className="flex-1 p-2 sm:p-4 lg:p-6 overflow-auto relative">
