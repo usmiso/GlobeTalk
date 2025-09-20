@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { auth } from "../../firebase/auth";
 import LANGUAGES_LIST from "../../../../public/assets/languages.js";
 import geonamesTimezones from "../../../../public/assets/geonames_timezone.json";
+import Sidebar from "@/app/components/Sidebar";
 
 const categories = [
   { name: "All", icon: Globe },
@@ -194,220 +195,219 @@ export default function ExplorePage({ userID }) {
   });
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Globe className="h-6 w-6 text-primary" />
-            <h1 className="text-xl font-bold text-foreground">GlobeTalk</h1>
+    <div className="flex min-h-screen bg-gray-100">
+      <Sidebar />
+      <div className="flex-1 p-2 sm:p-4 lg:p-6 overflow-auto relative">
+        {/* Header */}
+        <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-0">
+          <div className="container mx-auto px-4 py-4 flex items-center justify-center">
+            <div className="flex items-center justify-center gap-2">
+              <Globe className="h-6 w-6 text-primary" />
+              <h1 className="text-xl font-bold text-foreground">GlobeTalk</h1>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main className="container mx-auto px-4 py-8 max-w-7xl">
-        {/* Tabs */}
-        <div className="text-center mb-8">
-          <div className="flex justify-center items-center gap-2 mb-4">
-            <Search className="h-8 w-8 text-primary" />
-            <h1 className="text-4xl font-bold">Cultural Explorer</h1>
-          </div>
-          <p className="text-lg text-muted-foreground">
-            Discover fascinating traditions, customs, and stories from around
-            the world:
-          </p>
+        <main className="container mx-auto px-4 py-8 max-w-7xl">
+          {/* Tabs */}
+          <div className="text-center mb-8">
+            <div className="flex justify-center items-center gap-2 mb-4">
+              <Search className="h-8 w-8 text-primary" />
+              <h1 className="text-4xl font-bold">Cultural Explorer</h1>
+            </div>
+            <p className="text-lg text-muted-foreground">
+              Discover fascinating traditions, customs, and stories from around
+              the world:
+            </p>
 
-          {/* Tablist */}
-          <div
-            role="tablist"
-            className="bg-muted text-muted-foreground h-9 items-center justify-center rounded-lg p-[3px] grid w-full grid-cols-2 mt-4"
-          >
-            <button
-              type="button"
-              role="tab"
-              onClick={() => setSelectedTab("facts")}
-              className={`${
-                selectedTab === "facts"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "hover:bg-accent hover:text-accent-foreground"
-              } px-2 py-1 rounded-md text-sm font-medium`}
+            {/* Tablist */}
+            <div
+              role="tablist"
+              className="bg-muted text-muted-foreground h-9 items-center justify-center rounded-lg p-[3px] grid w-full grid-cols-2 mt-4"
             >
-              Cultural Facts
-            </button>
-            <button
-              type="button"
-              role="tab"
-              onClick={() => setSelectedTab("profiles")}
-              className={`${
-                selectedTab === "profiles"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "hover:bg-accent hover:text-accent-foreground"
-              } px-2 py-1 rounded-md text-sm font-medium`}
-            >
-              Country Profiles
-            </button>
+              <button
+                type="button"
+                role="tab"
+                onClick={() => setSelectedTab("facts")}
+                className={`${selectedTab === "facts"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "hover:bg-accent hover:text-accent-foreground"
+                  } px-2 py-1 rounded-md text-sm font-medium`}
+              >
+                Cultural Facts
+              </button>
+              <button
+                type="button"
+                role="tab"
+                onClick={() => setSelectedTab("profiles")}
+                className={`${selectedTab === "profiles"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "hover:bg-accent hover:text-accent-foreground"
+                  } px-2 py-1 rounded-md text-sm font-medium`}
+              >
+                Country Profiles
+              </button>
+            </div>
           </div>
-        </div>
 
-        {/* ✅ Tab Content */}
-        {selectedTab === "facts" && (
-          <>
-            {/* Search */}
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <input
-                type="text"
-                placeholder="Search for traditions, countries, or customs..."
-                className="pl-10 pr-3 py-2 w-full border rounded-md shadow-sm bg-background focus:ring-2 focus:ring-primary outline-none"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-
-            {/* Categories */}
-            <div className="flex flex-wrap gap-2 mb-6">
-              {categories.map(({ name, icon: Icon }) => (
-                <button
-                  key={name}
-                  onClick={() => setSelectedCategory(name)}
-                  className={`flex items-center gap-2 px-3 py-1 rounded-md text-sm transition ${
-                    selectedCategory === name
-                      ? "bg-primary text-primary-foreground shadow"
-                      : "border hover:bg-accent hover:text-accent-foreground"
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  {name}
-                </button>
-              ))}
-            </div>
-
-            {/* Facts */}
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {filteredFacts.map((fact, i) => (
-                <div
-                  key={i}
-                  className="border rounded-xl p-6 bg-card shadow-sm hover:shadow-md transition"
-                >
-                  <h2 className="font-semibold text-lg">{fact.title}</h2>
-                  <p className="text-sm text-muted-foreground">
-                    {fact.category}
-                  </p>
-                  <p className="mt-1 text-sm font-medium">{fact.location}</p>
-                  <p className="mt-3 text-sm">{fact.description}</p>
-                </div>
-              ))}
-              {filteredFacts.length === 0 && (
-                <p className="text-center text-muted-foreground col-span-full">
-                  No cultural facts found.
-                </p>
-              )}
-            </div>
-          </>
-        )}
-
-        {selectedTab === "profiles" && (
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* Country List */}
-            <div className="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm">
-              <div className="px-6">
-                <div className="leading-none font-semibold">
-                  Country Profiles
-                </div>
-                <div className="text-muted-foreground text-sm">
-                  Learn about countries where your pen pals live
-                </div>
+          {/* ✅ Tab Content */}
+          {selectedTab === "facts" && (
+            <>
+              {/* Search */}
+              <div className="relative mb-4">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <input
+                  type="text"
+                  placeholder="Search for traditions, countries, or customs..."
+                  className="pl-10 pr-3 py-2 w-full border rounded-md shadow-sm bg-background focus:ring-2 focus:ring-primary outline-none"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
-              <div className="relative h-[500px] overflow-y-scroll">
-                {profiles.map((c, i) => (
-                  <div
-                    key={i}
-                    onClick={() => setSelectedCountry(c)}
-                    className={`p-4 border-b cursor-pointer hover:bg-muted/50 transition-colors ${
-                      selectedCountry?.name === c.name ? "bg-muted" : ""
-                    }`}
+
+              {/* Categories */}
+              <div className="flex flex-wrap gap-2 mb-6">
+                {categories.map(({ name, icon: Icon }) => (
+                  <button
+                    key={name}
+                    onClick={() => setSelectedCategory(name)}
+                    className={`flex items-center gap-2 px-3 py-1 rounded-md text-sm transition ${selectedCategory === name
+                        ? "bg-primary text-primary-foreground shadow"
+                        : "border hover:bg-accent hover:text-accent-foreground"
+                      }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={c.countryFlag}
-                        alt={`${c.name} flag`}
-                        className="w-8 h-5 object-cover"
-                      />
-                      <div>
-                        <h4 className="font-medium">{c.name}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {c.region}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                    <Icon className="h-4 w-4" />
+                    {name}
+                  </button>
                 ))}
               </div>
-            </div>
 
-            {/* Selected Country */}
-            {selectedCountry && (
-              <div className="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm">
-                <div className="px-6 flex flex-col items-center gap-2">
-                  <img
-                    src={selectedCountry.countryFlag}
-                    alt={`${selectedCountry.name} flag`}
-                    className="w-24 h-16 object-cover"
-                  />
-                  {selectedCountry.coatOfArms && (
-                    <img
-                      src={selectedCountry.coatOfArms}
-                      alt={`${selectedCountry.name} coat of arms`}
-                      className="w-24 h-24 object-contain"
-                    />
-                  )}
-                  <h2 className="text-2xl font-semibold">
-                    {selectedCountry.name}
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    {selectedCountry.region}
+              {/* Facts */}
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {filteredFacts.map((fact, i) => (
+                  <div
+                    key={i}
+                    className="border rounded-xl p-6 bg-card shadow-sm hover:shadow-md transition"
+                  >
+                    <h2 className="font-semibold text-lg">{fact.title}</h2>
+                    <p className="text-sm text-muted-foreground">
+                      {fact.category}
+                    </p>
+                    <p className="mt-1 text-sm font-medium">{fact.location}</p>
+                    <p className="mt-3 text-sm">{fact.description}</p>
+                  </div>
+                ))}
+                {filteredFacts.length === 0 && (
+                  <p className="text-center text-muted-foreground col-span-full">
+                    No cultural facts found.
                   </p>
+                )}
+              </div>
+            </>
+          )}
+
+          {selectedTab === "profiles" && (
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* Country List */}
+              <div className="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm">
+                <div className="px-6">
+                  <div className="leading-none font-semibold">
+                    Country Profiles
+                  </div>
+                  <div className="text-muted-foreground text-sm">
+                    Learn about countries where your pen pals live
+                  </div>
                 </div>
-                <div className="px-6 space-y-4">
-                  <div className="grid gap-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Population:</span>
-                      <span className="text-sm text-muted-foreground">
-                        {selectedCountry.population}
-                      </span>
+                <div className="relative h-[500px] overflow-y-scroll">
+                  {profiles.map((c, i) => (
+                    <div
+                      key={i}
+                      onClick={() => setSelectedCountry(c)}
+                      className={`p-4 border-b cursor-pointer hover:bg-muted/50 transition-colors ${selectedCountry?.name === c.name ? "bg-muted" : ""
+                        }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={c.countryFlag}
+                          alt={`${c.name} flag`}
+                          className="w-8 h-5 object-cover"
+                        />
+                        <div>
+                          <h4 className="font-medium">{c.name}</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {c.region}
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Time Zone:</span>
-                      <span className="text-sm text-muted-foreground">
-                        {selectedCountry.timezone}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Currency:</span>
-                      <span className="text-sm text-muted-foreground">
-                        {selectedCountry.currency}
-                      </span>
-                    </div>
-                    <div className="flex items-start justify-between">
-                      <span className="text-sm font-medium">Languages:</span>
-                      <div className="flex flex-wrap gap-1 justify-end">
-                        {selectedCountry.languages.map((lang, i) => (
-                          <span
-                            key={i}
-                            className="inline-flex items-center justify-center rounded-md border px-2 py-0.5 font-medium w-fit whitespace-nowrap shrink-0 bg-secondary text-secondary-foreground text-xs"
-                          >
-                            {lang}
-                          </span>
-                        ))}
+                  ))}
+                </div>
+              </div>
+
+              {/* Selected Country */}
+              {selectedCountry && (
+                <div className="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm">
+                  <div className="px-6 flex flex-col items-center gap-2">
+                    <img
+                      src={selectedCountry.countryFlag}
+                      alt={`${selectedCountry.name} flag`}
+                      className="w-24 h-16 object-cover"
+                    />
+                    {selectedCountry.coatOfArms && (
+                      <img
+                        src={selectedCountry.coatOfArms}
+                        alt={`${selectedCountry.name} coat of arms`}
+                        className="w-24 h-24 object-contain"
+                      />
+                    )}
+                    <h2 className="text-2xl font-semibold">
+                      {selectedCountry.name}
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedCountry.region}
+                    </p>
+                  </div>
+                  <div className="px-6 space-y-4">
+                    <div className="grid gap-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Population:</span>
+                        <span className="text-sm text-muted-foreground">
+                          {selectedCountry.population}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Time Zone:</span>
+                        <span className="text-sm text-muted-foreground">
+                          {selectedCountry.timezone}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Currency:</span>
+                        <span className="text-sm text-muted-foreground">
+                          {selectedCountry.currency}
+                        </span>
+                      </div>
+                      <div className="flex items-start justify-between">
+                        <span className="text-sm font-medium">Languages:</span>
+                        <div className="flex flex-wrap gap-1 justify-end">
+                          {selectedCountry.languages.map((lang, i) => (
+                            <span
+                              key={i}
+                              className="inline-flex items-center justify-center rounded-md border px-2 py-0.5 font-medium w-fit whitespace-nowrap shrink-0 bg-secondary text-secondary-foreground text-xs"
+                            >
+                              {lang}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
-        )}
-      </main>
+              )}
+            </div>
+          )}
+        </main>
+      </div>
     </div>
   );
 }

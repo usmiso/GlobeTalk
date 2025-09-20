@@ -50,8 +50,8 @@ export default function Sidebar({ }) {
                         className="flex items-center gap-1 sm:gap-2 p-1 sm:p-2 rounded w-full text-left text-xs sm:text-sm lg:text-base cursor-pointer"
                     >
                         <img
-                            src="/images/profilelogo.png"
-                            alt="Profile"
+                            src="/images/home.svg"
+                            alt="Dashboard"
                             className="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-cover"
                         />
                         Dashboard
@@ -67,12 +67,24 @@ export default function Sidebar({ }) {
                         />
                         Profile
                     </button>
+
+                    <button
+                        onClick={() => router.push("/pages/explorer")}
+                        className="flex items-center gap-1 sm:gap-2 p-1 sm:p-2 rounded w-full text-left text-xs sm:text-sm lg:text-base cursor-pointer"
+                    >
+                        <img
+                            src="/images/earth.svg"
+                            alt="Profile"
+                            className="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-cover"
+                        />
+                        Cultural Explorer
+                    </button>
                     <button
                         onClick={() => router.push("/pages/inbox")}
                         className="flex items-center gap-1 sm:gap-2 p-1 sm:p-2 rounded w-full text-left text-xs sm:text-sm lg:text-base cursor-pointer"
                     >
                         <img
-                            src="/images/letters.png"
+                            src="/images/envelope.svg"
                             alt="Letters"
                             className="w-5 h-5 sm:w-6 sm:h-7 rounded-full object-cover"
                         />
@@ -83,7 +95,7 @@ export default function Sidebar({ }) {
                         className="flex items-center gap-1 sm:gap-2 p-1 sm:p-2 rounded w-full text-left text-xs sm:text-sm lg:text-base cursor-pointer"
                     >
                         <img
-                            src="/images/letters.png"
+                            src="/images/users.svg"
                             alt="Letters"
                             className="w-5 h-5 sm:w-6 sm:h-7 rounded-full object-cover"
                         />
