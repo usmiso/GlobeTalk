@@ -69,7 +69,7 @@ export default function Sidebar({ }) {
                     </button>
 
                     <button
-                        onClick={() => router.push("/pages/explorer")}
+                        onClick={() => router.push("/pages/explore")}
                         className="flex items-center gap-1 sm:gap-2 p-1 sm:p-2 rounded w-full text-left text-xs sm:text-sm lg:text-base cursor-pointer"
                     >
                         <img
