@@ -9,6 +9,7 @@ import Link from "next/link";
 
 // API base - prefer NEXT_PUBLIC_API_URL, fallback to localhost:5000 for dev
 const API = typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL : 'http://localhost:5000';
+import LoadingScreen from '../../components/LoadingScreen';
 
 export default function UserProfile() {
 
@@ -277,11 +278,7 @@ export default function UserProfile() {
 
 
     if (loading) {
-        return (
-            <div className="flex items-center justify-center min-h-screen">
-                Loading...
-            </div>
-        );
+        return <LoadingScreen />;
     }
 
     return (
@@ -329,7 +326,7 @@ export default function UserProfile() {
                         <Link href="/pages/userprofile" className="text-sm text-gray-700 hover:text-black">
                             Me
                         </Link>
-                        
+
                         <Link href="settings" className="flex items-center gap-1 text-gray-700 hover:text-black text-sm">
 
                             Settings

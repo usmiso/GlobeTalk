@@ -1,8 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter,useParams } from "next/navigation";
 import { auth } from "../../firebase/auth";
-
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
