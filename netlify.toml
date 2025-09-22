@@ -1,12 +1,6 @@
 [build]
   command = "CI= npm run build"
-  publish = ".next"
-
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
-
-[build]
-  command = "npm run build"
+>>>>>>>>> Temporary merge branch 2
   publish = ".next"
 
 [[plugins]]
