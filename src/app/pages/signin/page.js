@@ -116,9 +116,28 @@ const AuthPage = () => {
         }
     };
 
+    const getUserIP = async () => {
+    try {
+      const response = await fetch('https://api.ipify.org?format=json');
+      const data = await response.json();
+      console.log("Fetched IP address:", data.ip); // 👈 check in browser console
+      return data.ip;
+      
+    } catch (error) {
+      console.error('Could not get IP address:', error);
+      return 'unknown'; // Fallback value
+    }
+  };
+
+
     const handleGoogleAuth = async () => {
         try {
-            const { isNewUser, user } = await signInWithGoogle();
+        
+            const userIP = await getUserIP();//called this function to get the string value of the api
+            console.log("Using IP address:", userIP); 
+            const { isNewUser, user } = await signInWithGoogle(userIP);
+
+        
             if (isNewUser) {
                 router.push("/pages/profile");
             } else {
@@ -137,8 +156,13 @@ const AuthPage = () => {
                 setError("Google sign-up failed. Please try again.");
             }
         }
+        
+
 
     };
+
+    
+
 
 
 

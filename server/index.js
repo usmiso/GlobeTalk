@@ -387,6 +387,80 @@ app.post('/api/chat/report', async (req, res) => {
     }
 });
 
+// Simple API to just receive and store IP address for a user
+app.post('/api/user/ip', async (req, res) => {
+    if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
+
+    try {
+        const { uid, ipAddress } = req.body;
+
+        if (!uid) {
+            return res.status(400).json({ error: 'Missing user ID' });
+        }
+
+        console.log('Storing IP address for user:', { uid, ipAddress });
+
+        // Safely add IP address to the user's profile without affecting other fields
+        await db.collection('users').doc(uid).set({
+            ipAddress: ipAddress || 'unknown',
+            //lastLogin: admin.firestore.FieldValue.serverTimestamp()
+        }, { merge: true }); // merge: true preserves all existing fields
+
+        res.status(200).json({ message: 'IP address stored successfully' });
+    } catch (error) {
+        console.error('Error storing IP address:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+// Get countries/timezones for matched users
+app.get('/api/matchedUsers', async (req, res) => {
+    if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
+
+    const { userID } = req.query;
+    if (!userID) return res.status(400).json({ error: 'Missing userID' });
+
+    console.log("Received request for matched users with userID:", userID);
+
+    try {
+        // 1️⃣ Get current user profile
+        const userDoc = await db.collection('profiles').doc(userID).get();
+        if (!userDoc.exists) {
+            console.log("User profile not found for:", userID);
+            return res.status(404).json({ error: 'User profile not found' });
+        }
+
+        const userData = userDoc.data();
+        const matchedUserIDs = userData.MatchedUsers || [];
+        console.log("Matched user IDs:", matchedUserIDs);
+
+        if (!matchedUserIDs.length) {
+            console.log("No matched users for this user.");
+            return res.status(200).json([]);
+        }
+
+        // 2️⃣ Fetch profiles of matched users and extract timezone (location/country)
+        const countries = [];
+        for (const matchedID of matchedUserIDs) {
+            const doc = await db.collection('profiles').doc(matchedID).get();
+            if (doc.exists) {
+                const data = doc.data();
+                if (data.timezone) countries.push(data.timezone);
+            }
+        }
+
+        // Remove duplicates
+        const uniqueCountries = [...new Set(countries)];
+        console.log("Countries/timezones for matched users:", uniqueCountries);
+
+        res.status(200).json(uniqueCountries);
+
+    } catch (error) {
+        console.error('Error fetching matched users:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Catch-all for undefined routes
 app.use((req, res) => {
     res.status(404).json({ error: 'Not found' });
