@@ -572,6 +572,14 @@ const Inbox = () => {
                               )}
                             </div>
 
+                                  {/* Report button */}
+                                  <button
+                                    onClick={() => handleReportMessage(msg)}
+                                    className="ml-2 transition text-red-600 hover:text-red-800 text-xs border border-red-200 rounded px-2 py-1"
+                                    title="Report this message"
+                                  >
+                                    Report
+                                  </button>
 
                           </div>
                         );
