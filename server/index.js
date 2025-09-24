@@ -120,6 +120,34 @@ app.post('/api/profile/avatar', async (req, res) => {
 
 
 
+// 🆕 Simple API endpoint to get ALL reports
+app.get('/api/reports', async (req, res) => {
+    if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
+
+    try {
+        const snapshot = await db.collection('reports').get();
+        
+        const reports = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+
+        res.status(200).json({
+            success: true,
+            count: reports.length,
+            data: reports
+        });
+    } catch (error) {
+        console.error('Error fetching reports:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Failed to fetch reports',
+            message: error.message 
+        });
+    }
+});
+
+
 
 
 
@@ -197,28 +225,99 @@ app.post('/api/profile/edit', async (req, res) => {
 });
 
 // Simple API to just receive and store IP address for a user
-app.post('/api/user/ip', async (req, res) => {
+// ✅ Validate a report and update user violations
+app.post('/api/reports/:id/validate', async (req, res) => {
     if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
 
-    try {
-        const { uid, ipAddress } = req.body;
+    const { id } = req.params; // Report document ID
 
-        if (!uid) {
-            return res.status(400).json({ error: 'Missing user ID' });
+    try {
+        // Fetch the report
+        const reportRef = db.collection('reports').doc(id);
+        const reportSnap = await reportRef.get();
+
+        if (!reportSnap.exists) {
+            return res.status(404).json({ error: 'Report not found' });
         }
 
-        console.log('Storing IP address for user:', { uid, ipAddress });
+        const reportData = reportSnap.data();
+        const reportedUserId = reportData.message?.sender || reportData.reportedUserId;
 
-        // Safely add IP address to the user's profile without affecting other fields
-        await db.collection('users').doc(uid).set({
-            ipAddress: ipAddress || 'unknown',
-            //lastLogin: admin.firestore.FieldValue.serverTimestamp()
-        }, { merge: true }); // merge: true preserves all existing fields
+        if (!reportedUserId) {
+            return res.status(400).json({ error: 'Reported user ID missing in report' });
+        }
 
-        res.status(200).json({ message: 'IP address stored successfully' });
+        // Increment violation count for the user
+        const userRef = db.collection('users').doc(reportedUserId);
+
+        await db.runTransaction(async (t) => {
+            const userSnap = await t.get(userRef);
+            let strike_count = 0;
+            let isBlocked = false;
+
+            if (userSnap.exists) {
+                const userData = userSnap.data();
+                strike_count = (userData.strike_count || 0) + 1;
+                isBlocked = userData.isBanned || false;
+            } else {
+                violationCount = 1;
+            }
+
+            // If violationCount reaches 3, ban the user
+            if (violationCount >= 3) {
+                isBlocked = true;
+            }
+
+            t.set(userRef, {
+                strike_count,
+                isBlocked
+            }, { merge: true });
+
+            // Mark report as valid/resolved
+            t.set(reportRef, {
+                status: 'valid',
+                reviewedAt: admin.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+        });
+
+        res.status(200).json({
+            success: true,
+            message: `Report ${id} validated and violation count updated for user ${reportedUserId}`
+        });
+
     } catch (error) {
-        console.error('Error storing IP address:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        console.error('Error validating report:', error);
+        res.status(500).json({ error: 'Failed to validate report', details: error.message });
+    }
+});
+
+
+app.post('/api/reports/:id/invalidate', async (req, res) => {
+    if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
+
+    const { id } = req.params;
+
+    try {
+        const reportRef = db.collection('reports').doc(id);
+        const reportSnap = await reportRef.get();
+
+        if (!reportSnap.exists) {
+            return res.status(404).json({ error: 'Report not found' });
+        }
+
+        await reportRef.set({
+            status: 'invalid',
+            reviewedAt: admin.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+
+        res.status(200).json({
+            success: true,
+            message: `Report ${id} marked as invalid`
+        });
+
+    } catch (error) {
+        console.error('Error invalidating report:', error);
+        res.status(500).json({ error: 'Failed to invalidate report', details: error.message });
     }
 });
 

@@ -46,7 +46,7 @@ export default function UserProfile() {
 
         try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-            // const res = await fetch(`${apiUrl}/api/profile?userID=${uid}`);
+             //const res = await fetch(`${apiUrl}/api/profile?userID=${uid}`);
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/profile?userID=${uid}`);
             if (res.ok) {
                 const data = await res.json();

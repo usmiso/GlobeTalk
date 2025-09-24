@@ -16,10 +16,32 @@ import { sendEmailVerification } from "firebase/auth";
 //const auth = getAuth(app);
 
 // Email/password signup
-export async function signUp(email, password) {
+export async function signUp(email, password, ipAddress) {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
     await sendEmailVerification(userCredential.user);
+    const userDocRef = doc(db, "users", user.uid);
+     const userDoc = await getDoc(userDocRef);
+     if (!userDoc.exists()) {
+      // New user → Store minimal data including userId and lastIP
+      await setDoc(userDocRef, {
+        userId: user.uid,
+        email: user.email,
+        createdAt: new Date(),
+        lastIP: ipAddress || null,
+        isBlocked: false,
+        strike_count: 0,
+      });
+      return { isNewUser: true, user };
+    } else {
+      // Existing user → Always update lastIP
+      await updateDoc(userDocRef, {
+        lastIP: ipAddress || null,
+      });
+      return { isNewUser: false, user };
+    }
+
     return userCredential; // Return full UserCredential
   } catch (error) {
     throw error;
@@ -31,6 +53,7 @@ export async function signUpWithGoogle() {
   const provider = new GoogleAuthProvider();
   try {
     const result = await signInWithPopup(auth, provider);
+    
     return result; // Return full UserCredential
   } catch (error) {
     throw error;
@@ -66,6 +89,8 @@ export async function signInWithGoogle(ipAddress) {
         email: user.email,
         createdAt: new Date(),
         lastIP: ipAddress || null,
+        isBlocked: false,
+        strike_count: 0,
       });
       return { isNewUser: true, user };
     } else {
