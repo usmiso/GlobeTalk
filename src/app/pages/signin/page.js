@@ -62,7 +62,8 @@ const AuthPage = () => {
             }
 
             try {
-                await signUp(email, password);
+                 const userIP = await getUserIP();
+                await signUp(email, password,userIP);
                 setEmail("");
                 setPassword("");
                 setConfirmPassword("");
@@ -82,7 +83,8 @@ const AuthPage = () => {
             }
         } else {
             try {
-                const userCredential = await signIn(email, password);
+                 const userIP = await getUserIP();
+                const userCredential = await signIn(email, password,userIP);
                 const user = userCredential.user;
 
                 if (!user.emailVerified) {
