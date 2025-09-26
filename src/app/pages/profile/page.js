@@ -50,6 +50,12 @@ const Profile = () => {
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [timezones, setTimezones] = useState([]);
   const [selectedLanguage, setSelectedLanguage] = useState('');
+  // Helper to get language name from code
+  const getLanguageName = (code) => {
+    if (!code) return '';
+    const lang = LANGUAGES_LIST[code];
+    return lang ? lang.name : code;
+  };
   const [avatarUrl, setAvatarUrl] = useState('');
   const [username, setUsername] = useState('');
   const [mode, setMode] = useState('avatar'); // 'avatar', 'editProfile', 'viewProfile'
@@ -94,6 +100,15 @@ const Profile = () => {
       setCountryName(countryMap[tzObj.country_code]);
     }
     setTzDropdownOpen(false);
+  };
+
+  // Helper to get timezone display string with country
+  const getTimezoneDisplay = (tzId) => {
+    if (!tzId) return '';
+    const tzObj = timezones.find(tz => tz.timezone_id === tzId);
+    if (!tzObj) return tzId;
+    const country = countryMap && countryMap[tzObj.country_code] ? countryMap[tzObj.country_code] : '';
+    return `${tzObj.timezone_id} (GMT${tzObj.gmt_offset >= 0 ? '+' : ''}${tzObj.gmt_offset})${country ? ' - ' + country : ''}`;
   };
 
   const handleLanguageSelect = (code) => {
@@ -203,8 +218,10 @@ const Profile = () => {
             intro,
             ageRange,
             hobbies,
-            timezone, // only ID
+            timezone,
+            // only ID
             languageCode: selectedLanguage, // store code
+            language: getLanguageName(selectedLanguage), // store language name
             country: countryToSave,
             countryCode: tzObj?.country_code || '',
           }),
@@ -305,7 +322,7 @@ const Profile = () => {
               type="text"
               className="w-full border rounded px-3 py-2 mb-2"
               placeholder="Type timezone..."
-              value={timezone}
+              value={getTimezoneDisplay(timezone) || timezone}
               onChange={e => {
                 setTimezone(e.target.value);
                 setTzDropdownOpen(true);
@@ -337,7 +354,7 @@ const Profile = () => {
               type="text"
               className="w-full border rounded px-3 py-2 mb-2"
               placeholder="Type language..."
-              value={selectedLanguage}
+              value={getLanguageName(selectedLanguage) || selectedLanguage}
               onChange={e => {
                 setSelectedLanguage(e.target.value);
                 setLangDropdownOpen(true);
