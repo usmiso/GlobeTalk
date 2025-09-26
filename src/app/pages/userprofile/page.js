@@ -6,6 +6,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import LoadingScreen from '../../components/LoadingScreen';
 import Sidebar from '../../components/Sidebar';
+import Navbar from "@/app/components/Navbar";
 
 export default function UserProfile() {
     const router = useRouter();
@@ -75,8 +76,8 @@ export default function UserProfile() {
 
     return (
 
-        <div className="flex min-h-screen bg-gray-100">
-            <Sidebar />
+        <div className="flex-1 flex flex-col min-h-screen bg-gray-100 py-2 px-4 space-y-6">
+            <Navbar />
 
             <main className=" w-screen flex flex-col items-center justify-center min-h-screen py-8 px-4">
                 {/* <button

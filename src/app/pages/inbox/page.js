@@ -7,6 +7,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { EnvelopeIcon, CalendarIcon, ClockIcon } from "@heroicons/react/24/outline";
+import Navbar from '@/app/components/Navbar';
 
 
 const Inbox = () => {
@@ -342,40 +343,7 @@ const Inbox = () => {
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
-      {/* Top Bar */}
-      <header className="w-full bg-white border-b border-gray-200 px-4 flex items-center justify-between">
-        {/* Left - Logo */}
-        <div className="flex items-center gap-2">
-          <img src="/images/globe.png" alt="GlobeTalk Logo" className="w-6 h-6" />
-          <span className="font-bold text-lg">GlobeTalk</span>
-        </div>
-
-        {/* Right - Nav Links */}
-        <nav className="flex items-center gap-10 mb-3 mt-2">
-          <Link
-            href="/pages/dashboard"
-            className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
-          >
-            Dashboard
-          </Link>
-          <Link href="/pages/matchmaking" className="text-sm text-gray-700 hover:text-black">
-            Match
-          </Link>
-          <Link href="/pages/inbox" className="text-sm text-gray-700 hover:text-black">
-            Inbox
-          </Link>
-          <Link href="/pages/explore" className="text-sm text-gray-700 hover:text-black">
-            Explore
-          </Link>
-          <Link href="/pages/userprofile" className="text-sm text-gray-700 hover:text-black">
-            Me
-          </Link>
-          <Link href="/pages/settings" className="text-sm text-gray-700 hover:text-black">
-            Settings
-          </Link>
-        </nav>
-
-      </header>
+      <Navbar />
 
       {/* Main Content Area: Sidebar + Chat */}
       <div className="flex flex-1 overflow-hidden">
