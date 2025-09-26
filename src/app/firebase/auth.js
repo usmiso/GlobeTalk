@@ -9,7 +9,7 @@ import {
   onAuthStateChanged,
 } from "firebase/auth";
 import { collection, query, where, getDocs } from "firebase/firestore";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc,updateDoc } from "firebase/firestore";
 import { sendEmailVerification } from "firebase/auth";
 
 
@@ -48,31 +48,37 @@ export async function signIn(email, password) {
 }
 
 
-export async function signInWithGoogle() {
+// ...existing code...
+export async function signInWithGoogle(ipAddress) {
   try {
     const provider = new GoogleAuthProvider();
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
 
-    const userDoc = await getDoc(doc(db, "users", user.uid));
+    const userDocRef = doc(db, "users", user.uid);
+    const userDoc = await getDoc(userDocRef);
+    console.log("Auth", ipAddress);
 
     if (!userDoc.exists()) {
-      // New user → Store minimal data including userId
-      await setDoc(doc(db, "users", user.uid), {
+      // New user → Store minimal data including userId and lastIP
+      await setDoc(userDocRef, {
         userId: user.uid,
         email: user.email,
         createdAt: new Date(),
+        ipAddress: ipAddress || null,
       });
       return { isNewUser: true, user };
+    } else {
+      // Existing user → Always update ipAddress
+      await updateDoc(userDocRef, {
+        ipAddress: ipAddress || null,
+      });
+      return { isNewUser: false, user };
     }
-
-    return { isNewUser: false, user };
   } catch (error) {
     throw error;
   }
 }
-
-
 // Forgot password
 export async function forgotPassword(email) {
   try {
@@ -80,6 +86,17 @@ export async function forgotPassword(email) {
     return true;
   } catch (error) {
     throw error;
+  }
+}
+
+async function saveUserIP(uid, ip) {
+  try {
+    await updateDoc(doc(db, "users", uid), {
+      lastIP: ip,
+      
+    });
+  } catch (err) {
+    console.warn("Could not save user IP:", err);
   }
 }
 
