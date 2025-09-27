@@ -249,7 +249,7 @@ const Inbox = () => {
 
   if (loading) return <LoadingScreen />;
   if (error) return <div style={{ color: 'red' }}>Error: {error}</div>;
-  if (!chats.length) return <div>No chats found.</div>;
+  // if (!chats.length) return <div>No chats found.</div>;
 
   // Get current userID from auth (for filtering display)
   const currentUser = auth.currentUser;
@@ -345,13 +345,14 @@ const Inbox = () => {
     <div className="flex flex-col h-screen bg-gray-50">
       <Navbar />
 
-      {/* Main Content Area: Sidebar + Chat */}
-      <div className="flex flex-1 overflow-hidden">
+
+      <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
         {/* Sidebar */}
 
         <aside
-          className={`fixed md:relative top-0 left-0 h-full md:h-auto md:min-h-screen border-r border-gray-300 bg-white shadow-sm transition-all duration-300 ${sidebarOpen ? "w-80 p-4" : "w-16 p-2"
-            }`}
+          className={`absolute md:relative top-0 left-0 h-full md:h-auto md:min-h-screen 
+    border-r border-gray-300 bg-white shadow-sm transition-all duration-300 
+    ${sidebarOpen ? "w-72 p-4 z-40" : "w-0 md:w-16 md:p-2 overflow-hidden"}`}
         >
           <div className="flex justify-between items-center mb-4">
             {/* Show title only when expanded */}
@@ -367,64 +368,122 @@ const Inbox = () => {
             </button>
           </div>
 
+          {/* <button
+            onClick={() => setSidebarOpen(true)}
+            className="p-2 rounded-md hover:bg-gray-200 text-gray-600 md:hidden"
+            title="Open sidebar"
+          >
+            ☰
+          </button> */}
+
+          {/* <button
+          onClick={() => setSidebarOpen(true)}
+          className="fixed top-4 left-4 z-50 p-2 rounded-md bg-white shadow-md md:hidden"
+          title="Open sidebar"
+        >
+          ☰
+        </button> */}
+
+
           {/* Sidebar content only when expanded */}
           {sidebarOpen && (
-            <ul className="space-y-3">
-              {chats.map((chat) => {
-                const friend = chat.userProfiles?.find(u => u.uid !== currentUserID);
+            chats.length === 0 ? (
+              <p className="text-gray-500 text-sm">No pen pals yet.</p>
+            ) : (
+              <ul className="space-y-3">
+                {chats.map((chat) => {
+                  const friend = chat.userProfiles?.find(u => u.uid !== currentUserID);
 
-                return (
-                  <li
-                    key={chat.chatId}
-                    onClick={() => setOpenChat(chat)}
-                    className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition ${openChat && openChat.chatId === chat.chatId
+                  return (
+                    <li
+                      key={chat.chatId}
+                      onClick={() => setOpenChat(chat)}
+                      className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition ${openChat && openChat.chatId === chat.chatId
                         ? "bg-blue-50"
                         : "hover:bg-gray-100"
-                      }`}
-                  >
-                    {/* Profile Image */}
-                    <img
-                      src={friend?.avatarUrl || "/default-avatar.png"}
-                      alt={friend?.username}
-                      className="w-10 h-10 rounded-full object-cover border border-gray-200"
-                    />
+                        }`}
+                    >
+                      {/* Profile Image */}
+                      <img
+                        src={friend?.avatarUrl || "/default-avatar.png"}
+                        alt={friend?.username}
+                        className="w-10 h-10 rounded-full object-cover border border-gray-200"
+                      />
 
-                    {/* Name + preview */}
-                    <div className="flex flex-col">
-                      <span className="font-medium">{friend?.username}</span>
-                      <p className="text-xs text-gray-400 truncate w-40">
-                        {chat.messages && chat.messages.length > 0
-                          ? (() => {
-                            const now = Date.now();
-                            const lastUnlocked = [...chat.messages]
-                              .reverse()
-                              .find(m => m.deliveryTime <= now);
+                      {/* Name + preview */}
+                      <div className="flex flex-col">
+                        <span className="font-medium">{friend?.username}</span>
+                        <p className="text-xs text-gray-400 truncate w-40">
+                          {chat.messages && chat.messages.length > 0
+                            ? (() => {
+                              const now = Date.now();
+                              const lastUnlocked = [...chat.messages]
+                                .reverse()
+                                .find(m => m.deliveryTime <= now);
 
-                            if (lastUnlocked) {
-                              const isSender = lastUnlocked.sender === currentUserID;
-                              return `${isSender ? "You: " : ""}${lastUnlocked.text}`;
-                            }
-                            return "No unlocked messages yet";
-                          })()
-                          : "No messages yet"}
-                      </p>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+                              if (lastUnlocked) {
+                                const isSender = lastUnlocked.sender === currentUserID;
+                                return `${isSender ? "You: " : ""}${lastUnlocked.text}`;
+                              }
+                              //  if messages exist but none unlocked
+                              return "Locked message (coming soon…)";
+                            })()
+                            : "No messages yet"}
+                        </p>
 
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )
           )}
         </aside>
 
+        {sidebarOpen && (
+          <div
+            onClick={() => setSidebarOpen(false)}
+            className="fixed inset-0 bg-white bg-opacity-30 md:hidden z-30"
+          />
+        )}
 
 
         {/* Chat Area */}
         <main className="flex-1 flex flex-col overflow-hidden">
-          {openChat ? (
+          {chats.length === 0 ? (
+            // Case 1: No chats at all
+            <div className="flex flex-1 items-center justify-center text-center px-6">
+              <div className="max-w-md">
+
+                <h2 className="text-xl font-semibold text-gray-700 mb-2">
+                  You don't have any pen pals yet
+                </h2>
+                <p className="text-gray-500 mb-6">
+                  Once you connect with a pen pal, your chats will appear here.
+                </p>
+                <button
+                  onClick={() => router.push("/pages/matchmaking")}
+                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition"
+                >
+                  Find a Pen Pal
+                </button>
+              </div>
+            </div>
+          ) : openChat ? (
             <div className="flex flex-col h-full">
               {/* Chat Header */}
               <div className="shrink-0 border-b border-gray-50 bg-white px-6 py-4 shadow-sm flex items-center justify-between">
+
+                {!sidebarOpen && (
+                  <button
+                    onClick={() => setSidebarOpen(true)}
+                    className="fixed p-2 top-4 left-4 z-50 rounded-md bg-white shadow-md hover:bg-gray-200 text-gray-600 md:hidden"
+                    title="Open sidebar"
+                  >
+                    ☰
+                  </button>
+                )}
+
                 <div className="flex items-center gap-3">
                   <img
                     src={openChat.userProfiles.find(u => u.uid !== currentUserID)?.avatarUrl || "/default-avatar.png"}
@@ -435,14 +494,16 @@ const Inbox = () => {
                     {openChat.userProfiles.find(u => u.uid !== currentUserID)?.username}
                   </h3>
                 </div>
-                <button
-                  onClick={() =>
-                    handleDownloadChatPDF(openChat.messages, currentUserID, openChat.userProfiles)
-                  }
-                  className="flex items-center gap-2 px-3 py-1.5 rounded bg-gray-200 hover:bg-gray-300 text-sm text-gray-700"
-                >
-                  Download Chat
-                </button>
+                {openChat.messages && openChat.messages.length > 0 && (
+                  <button
+                    onClick={() =>
+                      handleDownloadChatPDF(openChat.messages, currentUserID, openChat.userProfiles)
+                    }
+                    className="flex items-center gap-2 px-3 py-1.5 rounded bg-gray-200 hover:bg-gray-300 text-sm text-gray-700"
+                  >
+                    Download Chat
+                  </button>
+                )}
               </div>
 
               {/* Messages */}
@@ -450,7 +511,7 @@ const Inbox = () => {
               <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
                 {openChat.messages && openChat.messages.length > 0 ? (
                   <>
-                    {/* ✅ CASE 1: Conversation already started */}
+                    {/* Conversation already started */}
                     {/* Messages list */}
                     <div className="flex-1 overflow-y-auto space-y-3">
                       {openChat.messages.map((msg, i) => {
@@ -540,14 +601,14 @@ const Inbox = () => {
                               )}
                             </div>
 
-                                  {/* Report button */}
-                                  <button
-                                    onClick={() => handleReportMessage(msg)}
-                                    className="ml-2 transition text-red-600 hover:text-red-800 text-xs border border-red-200 rounded px-2 py-1"
-                                    title="Report this message"
-                                  >
-                                    Report
-                                  </button>
+                            {/* Report button */}
+                            <button
+                              onClick={() => handleReportMessage(msg)}
+                              className="ml-2 transition text-red-600 hover:text-red-800 text-xs border border-red-200 rounded px-2 py-1"
+                              title="Report this message"
+                            >
+                              Report
+                            </button>
 
                           </div>
                         );
@@ -556,19 +617,14 @@ const Inbox = () => {
 
                   </>
                 ) : (
-                  // ✅ CASE 2: No messages yet → Start Chatting button in center
-                  <div className="flex-1 flex items-center justify-center">
-                    <button
-                      onClick={() => setShowComposer(true)}
-                      className="bg-blue-600 text-white font-medium px-6 py-3 rounded-lg hover:bg-blue-700"
-                    >
-                      Start Chatting
-                    </button>
+                  // No messages yet → Start Chatting button in center
+                  <div className="flex-1 flex items-center justify-center py-20 text-gray-500">
+                    No messages yet. Send a letter to start a Conversation!
                   </div>
                 )}
               </div>
 
-              {/* ✅ Reply input stays at bottom once chat has started */}
+              {/* Reply input stays at bottom once chat has started */}
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -580,13 +636,15 @@ const Inbox = () => {
                     onClick={() => {
                       if (openChat && openChat.userProfiles) {
                         const friend = openChat.userProfiles.find(u => u.uid !== currentUserID);
-                        setFriendProfile(friend);   // 🔹 set the other user
+                        setFriendProfile(friend);
                       }
-                      setShowComposer(true);        // 🔹 open modal
+                      setShowComposer(true);
                     }}
                     className="w-full bg-blue-600 text-white font-medium py-3 rounded-lg hover:bg-blue-700"
                   >
-                    Reply to Letter
+                    {openChat.messages && openChat.messages.length > 0
+                      ? "Reply to Letter"
+                      : "Start Chatting"}
                   </button>
                 </div>
 
@@ -729,7 +787,7 @@ const Inbox = () => {
           )}
         </main>
       </div>
-      {/* Report Modal */}
+
       {reportModal.open && (
         <div style={{
           position: 'fixed',
@@ -804,6 +862,5 @@ const Inbox = () => {
       )}
     </div>
   );
-
-};
+}
 export default Inbox;
