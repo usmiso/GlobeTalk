@@ -432,7 +432,7 @@ app.get('/api/matchedUsers', async (req, res) => {
         }
 
         const userData = userDoc.data();
-        const matchedUserIDs = userData.MatchedUsers || [];
+        const matchedUserIDs = (userData.chats || []).map(chatId => chatId.split('_')[0]);
         console.log("Matched user IDs:", matchedUserIDs);
 
         if (!matchedUserIDs.length) {
