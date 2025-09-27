@@ -24,8 +24,6 @@ export default function UserProfile() {
     const [loading, setLoading] = useState(true);
     const [username, setUsername] = useState("");
     const [avatarUrl, setAvatarUrl] = useState("");
-    const [sidebarOpen, setSidebarOpen] = useState(true);
-    const [editingField, setEditingField] = useState(null);
     const [error, setError] = useState('');
     const [saving, setSaving] = useState(false);
     const [readOnly, setReadOnly] = useState(false);
@@ -106,7 +104,7 @@ export default function UserProfile() {
                 } else {
                     setLanguage([]);
                 }
-                // setRegion(data.region || "");
+                setTimezone(data.timezone || "");
                 setSayings(data.sayings || []);
                 setUsername(data.username || "");
                 setAvatarUrl(data.avatarUrl || "");
@@ -310,6 +308,7 @@ export default function UserProfile() {
 
                         {/* Display Name */}
                         <h1 className="text-2xl font-bold mb-2">{username}</h1>
+                        <p className="text-sm text-gray-500">{timezone || "No location set"}</p>
                     </div>
 
 
