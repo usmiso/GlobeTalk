@@ -461,6 +461,99 @@ app.get('/api/matchedUsers', async (req, res) => {
     }
 });
 
+
+// Get user stats + recent activity
+app.get('/api/stats', async (req, res) => {
+    if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
+
+    const { userID } = req.query;
+    if (!userID) return res.status(400).json({ error: 'Missing userID' });
+
+    try {
+        const chatsSnap = await db.collection('chats')
+            .where('users', 'array-contains', userID).get();
+
+
+        let totalLetters = 0;
+        let countries = new Set();
+        let activity = [];
+        let responseTimes = [];
+
+        for (const chatDoc of chatsSnap.docs) {
+            const data = chatDoc.data();
+
+            if (Array.isArray(data.messages)) {
+                //  Sort messages by time
+                const sortedMessages = [...data.messages].sort((a, b) => a.deliveryTime - b.deliveryTime);
+
+                for (let i = 0; i < sortedMessages.length - 1; i++) {
+                    const current = sortedMessages[i];
+                    const next = sortedMessages[i + 1];
+
+                    if (current.sender !== userID && next.sender === userID) {
+                        const diff = next.deliveryTime - current.deliveryTime;
+                        if (diff > 0) responseTimes.push(diff);
+                    }
+                }
+
+                // Count + log activity
+                sortedMessages.forEach(m => {
+                    if (m.sender === userID) totalLetters++;
+                    activity.push({
+                        type: m.sender === userID ? "sent" : "received",
+                        text: m.text,
+                        sender: m.sender,
+                        timestamp: m.deliveryTime,
+                    });
+                });
+            }
+
+            // Track matches
+            if (data.users) {
+                const otherUserId = data.users.find(u => u !== userID);
+                if (otherUserId) {
+                    countries.add(otherUserId);
+
+                    // Fetch username for other user
+                    const otherUserDoc = await db.collection("profiles").doc(otherUserId).get();
+                    activity.push({
+                        type: "match",
+                        users: [userID, otherUserId],
+                        otherUsername: otherUserDoc.exists ? otherUserDoc.data().username : otherUserId,
+                        timestamp: data.createdAt?.toMillis() || Date.now(),
+                    });
+                }
+            }
+        }
+
+        let avgResponse = "N/A";
+        if (responseTimes.length > 0) {
+            const avgMs = responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length;
+            const avgHours = avgMs / (1000 * 60 * 60);
+            avgResponse = avgHours < 24
+                ? `${avgHours.toFixed(1)} hours`
+                : `${(avgHours / 24).toFixed(1)} days`;
+        }
+
+        // Count active pen pals
+        const activePenPals = countries.size;
+
+        res.status(200).json({
+            totalLetters,
+            activePenPals,
+            countriesConnected: countries.size,
+            averageResponseTime: avgResponse,
+            lettersThisMonth: totalLetters,
+            favoriteLetters: 0,
+            activity: activity.sort((a, b) => b.timestamp - a.timestamp).slice(0, 5),
+        });
+    } catch (error) {
+        console.error('Error fetching stats:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
 // Catch-all for undefined routes
 app.use((req, res) => {
     res.status(404).json({ error: 'Not found' });
