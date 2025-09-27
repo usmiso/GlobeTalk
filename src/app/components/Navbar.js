@@ -3,7 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Menu, X } from "lucide-react"; //  lightweight icons
+import { Menu, X } from "lucide-react";
+import { signOut } from "firebase/auth";
+import { auth } from '../firebase/auth';
+import { useRouter } from "next/navigation";
 
 const navLinks = [
   { href: "/pages/dashboard", label: "Dashboard" },
@@ -14,8 +17,18 @@ const navLinks = [
 ];
 
 export default function Navbar() {
+  const router = useRouter();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.push("/");
+    } catch (err) {
+      console.error("Logout failed:", err);
+    }
+  };
 
   return (
     <header className="w-full h-20 bg-white border-b border-gray-200 px-4 flex items-center justify-between relative">
@@ -44,6 +57,12 @@ export default function Navbar() {
             </Link>
           );
         })}
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-0 px-3 py-1 rounded-md text-sm font-medium text-gray-700 hover:text-red-600"
+        >
+          Logout
+        </button>
       </nav>
 
       {/* Mobile Menu Button */}
@@ -76,6 +95,15 @@ export default function Navbar() {
                 </Link>
               );
             })}
+            <button
+              onClick={() => {
+                setIsOpen(false);
+                handleLogout();
+              }}
+              className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-red-600 text-left"
+            >
+              Logout
+            </button>
           </nav>
         </div>
       )}
