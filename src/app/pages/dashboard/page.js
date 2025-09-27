@@ -250,31 +250,41 @@ export default function DashboardPage() {
               Recent Activity
             </div>
             <div className="p-4 space-y-3">
-              {Array.isArray(activity) && activity.map((a, idx) => (
-                <div key={idx} className="flex items-center gap-3 p-2 rounded bg-gray-50">
-                  {/* Colored dot */}
-                  <div
-                    className={`h-2 w-2 rounded-full ${a.type === "received"
-                      ? "bg-green-500"
-                      : a.type === "sent"
-                        ? "bg-blue-500"
-                        : "bg-purple-500"
-                      }`}
-                  />
+              {Array.isArray(activity) && activity.length > 0 ? (
+                activity.map((a, idx) => (
+                  <div key={idx} className="flex items-center gap-3 p-2 rounded bg-gray-50">
+                    {/* Colored dot */}
+                    <div
+                      className={`h-2 w-2 rounded-full ${a.type === "received"
+                          ? "bg-green-500"
+                          : a.type === "sent"
+                            ? "bg-blue-500"
+                            : "bg-purple-500"
+                        }`}
+                    />
 
-                  {/* Activity message */}
-                  <div className="flex-1 text-sm">
-                    {a.type === "received" && <>Received a letter: <strong>{a.text}</strong></>}
-                    {a.type === "sent" && <>Sent a letter: <strong>{a.text}</strong></>}
-                    {a.type === "match" && <>New match with <strong>{a.otherUsername}</strong></>}
-                  </div>
+                    {/* Activity message */}
+                    <div className="flex-1 text-sm">
+                      {a.type === "received" && (
+                        <>Received a letter: <strong>{a.text}</strong></>
+                      )}
+                      {a.type === "sent" && (
+                        <>Sent a letter: <strong>{a.text}</strong></>
+                      )}
+                      {a.type === "match" && (
+                        <>New match with <strong>{a.otherUsername}</strong></>
+                      )}
+                    </div>
 
-                  {/* Timestamp */}
-                  <div className="text-xs text-muted-foreground">
-                    {new Date(a.timestamp).toLocaleString()}
+                    {/* Timestamp */}
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(a.timestamp).toLocaleString()}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <div className="text-sm text-gray-500 italic">No recent activity yet</div>
+              )}
             </div>
           </div>
 
