@@ -306,7 +306,8 @@ export default function UserProfile() {
             <main className="flex flex-col items-center w-full min-h-screen py-2 px-4 bg-gray-50">
                 <Navbar />
                 {/* Profile Card */}
-                <div className="bg-white w-full max-w-3xl flex flex-col gap-6 rounded-xl border border-gray-200 p-6 mt-5 shadow-sm">
+                <div className="bg-white w-full flex flex-col gap-4 rounded-xl border border-gray-100
+                max-w-3xl mx-auto p-10 shadow-2xl mt-8 transition-all duration-300 hover:shadow-blue-200 z-10 relative">
 
                     {/* Avatar */}
                     <div className="flex flex-col items-center">
