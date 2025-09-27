@@ -1,5 +1,5 @@
 [build]
-  command = "npm rebuild lightningcss && CI= npm run build"
+  command = "npm install --force lightningcss && CI= npm run build"
   publish = ".next"
 
 [build.environment]
