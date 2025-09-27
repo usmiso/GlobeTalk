@@ -1,6 +1,5 @@
 [build]
   command = "CI= npm run build"
->>>>>>>>> Temporary merge branch 2
   publish = ".next"
 
 [[plugins]]
