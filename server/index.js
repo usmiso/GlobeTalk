@@ -278,7 +278,8 @@ app.post('/api/profile/edit', async (req, res) => {
                 languages: languages || [],
                 sayings: sayings || [],
                 username: username || "",
-                avatarUrl: avatarUrl || ""
+                avatarUrl: avatarUrl || "",
+                country: country || "" 
             },
             { merge: true }
         );
