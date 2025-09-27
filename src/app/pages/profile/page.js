@@ -222,7 +222,7 @@ const Profile = () => {
             // only ID
             languageCode: selectedLanguage, // store code
             language: getLanguageName(selectedLanguage), // store language name
-            country: countryToSave,
+            country: countryName,
             countryCode: tzObj?.country_code || '',
           }),
         });

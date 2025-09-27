@@ -24,8 +24,6 @@ export default function UserProfile() {
     const [loading, setLoading] = useState(true);
     const [username, setUsername] = useState("");
     const [avatarUrl, setAvatarUrl] = useState("");
-    const [sidebarOpen, setSidebarOpen] = useState(true);
-    const [editingField, setEditingField] = useState(null);
     const [error, setError] = useState('');
     const [saving, setSaving] = useState(false);
     const [readOnly, setReadOnly] = useState(false);
@@ -36,6 +34,7 @@ export default function UserProfile() {
     const [langQuery, setQueryLang] = useState("");
     const [favorites, setFavorites] = useState("");
     const [facts, setFacts] = useState("");
+    const [country, setCountry] = useState("");
     const [sayings, setSayings] = useState("");
 
 
@@ -106,12 +105,13 @@ export default function UserProfile() {
                 } else {
                     setLanguage([]);
                 }
-                // setRegion(data.region || "");
+                setTimezone(data.timezone || "");
                 setSayings(data.sayings || []);
                 setUsername(data.username || "");
                 setAvatarUrl(data.avatarUrl || "");
                 setFavorites(data.favorites || "");
                 setFacts(data.facts || "");
+                setCountry(data.country || "");
             }
         } catch (err) {
             console.error("Error fetching profile:", err);
@@ -233,9 +233,18 @@ export default function UserProfile() {
                 favorites,
                 facts,
                 sayings: sayings || [],
+                country,
                 // username,
                 // avatarUrl
             });
+            const tzObj = timezones.find(tz => tz.timezone_id === timezone);
+            let countryToSave = country;
+            if (!countryToSave) {
+                const tzObj = timezones.find(tz => tz.timezone_id === timezone);
+                if (tzObj && tzObj.country_code && countryMap && countryMap[tzObj.country_code]) {
+                    countryToSave = countryMap[tzObj.country_code];
+                }
+            }
 
             // const res = await fetch(`http://localhost:5000/api/profile`, {
             const res = await fetch(`${API}/api/profile`, {
@@ -252,7 +261,10 @@ export default function UserProfile() {
                     facts,
                     sayings: sayings || [],
                     username,
-                    avatarUrl
+                    avatarUrl,
+                    country: countryToSave,             // full country name
+                    countryCode: tzObj?.country_code || ''
+
                 }),
             });
 
@@ -294,7 +306,8 @@ export default function UserProfile() {
             <main className="flex flex-col items-center w-full min-h-screen py-2 px-4 bg-gray-50">
                 <Navbar />
                 {/* Profile Card */}
-                <div className="bg-white w-full max-w-3xl flex flex-col gap-6 rounded-xl border border-gray-200 p-6 mt-5 shadow-sm">
+                <div className="bg-white w-full flex flex-col gap-4 rounded-xl border border-gray-100
+                max-w-3xl mx-auto p-10 shadow-2xl mt-8 transition-all duration-300 hover:shadow-blue-200 z-10 relative">
 
                     {/* Avatar */}
                     <div className="flex flex-col items-center">
@@ -310,6 +323,7 @@ export default function UserProfile() {
 
                         {/* Display Name */}
                         <h1 className="text-2xl font-bold mb-2">{username}</h1>
+                        <p className="text-sm text-gray-500">{timezone || "No location set"}</p>
                     </div>
 
 
@@ -351,7 +365,12 @@ export default function UserProfile() {
                             {language.map((lang, i) => (
                                 <span
                                     key={i}
-                                    className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 text-sm border"
+                                    className="flex items-center gap-2 px-3 bg-green-100 border
+                                 rounded-md  
+                                text-sm  border-gray-300 font-medium 
+                      duration-200 hover:bg-green-100 hover:border-green-300 hover:text-green-700 cursor-pointer
+                     py-2 
+             transition-transform transform hover:scale-105 hover:shadow-md"
                                 >
                                     {lang}
                                     <button
@@ -408,7 +427,11 @@ export default function UserProfile() {
                             {hobbies.map((hobby, i) => (
                                 <span
                                     key={i}
-                                    className="flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-sm border"
+                                    className="flex items-center gap-2 rounded-md bg-blue-100 border
+                                    px-3 text-sm  border-gray-300 font-medium 
+                      duration-200 hover:bg-blue-100 hover:border-blue-400 hover:text-blue-700 cursor-pointer
+                     py-2 
+             transition-transform transform hover:scale-105 hover:shadow-md"
                                 >
                                     {hobby}
                                     <button
@@ -499,7 +522,9 @@ export default function UserProfile() {
                         <button
                             type="button"
                             onClick={handleSubmitSave}
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-md"
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-md
+                            h-12 border border-gray-200  flex flex-col justify-center items-center gap-2 
+             hover:shadow-lg transform hover:scale-105 transition-all duration-200"
                         >
                             Save Changes
                         </button>
