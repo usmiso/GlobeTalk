@@ -34,6 +34,7 @@ export default function UserProfile() {
     const [langQuery, setQueryLang] = useState("");
     const [favorites, setFavorites] = useState("");
     const [facts, setFacts] = useState("");
+    const [country, setCountry] = useState("");
     const [sayings, setSayings] = useState("");
 
 
@@ -110,6 +111,7 @@ export default function UserProfile() {
                 setAvatarUrl(data.avatarUrl || "");
                 setFavorites(data.favorites || "");
                 setFacts(data.facts || "");
+                setCountry(data.country || "");
             }
         } catch (err) {
             console.error("Error fetching profile:", err);
@@ -231,9 +233,18 @@ export default function UserProfile() {
                 favorites,
                 facts,
                 sayings: sayings || [],
+                country,
                 // username,
                 // avatarUrl
             });
+            const tzObj = timezones.find(tz => tz.timezone_id === timezone);
+            let countryToSave = country;
+            if (!countryToSave) {
+                const tzObj = timezones.find(tz => tz.timezone_id === timezone);
+                if (tzObj && tzObj.country_code && countryMap && countryMap[tzObj.country_code]) {
+                    countryToSave = countryMap[tzObj.country_code];
+                }
+            }
 
             // const res = await fetch(`http://localhost:5000/api/profile`, {
             const res = await fetch(`${API}/api/profile`, {
@@ -250,7 +261,10 @@ export default function UserProfile() {
                     facts,
                     sayings: sayings || [],
                     username,
-                    avatarUrl
+                    avatarUrl,
+                    country: countryToSave,             // full country name
+                    countryCode: tzObj?.country_code || ''
+
                 }),
             });
 
