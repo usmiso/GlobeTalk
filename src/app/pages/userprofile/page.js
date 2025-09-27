@@ -364,7 +364,12 @@ export default function UserProfile() {
                             {language.map((lang, i) => (
                                 <span
                                     key={i}
-                                    className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 text-sm border"
+                                    className="flex items-center gap-2 px-3 bg-green-100 border
+                                 rounded-md  
+                                text-sm  border-gray-300 font-medium 
+                      duration-200 hover:bg-green-100 hover:border-green-300 hover:text-green-700 cursor-pointer
+                     py-2 
+             transition-transform transform hover:scale-105 hover:shadow-md"
                                 >
                                     {lang}
                                     <button
@@ -421,7 +426,11 @@ export default function UserProfile() {
                             {hobbies.map((hobby, i) => (
                                 <span
                                     key={i}
-                                    className="flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-sm border"
+                                    className="flex items-center gap-2 rounded-md bg-blue-100 border
+                                    px-3 text-sm  border-gray-300 font-medium 
+                      duration-200 hover:bg-blue-100 hover:border-blue-400 hover:text-blue-700 cursor-pointer
+                     py-2 
+             transition-transform transform hover:scale-105 hover:shadow-md"
                                 >
                                     {hobby}
                                     <button
@@ -512,7 +521,9 @@ export default function UserProfile() {
                         <button
                             type="button"
                             onClick={handleSubmitSave}
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-md"
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-md
+                            h-12 border border-gray-200  flex flex-col justify-center items-center gap-2 
+             hover:shadow-lg transform hover:scale-105 transition-all duration-200"
                         >
                             Save Changes
                         </button>

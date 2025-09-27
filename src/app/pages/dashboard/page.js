@@ -129,8 +129,7 @@ export default function DashboardPage() {
                 </div>
               </div>
             </div>
-
-            {/* Languages & Interests */}
+            
             {/* Languages & Interests */}
             <div className="flex-1 space-y-8 pl-4">
               <div>
