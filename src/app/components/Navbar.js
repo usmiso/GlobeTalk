@@ -18,7 +18,7 @@ export default function Navbar() {
         <img src="/images/globe.png" alt="GlobeTalk Logo" className="w-6 h-6" />
         <span className="font-bold text-lg">GlobeTalk</span>
       </div>
-      <nav className="flex items-center gap-10 mb-3 mt-2">
+      <nav className="flex items-center gap-10 mb-3 mt-2 ">
         {navLinks.map(({ href, label }) => {
           const isActive = pathname === href || pathname.startsWith(href + "/");
           return (
@@ -26,10 +26,10 @@ export default function Navbar() {
               key={href}
               href={href}
               className={
-                "flex items-center gap-1 px-3 py-1.5 rounded-md text-m font-medium " +
+                "flex items-center gap-1 px-3 py-1.5 rounded-md text-m font-medium  " +
                 (isActive
                   ? "bg-blue-600 text-white hover:bg-blue-700"
-                  : "text-gray-700 hover:text-black")
+                  : "text-gray-700 hover:text-blue-700 ")
               }
             >
               {label}
