@@ -29,7 +29,7 @@ jobs:
       run: chmod +x ./node_modules/.bin/*
 
     - name: Run tests with coverage
-      run: npm test -- --coverage --no-cache || true
+      run: npm test -- --coverage --no-cache --silent
  
 
     - name: Upload coverage to Codecov
