@@ -48,6 +48,12 @@ export default function DashboardPage() {
       if (user) {
         try {
           const res = await fetch(`${API}/api/profile?userID=${user.uid}`);
+          if (res.status === 404) {
+            // No profile yet — send user to setup page
+            setLoading(false);
+            router.push("/pages/profile");
+            return;
+          }
           if (!res.ok) throw new Error("Profile fetch failed");
           const data = await res.json();
 
