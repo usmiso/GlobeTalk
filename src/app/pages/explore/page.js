@@ -87,9 +87,9 @@ export default function ExplorePage({ userID }) {
 
       try {
         // 1️⃣ Get matched users' timezones
-        const res = await fetch(`http://localhost:5000/api/matchedUsers?userID=${user.uid}`);
+        //const res = await fetch(`http://localhost:5000/api/matchedUsers?userID=${user.uid}`);
         const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-        // const res = await fetch(`${apiUrl}/api/profile?userID=${user.uid}`);
+        const res = await fetch(`${apiUrl}/api/profile?userID=${user.uid}`);
         const timezones = await res.json();
 
         if (!timezones.length) {
