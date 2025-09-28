@@ -6,11 +6,13 @@ import { useRouter } from "next/navigation";
 
 // Mock next/image (omit non-HTML boolean attributes like `fill` and `priority`)
 jest.mock("next/image", () => {
+  function MockNextImage({ src, alt, fill, priority, ...rest }) {
+    return <img src={src} alt={alt} {...rest} />;
+  }
+  MockNextImage.displayName = "MockNextImage";
   return {
     __esModule: true,
-    default: ({ src, alt, fill, priority, ...rest }) => (
-      <img src={src} alt={alt} {...rest} />
-    ),
+    default: MockNextImage,
   };
 });
 

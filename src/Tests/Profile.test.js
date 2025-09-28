@@ -50,7 +50,11 @@ jest.mock("../app/components/avatar/page", () => ({
 }));
 
 // Mock LoadingScreen
-jest.mock("../app/components/LoadingScreen", () => () => <div>Loading...</div>);
+jest.mock("../app/components/LoadingScreen", () => {
+  function MockLoadingScreen() { return <div>Loading...</div>; }
+  MockLoadingScreen.displayName = "MockLoadingScreen";
+  return MockLoadingScreen;
+});
 
 beforeEach(() => {
   jest.clearAllMocks();

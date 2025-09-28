@@ -21,8 +21,16 @@ jest.mock("../app/firebase/auth", () => ({
 }));
 
 // Mock Navbar and LoadingScreen to simplify DOM
-jest.mock("../app/components/Navbar", () => () => <div data-testid="navbar" />);
-jest.mock("../app/components/LoadingScreen", () => () => <div>Loading...</div>);
+jest.mock("../app/components/Navbar", () => {
+  function MockNavbar() { return <div data-testid="navbar" />; }
+  MockNavbar.displayName = "MockNavbar";
+  return MockNavbar;
+});
+jest.mock("../app/components/LoadingScreen", () => {
+  function MockLoading() { return <div>Loading...</div>; }
+  MockLoading.displayName = "MockLoadingScreen";
+  return MockLoading;
+});
 
 // Mock jsPDF used for downloads
 const saveSpyList = [];

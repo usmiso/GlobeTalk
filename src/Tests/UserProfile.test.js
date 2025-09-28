@@ -2,7 +2,11 @@ import { render, screen, waitFor, fireEvent, within, act } from "@testing-librar
 import UserProfile from "../app/pages/userprofile/page";
 
 // Mock Navbar to avoid unrelated complexity (use relative path to avoid alias issues)
-jest.mock("../app/components/Navbar", () => () => <div data-testid="navbar" />);
+jest.mock("../app/components/Navbar", () => {
+  function MockNavbar() { return <div data-testid="navbar" />; }
+  MockNavbar.displayName = "MockNavbar";
+  return MockNavbar;
+});
 
 // Mock next/navigation useRouter to avoid App Router invariant
 const pushMock = jest.fn();

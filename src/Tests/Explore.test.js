@@ -6,7 +6,13 @@ import { render, screen, waitFor, within, fireEvent } from '@testing-library/rea
 import '@testing-library/jest-dom';
 
 // Mock Navbar to avoid layout complexity
-jest.mock('@/app/components/Navbar', () => () => <nav data-testid="navbar" />);
+jest.mock('@/app/components/Navbar', () => {
+  function MockNavbar() {
+    return <nav data-testid="navbar" />;
+  }
+  MockNavbar.displayName = 'MockNavbar';
+  return MockNavbar;
+});
 
 // Mock router to avoid Next.js App Router invariant
 jest.mock('next/navigation', () => ({

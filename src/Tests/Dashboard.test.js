@@ -10,9 +10,13 @@ jest.mock("next/navigation", () => ({
 }));
 
 // Mock Navbar to avoid external dependencies and focus on Dashboard logic
-jest.mock("../app/components/Navbar", () => () => (
-  <div data-testid="mock-navbar">Navbar</div>
-));
+jest.mock("../app/components/Navbar", () => {
+  function MockNavbar() {
+    return <div data-testid="mock-navbar">Navbar</div>;
+  }
+  MockNavbar.displayName = "MockNavbar";
+  return MockNavbar;
+});
 
 // Mock Firebase auth and app auth export
 jest.mock("firebase/auth", () => ({
