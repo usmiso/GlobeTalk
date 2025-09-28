@@ -438,13 +438,6 @@ const Inbox = () => {
         {sidebarOpen && <h2 className="text-lg font-semibold">Your Pen Pals</h2>}
         <div className="flex gap-2">
           <button
-            onClick={() => setShowTicTacToe(true)}
-            className="px-3 py-1 rounded bg-green-500 text-white font-semibold hover:bg-green-600 shadow"
-            title="Play Tic Tac Toe"
-          >
-            Tic Tac Toe
-          </button>
-          <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="p-2 rounded-md hover:bg-gray-200 text-gray-600"
             title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
@@ -561,12 +554,21 @@ const Inbox = () => {
           </div>
           
           {openChat.messages && openChat.messages.length > 0 && (
-            <button
-              onClick={() => handleDownloadChatPDF(openChat.messages, currentUserID, openChat.userProfiles)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded bg-gray-200 hover:bg-gray-300 text-sm text-gray-700"
-            >
-              Download Chat
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleDownloadChatPDF(openChat.messages, currentUserID, openChat.userProfiles)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded bg-gray-200 hover:bg-gray-300 text-sm text-gray-700"
+              >
+                Download Chat
+              </button>
+              <button
+                onClick={() => setShowTicTacToe(true)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-sm text-white font-semibold"
+                title="Play Tic Tac Toe"
+              >
+                Tic Tac Toe
+              </button>
+            </div>
           )}
         </div>
 
@@ -597,13 +599,6 @@ const Inbox = () => {
           >
             {openChat.messages && openChat.messages.length > 0 ? "Reply to Letter" : "Start Chatting"}
           </button>
-              <button
-                onClick={() => setShowTicTacToe(true)}
-                className="w-full mb-3 bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition"
-                style={{maxWidth: '300px'}}
-              >
-                Tic Tac Toe
-              </button>
         </div>
       </div>
     );
