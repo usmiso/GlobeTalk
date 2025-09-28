@@ -230,9 +230,18 @@ const AuthPage = () => {
                 </span>
             </div>
 
-            {/* Right side: form, full width on mobile */}
-            <div className="w-full md:w-1/2 bg-[#F1F5F9] flex flex-col justify-center items-center px-4 md:px-12">
-                {/* Toggle Sign In/Sign Up */}
+                        {/* Right side: form, full width on mobile */}
+                        <div className="w-full md:w-1/2 bg-[#F1F5F9] flex flex-col justify-center items-center px-4 md:px-12 relative overflow-x-hidden">
+                                {/* Decorative faint background images */}
+                                <div className="fixed md:absolute inset-0 z-0 pointer-events-none">
+                                    <div className="flex justify-end items-end h-full w-full">
+                                        <img src="/images/globe.png" alt="Globe" className="w-[220px] md:w-[420px] opacity-10 mr-2 mb-2 md:mr-8 md:mb-8 select-none hidden md:block" />
+                                    </div>
+                                    <div className="flex justify-start items-end h-full w-full absolute top-0 left-0">
+                                        <img src="/images/nations.png" alt="Nations" className="w-[400px] h-[250px] md:w-[1000px] md:h-[655px] opacity-10 select-none hidden md:block" />
+                                    </div>
+                                </div>
+                {/* ...existing code... */}
                 <div className="flex mb-8 space-x-4">
                     <button
                         className={`px-6 py-2 rounded font-bold cursor-pointer ${mode === "signin"
