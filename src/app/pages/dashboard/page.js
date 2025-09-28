@@ -216,7 +216,7 @@ export default function DashboardPage() {
         <div className="grid md:grid-cols-2 gap-6 w-full">
           {/* Monthly Progress */}
           <div className="border-[0.5px] border-gray-200  bg-gray-50 rounded-lg">
-            <div className="p-4 font-semibold border-b-[0.5px] border-gray-200">This Month's Activity</div>
+            <div className="p-4 font-semibold border-b-[0.5px] border-gray-200">This Month&apos;s Activity</div>
             <div className="p-4 space-y-4">
               <div>
                 <div className="flex justify-between text-sm mb-2">
