@@ -69,7 +69,7 @@ export default function TicTacToe({ playerX = "You", playerO = "Friend", onClose
           {winner ? (
             <span className="text-green-600 font-semibold">{winner === "X" ? playerX : playerO} wins!</span>
           ) : isDraw ? (
-            <span className="text-gray-600 font-semibold">It's a draw!</span>
+            <span className="text-gray-600 font-semibold">It&apos;s a draw!</span>
           ) : (
               <span className="text-blue-700 font-semibold">{xIsNext ? playerX : playerO}&apos;s turn ({xIsNext ? "X" : "O"})</span>
           )}
