@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { EnvelopeIcon, CalendarIcon, ClockIcon } from "@heroicons/react/24/outline";
 import Navbar from '@/app/components/Navbar';
+import TicTacToe from '@/app/components/TicTacToe';
 
 const Inbox = () => {
   const router = useRouter();
@@ -30,6 +31,7 @@ const Inbox = () => {
   const [reportOther, setReportOther] = useState('');
   const [profile, setProfile] = useState(null);
   const [friendProfile, setFriendProfile] = useState(null);
+  const [showTicTacToe, setShowTicTacToe] = useState(false);
 
   const handleReply = (chat) => {
     const friend = chat.userProfiles.find(u => u.uid !== currentUserID);
@@ -433,13 +435,22 @@ const Inbox = () => {
       ${sidebarOpen ? "w-72 p-4 z-40" : "w-0 md:w-16 md:p-2 overflow-hidden"}`}>
       <div className="flex justify-between items-center mb-4">
         {sidebarOpen && <h2 className="text-lg font-semibold">Your Pen Pals</h2>}
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="p-2 rounded-md hover:bg-gray-200 text-gray-600"
-          title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-        >
-          {sidebarOpen ? "✖" : "☰"}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowTicTacToe(true)}
+            className="px-3 py-1 rounded bg-green-500 text-white font-semibold hover:bg-green-600 shadow"
+            title="Play Tic Tac Toe"
+          >
+            Tic Tac Toe
+          </button>
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-2 rounded-md hover:bg-gray-200 text-gray-600"
+            title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+          >
+            {sidebarOpen ? "✖" : "☰"}
+          </button>
+        </div>
       </div>
       
       {sidebarOpen && (
@@ -489,7 +500,7 @@ const Inbox = () => {
           </ul>
         )
       )}
-    </aside>
+  </aside>
   );
 
   // Render chat area
@@ -593,7 +604,13 @@ const Inbox = () => {
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       <Navbar />
-      
+      {showTicTacToe && (
+        <TicTacToe
+          playerX="You"
+          playerO="Friend"
+          onClose={() => setShowTicTacToe(false)}
+        />
+      )}
       <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
         {/* Mobile: Show either sidebar or chat */}
         {isMobile ? (
