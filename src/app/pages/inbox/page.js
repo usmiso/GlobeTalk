@@ -27,6 +27,7 @@ const Inbox = () => {
   const [showComposer, setShowComposer] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
   const [reportModal, setReportModal] = useState({ open: false, msg: null });
+  const [reportSuccess, setReportSuccess] = useState(false);
   const [reportReason, setReportReason] = useState('Spam or scam');
   const [reportOther, setReportOther] = useState('');
   const [profile, setProfile] = useState(null);
@@ -326,11 +327,11 @@ const Inbox = () => {
       });
       
       if (!res.ok) throw new Error('Failed to report message');
-      
-      alert('Message reported. Thank you for your feedback.');
       setReportModal({ open: false, msg: null });
+      setReportSuccess(true);
     } catch (err) {
-      alert('Error reporting message: ' + err.message);
+      setReportModal({ open: false, msg: null });
+      setReportSuccess(false);
     }
   };
 
@@ -800,14 +801,12 @@ const Inbox = () => {
         <div className="fixed inset-0 bg-black/25 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-7 min-w-80 shadow-xl max-w-[90vw]">
             <h3 className="text-lg font-semibold mb-4">Report Message</h3>
-            
             <div className="mb-3 text-sm text-gray-700">
               <strong>Message:</strong>
               <div className="bg-gray-50 rounded-md p-2 mt-1 mb-2 text-sm">
                 {reportModal.msg?.text}
               </div>
             </div>
-            
             <div className="mb-3">
               <label htmlFor="report-reason" className="block text-sm font-medium mb-1">
                 Reason:
@@ -826,7 +825,6 @@ const Inbox = () => {
                 <option>Other</option>
               </select>
             </div>
-            
             {reportReason === 'Other' && (
               <div className="mb-3">
                 <label htmlFor="report-other" className="block text-sm font-medium mb-1">
@@ -842,7 +840,6 @@ const Inbox = () => {
                 />
               </div>
             )}
-            
             <div className="flex justify-end gap-2 pt-2">
               <button
                 onClick={() => setReportModal({ open: false, msg: null })}
@@ -857,6 +854,22 @@ const Inbox = () => {
                 Submit Report
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Report Success Popup */}
+      {reportSuccess && (
+        <div className="fixed inset-0 bg-black/25 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-7 min-w-80 shadow-xl max-w-[90vw] flex flex-col items-center">
+            <h3 className="text-lg font-semibold mb-4 text-green-700">Report Submitted</h3>
+            <p className="mb-4 text-gray-700 text-center">Message reported. Thank you for your feedback.</p>
+            <button
+              onClick={() => setReportSuccess(false)}
+              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium"
+            >
+              Close
+            </button>
           </div>
         </div>
       )}
