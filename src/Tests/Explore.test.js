@@ -17,6 +17,10 @@ jest.mock('next/navigation', () => ({
 jest.mock('@/app/firebase/auth', () => ({
   auth: { currentUser: { uid: 'u-123' } },
 }));
+// Also mock via relative path resolution used by the page module
+jest.mock('../app/firebase/auth', () => ({
+  auth: { currentUser: { uid: 'u-123' } },
+}));
 
 // Mock Papa.parse to control CSV parsing
 jest.mock('papaparse', () => ({
