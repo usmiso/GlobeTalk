@@ -230,7 +230,11 @@ describe("Inbox Page", () => {
     fireEvent.click(screen.getByRole("button", { name: /submit report/i }));
 
     await waitFor(() => expect(reportMock).toHaveBeenCalled());
-    expect(window.alert).toHaveBeenCalledWith(expect.stringMatching(/message reported/i));
+    // Success UI shows a confirmation popup rather than an alert
+    expect(await screen.findByText(/report submitted/i)).toBeInTheDocument();
+    expect(screen.getByText(/message reported/i)).toBeInTheDocument();
+    // Close the popup to clean up UI state
+    fireEvent.click(screen.getByRole("button", { name: /close/i }));
   });
 
   test("unauthenticated user shows error", async () => {

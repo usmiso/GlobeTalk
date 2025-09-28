@@ -5,6 +5,18 @@ import 'whatwg-fetch'; // polyfill fetch
 // Mock environment variables
 process.env.NEXT_PUBLIC_API_URL = 'http://localhost:3000';
 
+// Global mock for next/image to avoid DOM warnings for boolean props like `priority` & `fill`
+jest.mock('next/image', () => {
+  const React = require('react');
+  const NextImageMock = ({ src = '', alt = '', ...props }) => {
+    // Strip Next-specific/boolean-only props that aren't valid DOM attributes
+    const { fill, priority, placeholder, blurDataURL, loader, ...rest } = props;
+    return React.createElement('img', { src, alt, ...rest });
+  };
+  NextImageMock.displayName = 'NextImageMock';
+  return NextImageMock;
+});
+
 // Mock window methods
 Object.defineProperty(window, 'alert', {
   value: jest.fn(),

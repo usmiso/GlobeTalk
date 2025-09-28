@@ -4,11 +4,6 @@ import { render, screen, fireEvent, waitFor, within } from "@testing-library/rea
 import ForgotPassword from "../app/pages/forgetpassword/page"; // adjust path
 import { forgotPassword } from "../app/firebase/auth";
 
-// Mock next/image
-jest.mock("next/image", () => ({ src, alt, ...props }) => (
-  <img src={src} alt={alt} {...props} />
-));
-
 // Mock forgotPassword function
 jest.mock("../app/firebase/auth", () => ({
   forgotPassword: jest.fn(),

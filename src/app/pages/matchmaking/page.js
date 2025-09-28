@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { auth } from "../../firebase/auth";
-import Sidebar from '../../components/Sidebar';
 import Navbar from "@/app/components/Navbar";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;

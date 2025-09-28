@@ -16,6 +16,7 @@ import { auth } from "../../firebase/auth";
 import LANGUAGES_LIST from "../../../../public/assets/languages.js";
 import geonamesTimezones from "../../../../public/assets/geonames_timezone.json";
 import Navbar from "@/app/components/Navbar";
+import LoadingScreen from "@/app/components/LoadingScreen";
 
 const categories = [
   { name: "All", icon: Globe },
@@ -53,6 +54,7 @@ export default function ExplorePage({ userID }) {
   const [countryMap, setCountryMap] = useState(null);
   const [profiles, setProfiles] = useState([]);
   const [selectedCountry, setSelectedCountry] = useState(null);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   const router = useRouter();
 
@@ -82,13 +84,23 @@ export default function ExplorePage({ userID }) {
 
     const fetchData = async () => {
       const user = auth.currentUser;
-      if (!user) return;
+      if (!user) {
+        if (isInitialLoading) setIsInitialLoading(false);
+        return;
+      }
 
       try {
-        // 1️⃣ Get matched users' timezones
+        // 1️⃣ Get matched users' timezones (from backend)
         const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-        const res = await fetch(`${apiUrl}/api/profile?userID=${user.uid}`);
+        const res = await fetch(`${apiUrl}/api/matchedUsers?userID=${user.uid}`);
         const timezones = await res.json();
+
+        // Ensure we received a list of timezone strings
+        if (!Array.isArray(timezones)) {
+          setFacts([]);
+          setProfiles([]);
+          return;
+        }
 
         if (!timezones.length) {
           setFacts([]);
@@ -173,6 +185,8 @@ export default function ExplorePage({ userID }) {
         console.error("Error fetching explorer data:", err);
         setFacts([]);
         setProfiles([]);
+      } finally {
+        if (isInitialLoading) setIsInitialLoading(false);
       }
     };
 
@@ -180,7 +194,7 @@ export default function ExplorePage({ userID }) {
     interval = setInterval(fetchData, 10000);
 
     return () => clearInterval(interval);
-  }, [countryMap]);
+  }, [countryMap, isInitialLoading]);
 
   // ✅ Filter facts
   const filteredFacts = facts.filter((fact) => {
@@ -193,6 +207,10 @@ export default function ExplorePage({ userID }) {
       (fact.description && fact.description.toLowerCase().includes(searchTerm.toLowerCase()));
     return matchesCategory && matchesSearch;
   });
+
+  if (isInitialLoading) {
+    return <LoadingScreen />;
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 py-2 px-4 space-y-6 relative overflow-hidden">

@@ -29,13 +29,6 @@ jest.mock('next/navigation', () => ({
   })
 }));
 
-// Mock components
-jest.mock('../app/components/Sidebar', () => {
-  return function MockSidebar() {
-    return <div data-testid="mock-sidebar">Sidebar</div>;
-  };
-});
-
 jest.mock('../app/components/Navbar', () => {
   return function MockNavbar() {
     return <div data-testid="mock-navbar">Navbar</div>;

@@ -28,6 +28,7 @@ import Papa from 'papaparse';
 beforeEach(() => {
   jest.useFakeTimers();
   jest.spyOn(global, 'fetch');
+  process.env.NEXT_PUBLIC_API_URL = 'http://localhost:5000';
 });
 
 afterEach(() => {

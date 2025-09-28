@@ -436,7 +436,7 @@ app.get('/api/matchedUsers', async (req, res) => {
 
         const userData = userDoc.data();
         const matchedUserIDs = (userData.chats || []).map(chatId => chatId.split('_')[0]);
-        console.log("Matched user IDs:", matchedUserIDs);
+        console.log("Matched user IDs chats:", matchedUserIDs);
 
         if (!matchedUserIDs.length) {
             console.log("No matched users for this user.");
