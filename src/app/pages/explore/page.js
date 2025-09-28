@@ -16,7 +16,6 @@ import { auth } from "../../firebase/auth";
 import LANGUAGES_LIST from "../../../../public/assets/languages.js";
 import geonamesTimezones from "../../../../public/assets/geonames_timezone.json";
 import Navbar from "@/app/components/Navbar";
-import ProtectedLayout from "@/app/components/ProtectedLayout";
 
 const categories = [
   { name: "All", icon: Globe },
@@ -87,7 +86,6 @@ export default function ExplorePage({ userID }) {
 
       try {
         // 1️⃣ Get matched users' timezones
-        //const res = await fetch(`http://localhost:5000/api/matchedUsers?userID=${user.uid}`);
         const apiUrl = process.env.NEXT_PUBLIC_API_URL;
         const res = await fetch(`${apiUrl}/api/profile?userID=${user.uid}`);
         const timezones = await res.json();
@@ -197,13 +195,182 @@ export default function ExplorePage({ userID }) {
   });
 
   return (
-    <ProtectedLayout redirectTo="/">
-      <div className="min-h-screen bg-gray-100 py-2 px-4 space-y-6">
+    <div className="min-h-screen bg-gray-100 py-2 px-4 space-y-6 relative overflow-hidden">
+      {/* Faint background image */}
+      <img
+        src="/images/nations.png"
+        alt="background"
+        className="absolute inset-0 w-full h-full object-cover opacity-20 pointer-events-none select-none z-0"
+      />
+      <div className="relative z-10">
         <Navbar />
         <main className="container mx-auto px-4 py-8 max-w-7xl space-y-6">
-          {/* ...existing code... */}
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="flex justify-center items-center gap-2 mb-4">
+              <Search className="h-8 w-8 text-primary" />
+              <h1 className="text-4xl font-bold">Cultural Explorer</h1>
+            </div>
+            <p className="text-lg text-muted-foreground">
+              Discover fascinating traditions, customs, and stories from around the world:
+            </p>
+            {/* Tabs */}
+            <div
+              role="tablist"
+              className="bg-muted text-muted-foreground h-9 items-center justify-center rounded-lg p-[3px] grid w-full grid-cols-2 mt-4"
+            >
+              <button
+                type="button"
+                role="tab"
+                onClick={() => setSelectedTab("facts")}
+                className={`${
+                  selectedTab === "facts"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "hover:bg-accent hover:text-accent-foreground"
+                } px-2 py-1 rounded-md text-sm font-medium`}
+              >
+                Cultural Facts
+              </button>
+              <button
+                type="button"
+                role="tab"
+                onClick={() => setSelectedTab("profiles")}
+                className={`${
+                  selectedTab === "profiles"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "hover:bg-accent hover:text-accent-foreground"
+                } px-2 py-1 rounded-md text-sm font-medium`}
+              >
+                Country Profiles
+              </button>
+            </div>
+          </div>
+          {/* Search + Categories */}
+          {selectedTab === "facts" && (
+            <div className="space-y-4">
+              <div className="relative mb-4">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <input
+                  type="text"
+                  placeholder="Search for traditions, countries, or customs..."
+                  className="pl-10 pr-3 py-2 w-full border-[0.5px] border-gray-200 rounded-md shadow-sm bg-background focus:ring-2 focus:ring-primary outline-none"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <div className="flex flex-wrap gap-2 mb-6">
+                {categories.map(({ name, icon: Icon }) => (
+                  <button
+                    key={name}
+                    onClick={() => setSelectedCategory(name)}
+                    className={`flex items-center gap-2 px-3 py-1 rounded-md text-sm transition ${
+                      selectedCategory === name
+                        ? "bg-primary text-primary-foreground shadow"
+                        : "border-[0.5px] border-gray-200 hover:bg-accent hover:text-accent-foreground"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {name}
+                  </button>
+                ))}
+              </div>
+              {/* Facts Grid */}
+              <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                {filteredFacts.length > 0 ? (
+                  filteredFacts.map((fact, i) => (
+                    <div
+                      key={i}
+                      className="border-[0.5px] border-gray-200 rounded-xl p-6 bg-card shadow-sm hover:shadow-md transition"
+                    >
+                      <h2 className="font-semibold text-lg">{fact.title}</h2>
+                      <p className="text-sm text-muted-foreground">{fact.category}</p>
+                      <p className="mt-1 text-sm font-medium">{fact.location}</p>
+                      <p className="mt-3 text-sm">{fact.description}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-center text-muted-foreground col-span-full">
+                    No cultural facts found.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+          {/* Profiles */}
+          {selectedTab === "profiles" && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Country List */}
+              <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border-[0.5px] border-gray-200 py-4 shadow-sm overflow-y-auto max-h-[500px]">
+                {profiles.map((c, i) => (
+                  <div
+                    key={i}
+                    onClick={() => setSelectedCountry(c)}
+                    className={`p-3 border-[0.5px] border-gray-300 cursor-pointer hover:bg-muted/50 transition-colors ${
+                      selectedCountry?.name === c.name ? "bg-muted" : ""
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <img src={c.countryFlag} alt={`${c.name} flag`} className="w-6 h-4 object-cover" />
+                      <div>
+                        <h4 className="font-medium text-sm">{c.name}</h4>
+                        <p className="text-xs text-muted-foreground">{c.region}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Selected Country */}
+              {selectedCountry && (
+                <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border-[0.5px] border-gray-200 py-4 shadow-sm">
+                  <div className="flex flex-col items-center gap-2">
+                    <img
+                      src={selectedCountry.countryFlag}
+                      alt={`${selectedCountry.name} flag`}
+                      className="w-20 h-12 object-cover"
+                    />
+                    {selectedCountry.coatOfArms && (
+                      <img
+                        src={selectedCountry.coatOfArms}
+                        alt={`${selectedCountry.name} coat of arms`}
+                        className="w-20 h-20 object-contain"
+                      />
+                    )}
+                    <h2 className="text-xl font-semibold">{selectedCountry.name}</h2>
+                    <p className="text-sm text-muted-foreground">{selectedCountry.region}</p>
+                  </div>
+                  <div className="px-4 space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Population:</span>
+                      <span>{selectedCountry.population}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Time Zone:</span>
+                      <span>{selectedCountry.timezone}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Currency:</span>
+                      <span>{selectedCountry.currency}</span>
+                    </div>
+                    <div>
+                      <span>Languages:</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {selectedCountry.languages.map((lang, i) => (
+                          <span
+                            key={i}
+                            className="inline-flex items-center justify-center rounded-md border-[0.5px] border-gray-200 px-2 py-0.5 font-medium bg-secondary text-secondary-foreground text-xs"
+                          >
+                            {lang}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </main>
       </div>
-    </ProtectedLayout>
+    </div>
   );
 }

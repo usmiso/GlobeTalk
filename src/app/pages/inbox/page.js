@@ -596,6 +596,13 @@ const Inbox = () => {
           >
             {openChat.messages && openChat.messages.length > 0 ? "Reply to Letter" : "Start Chatting"}
           </button>
+              <button
+                onClick={() => setShowTicTacToe(true)}
+                className="w-full mb-3 bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition"
+                style={{maxWidth: '300px'}}
+              >
+                Tic Tac Toe
+              </button>
         </div>
       </div>
     );
