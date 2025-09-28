@@ -1,5 +1,6 @@
 // jest.setup.js
 import '@testing-library/jest-dom';
+import 'whatwg-fetch'; // polyfill fetch
 
 // Mock environment variables
 process.env.NEXT_PUBLIC_API_URL = 'http://localhost:3000';

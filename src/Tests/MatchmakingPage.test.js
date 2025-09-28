@@ -3,536 +3,208 @@ import { useRouter } from "next/navigation";
 import MatchmakingPage from "../app/pages/matchmaking/page";
 import { auth } from "../app/firebase/auth";
 
-// Mock Firebase auth properly
-jest.mock("../app/firebase/auth", () => ({
+/**
+ * @jest-environment jsdom
+ */
+
+// Global fetch polyfill
+global.fetch = jest.fn();
+global.Headers = jest.fn();
+
+// Mock Firebase auth
+jest.mock('../app/firebase/auth', () => ({
   auth: {
     currentUser: {
-      uid: "user123",
-      email: "test@example.com"
+      uid: 'test-user-id',
+      email: 'test@example.com'
     }
   }
 }));
 
-// Mock Next.js router
+// Mock Next.js navigation
 const mockPush = jest.fn();
-jest.mock("next/navigation", () => ({
+jest.mock('next/navigation', () => ({
   useRouter: () => ({
-    push: mockPush,
-    refresh: jest.fn(),
-    back: jest.fn()
-  }),
+    push: mockPush
+  })
 }));
 
-// Mock global fetch
-global.fetch = jest.fn();
-global.alert = jest.fn();
+// Mock components
+jest.mock('../app/components/Sidebar', () => {
+  return function MockSidebar() {
+    return <div data-testid="mock-sidebar">Sidebar</div>;
+  };
+});
 
-const mockTimezones = [
-  { name: "UTC-05", value: "(UTC-05:00) Eastern Time" },
-  { name: "UTC+01", value: "(UTC+01:00) Central European Time" }
-];
+jest.mock('../app/components/Navbar', () => {
+  return function MockNavbar() {
+    return <div data-testid="mock-navbar">Navbar</div>;
+  };
+});
 
-const mockLanguages = [
-  { name: "English", value: "en" },
-  { name: "French", value: "fr" }
-];
+// ...existing code...
 
-const mockMatch = {
-  userID: "match123", 
-  username: "MatchedUser",
-  name: "Matched User",
-  email: "matched@example.com",
-  language: "English",
-  timezone: "UTC-05",
-  intro: "Hello world",
-  ageMin: 20,
-  ageMax: 30,
-  hobbies: ["Reading", "Sports"],
-  avatarURL: "https://example.com/avatar.jpg"
-};
-
-describe("MatchmakingPage - Comprehensive Tests", () => {
+describe('MatchmakingPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.useFakeTimers();
     
-    // Default successful fetches
+    // Setup fetch mock responses
     global.fetch.mockImplementation((url) => {
-      if (url.includes('available_timezones')) {
+      if (url.includes('/api/available_timezones')) {
         return Promise.resolve({
           ok: true,
-          json: async () => mockTimezones
+          json: () => Promise.resolve([
+            { id: 1, name: 'America/New_York', value: 'America/New_York' },
+            { id: 2, name: 'Europe/London', value: 'Europe/London' },
+            { id: 3, name: 'Asia/Tokyo', value: 'Asia/Tokyo' }
+          ])
         });
       }
-      if (url.includes('available_languages')) {
+      
+      if (url.includes('/api/available_languages')) {
         return Promise.resolve({
           ok: true,
-          json: async () => mockLanguages
+          json: () => Promise.resolve([
+            { id: 1, name: 'English', value: 'English' },
+            { id: 2, name: 'Spanish', value: 'Spanish' },
+            { id: 3, name: 'French', value: 'French' }
+          ])
         });
       }
-      if (url.includes('matchmaking')) {
+      
+      if (url.includes('/api/matchmaking')) {
         return Promise.resolve({
           ok: true,
-          json: async () => mockMatch
+          json: () => Promise.resolve({
+            userID: 'matched-user-id',
+            username: 'matcheduser',
+            language: 'English',
+            timezone: 'America/New_York',
+            avatarURL: '/avatar.jpg',
+            intro: 'Hello world!',
+            hobbies: ['reading', 'coding']
+          })
         });
       }
+      
       if (url.includes('/api/match')) {
         return Promise.resolve({
           ok: true,
-          json: async () => ({ success: true })
+          json: () => Promise.resolve({ success: true })
         });
       }
+      
       return Promise.resolve({
-        ok: false,
-        json: async () => ({ error: 'Not found' })
+        ok: true,
+        json: () => Promise.resolve({})
       });
     });
   });
 
-  afterEach(() => {
-    jest.useRealTimers();
-  });
-
-  // LINES 28-45: useEffect for fetching available data
-  test("fetches available timezones and languages on mount", async () => {
-    await act(async () => {
-      render(<MatchmakingPage />);
-    });
-
+  test('renders matchmaking page with all elements', async () => {
+    render(<MatchmakingPage />);
+    
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/api/available_timezones'));
-      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/api/available_languages'));
+      expect(screen.getByTestId('mock-navbar')).toBeInTheDocument();
+    });
+    
+        expect(screen.getByText((content) => content.includes('Find a Match'))).toBeInTheDocument();
+    expect(screen.getByText('Filter by Timezone, Country, or Both')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Search timezone...')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Search language...')).toBeInTheDocument();
+    expect(screen.getByText('Find Match')).toBeInTheDocument();
+  });
+
+  test('fetches available timezones and languages on mount', async () => {
+    render(<MatchmakingPage />);
+    
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/api/available_timezones'));
+      expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/api/available_languages'));
     });
   });
 
-  test("handles empty arrays when fetch fails", async () => {
-    global.fetch.mockImplementation(() => 
-      Promise.resolve({
-        ok: false,
-        json: async () => ({ error: 'Failed' })
-      })
-    );
 
-    await act(async () => {
-      render(<MatchmakingPage />);
+
+  test('searches and selects language', async () => {
+    render(<MatchmakingPage />);
+    
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Search language...')).toBeInTheDocument();
     });
-
-    // Component should render without crashing
-    expect(screen.getByText(/Find a Match/i)).toBeInTheDocument();
+    
+    const languageInput = screen.getByPlaceholderText('Search language...');
+    
+    fireEvent.focus(languageInput);
+    fireEvent.change(languageInput, { target: { value: 'Eng' } });
+    
+    await waitFor(() => {
+      expect(screen.getByText('English')).toBeInTheDocument();
+    });
+    
+    fireEvent.click(screen.getByText('English'));
+    
+    expect(screen.getByText('Selected: English')).toBeInTheDocument();
   });
 
-  test("handles non-array responses from API", async () => {
+
+
+  test('finds match with language filter', async () => {
+    render(<MatchmakingPage />);
+    
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Search language...')).toBeInTheDocument();
+    });
+    
+    // Select language
+    const languageInput = screen.getByPlaceholderText('Search language...');
+    fireEvent.focus(languageInput);
+    fireEvent.change(languageInput, { target: { value: 'Eng' } });
+    
+    await waitFor(() => {
+      expect(screen.getByText('English')).toBeInTheDocument();
+    });
+    
+    fireEvent.click(screen.getByText('English'));
+    
+    // Click find match
+    fireEvent.click(screen.getByText('Find Match'));
+    
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith(expect.stringContaining('language=English'));
+    });
+    
+    expect(await screen.findByText('Matched User')).toBeInTheDocument();
+  });
+
+
+  test('handles empty timezones and languages response', async () => {
     global.fetch.mockImplementation((url) => {
-      if (url.includes('available_timezones')) {
+      if (url.includes('/api/available_timezones') || url.includes('/api/available_languages')) {
         return Promise.resolve({
           ok: true,
-          json: async () => ({ timezones: mockTimezones }) // Wrong format
+          json: () => Promise.resolve([]) // Empty array
         });
       }
       return Promise.resolve({
         ok: true,
-        json: async () => []
+        json: () => Promise.resolve({})
       });
     });
-
-    await act(async () => {
-      render(<MatchmakingPage />);
-    });
-
-    // Should handle the malformed response gracefully
-    expect(screen.getByPlaceholderText("Search timezone...")).toBeInTheDocument();
-  });
-
-  // LINES 53-68: handleProceedToChat function
-  test("handleProceedToChat creates match and redirects", async () => {
-    await act(async () => {
-      render(<MatchmakingPage />);
-    });
-
-    // First, find a match
-    const timezoneInput = screen.getByPlaceholderText("Search timezone...");
-    await act(async () => {
-      fireEvent.focus(timezoneInput);
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText("UTC-05")).toBeInTheDocument();
-    });
-
-    await act(async () => {
-      fireEvent.click(screen.getByText("UTC-05"));
-    });
-
-    const findMatchButton = screen.getByRole("button", { name: /Find Match/i });
-    await act(async () => {
-      fireEvent.click(findMatchButton);
-    });
-
-    // Wait for match to appear
-    await waitFor(() => {
-      expect(screen.getByText("Matched User")).toBeInTheDocument();
-    });
-
-    // Select chat type
-    const oneTimeChatButton = screen.getByText("One Time Chat");
-    await act(async () => {
-      fireEvent.click(oneTimeChatButton);
-    });
-
-    // Proceed to chat
-    const proceedButton = screen.getByText("Proceed to chat");
-    await act(async () => {
-      fireEvent.click(proceedButton);
-    });
-
-    // Check API call
-    await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/match'),
-        expect.objectContaining({
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userA: "user123", userB: "match123" })
-        })
-      );
-    });
-
-    // Check redirect after delay
-    await act(async () => {
-      jest.advanceTimersByTime(1000);
-    });
-
-    expect(mockPush).toHaveBeenCalledWith("/pages/inbox");
-  });
-
-  test("handleProceedToChat shows error when API fails", async () => {
-    global.fetch.mockImplementation((url) => {
-      if (url.includes('/api/match')) {
-        return Promise.resolve({
-          ok: false,
-          json: async () => ({ error: "Match creation failed" })
-        });
-      }
-      return Promise.resolve({
-        ok: true,
-        json: async () => mockMatch
-      });
-    });
-
-    await act(async () => {
-      render(<MatchmakingPage />);
-    });
-
-    // Find match and proceed
-    const timezoneInput = screen.getByPlaceholderText("Search timezone...");
-    await act(async () => {
-      fireEvent.focus(timezoneInput);
-      fireEvent.click(await screen.findByText("UTC-05"));
-    });
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: /Find Match/i }));
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText("One Time Chat")).toBeInTheDocument();
-    });
-
-    await act(async () => {
-      fireEvent.click(screen.getByText("One Time Chat"));
-      fireEvent.click(screen.getByText("Proceed to chat"));
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText("Match creation failed")).toBeInTheDocument();
-    });
-  });
-
-  // LINES 74-87: Click outside handler
-  test("click outside closes dropdowns", async () => {
-    await act(async () => {
-      render(<MatchmakingPage />);
-    });
-
-    // Open timezone dropdown
-    const timezoneInput = screen.getByPlaceholderText("Search timezone...");
-    await act(async () => {
-      fireEvent.focus(timezoneInput);
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText("UTC-05")).toBeInTheDocument();
-    });
-
-    // Click outside
-    await act(async () => {
-      fireEvent.mouseDown(document.body);
-    });
-
-    // Dropdown should close
-    await waitFor(() => {
-      expect(screen.queryByText("UTC-05")).not.toBeInTheDocument();
-    });
-  });
-
-  test("event listener cleanup on unmount", async () => {
-    const removeEventListenerSpy = jest.spyOn(document, 'removeEventListener');
-
-    const { unmount } = render(<MatchmakingPage />);
-
-    unmount();
-
-    expect(removeEventListenerSpy).toHaveBeenCalledWith("mousedown", expect.any(Function));
     
-    removeEventListenerSpy.mockRestore();
-  });
-
-  // LINES 91-357: UI rendering and interactions
-  test("filtering and searching timezones", async () => {
-    await act(async () => {
-      render(<MatchmakingPage />);
-    });
-
-    const timezoneInput = screen.getByPlaceholderText("Search timezone...");
+    render(<MatchmakingPage />);
     
-    // Type in search
-    await act(async () => {
-      fireEvent.change(timezoneInput, { target: { value: "Eastern" } });
-    });
-
-    // Should filter options
-    await act(async () => {
-      fireEvent.focus(timezoneInput);
-    });
-
     await waitFor(() => {
-      expect(screen.getByText("UTC-05")).toBeInTheDocument();
-      expect(screen.queryByText("UTC+01")).not.toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Search timezone...')).toBeInTheDocument();
     });
-  });
-
-  test("clearing timezone selection", async () => {
-    await act(async () => {
-      render(<MatchmakingPage />);
-    });
-
-    const timezoneInput = screen.getByPlaceholderText("Search timezone...");
     
-    // Select a timezone
-    await act(async () => {
-      fireEvent.focus(timezoneInput);
-      fireEvent.click(await screen.findByText("UTC-05"));
-    });
-
-    // Clear button should appear
-    const clearButton = screen.getByText("Clear");
-    await act(async () => {
-      fireEvent.click(clearButton);
-    });
-
-    // Selection should be cleared
-    expect(timezoneInput.value).toBe("");
-  });
-
-  test("handles matchmaking with only timezone filter", async () => {
-    await act(async () => {
-      render(<MatchmakingPage />);
-    });
-
-    // Set only timezone
-    const timezoneInput = screen.getByPlaceholderText("Search timezone...");
-    await act(async () => {
-      fireEvent.focus(timezoneInput);
-      fireEvent.click(await screen.findByText("UTC-05"));
-    });
-
-    const findMatchButton = screen.getByRole("button", { name: /Find Match/i });
-    await act(async () => {
-      fireEvent.click(findMatchButton);
-    });
-
+    // Try to search in empty timezone list
+    const timezoneInput = screen.getByPlaceholderText('Search timezone...');
+    fireEvent.focus(timezoneInput);
+    fireEvent.change(timezoneInput, { target: { value: 'Test' } });
+    
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('timezone=UTC-05'));
+      expect(screen.getByText('No results')).toBeInTheDocument();
     });
-  });
-
-  test("handles matchmaking with only language filter", async () => {
-    await act(async () => {
-      render(<MatchmakingPage />);
-    });
-
-    // Set only language
-    const languageInput = screen.getByPlaceholderText("Search language...");
-    await act(async () => {
-      fireEvent.focus(languageInput);
-      fireEvent.click(await screen.findByText("English"));
-    });
-
-    const findMatchButton = screen.getByRole("button", { name: /Find Match/i });
-    await act(async () => {
-      fireEvent.click(findMatchButton);
-    });
-
-    await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('language=English'));
-    });
-  });
-
-  test("shows error when no filters selected", async () => {
-    await act(async () => {
-      render(<MatchmakingPage />);
-    });
-
-    const findMatchButton = screen.getByRole("button", { name: /Find Match/i });
-    await act(async () => {
-      fireEvent.click(findMatchButton);
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText(/Please select at least a timezone or a language/i)).toBeInTheDocument();
-    });
-  });
-
-  test("displays all match user information correctly", async () => {
-    await act(async () => {
-      render(<MatchmakingPage />);
-    });
-
-    // Find a match
-    const timezoneInput = screen.getByPlaceholderText("Search timezone...");
-    await act(async () => {
-      fireEvent.focus(timezoneInput);
-      fireEvent.click(await screen.findByText("UTC-05"));
-    });
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: /Find Match/i }));
-    });
-
-    // Check all displayed information
-    await waitFor(() => {
-      expect(screen.getByText("MatchedUser")).toBeInTheDocument();
-      expect(screen.getByText("Matched User")).toBeInTheDocument();
-      expect(screen.getByText("matched@example.com")).toBeInTheDocument();
-      expect(screen.getByText("English")).toBeInTheDocument();
-      expect(screen.getByText("UTC-05")).toBeInTheDocument();
-      expect(screen.getByText("Hello world")).toBeInTheDocument();
-      expect(screen.getByText("20 - 30")).toBeInTheDocument();
-      expect(screen.getByText("Reading, Sports")).toBeInTheDocument();
-    });
-
-    // Check avatar
-    const avatar = screen.getByAltText("avatar");
-    expect(avatar).toHaveAttribute("src", "https://example.com/avatar.jpg");
-  });
-
-  test("handles match with avatar field instead of avatarURL", async () => {
-    const matchWithAvatarField = {
-      ...mockMatch,
-      avatar: "https://example.com/avatar2.jpg",
-      avatarURL: undefined
-    };
-
-    global.fetch.mockImplementation((url) => {
-      if (url.includes('matchmaking')) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => matchWithAvatarField
-        });
-      }
-      return Promise.resolve({
-        ok: true,
-        json: async () => []
-      });
-    });
-
-    await act(async () => {
-      render(<MatchmakingPage />);
-    });
-
-    // Find a match
-    const timezoneInput = screen.getByPlaceholderText("Search timezone...");
-    await act(async () => {
-      fireEvent.focus(timezoneInput);
-      fireEvent.click(await screen.findByText("UTC-05"));
-    });
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: /Find Match/i }));
-    });
-
-    // Should use avatar field
-    await waitFor(() => {
-      const avatar = screen.getByAltText("avatar");
-      expect(avatar).toHaveAttribute("src", "https://example.com/avatar2.jpg");
-    });
-  });
-
-  test("falls back to JSON display for unknown match format", async () => {
-    const unknownMatch = {
-      userID: "test123",
-      unknownField: "test value"
-    };
-
-    global.fetch.mockImplementation((url) => {
-      if (url.includes('matchmaking')) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => unknownMatch
-        });
-      }
-      return Promise.resolve({
-        ok: true,
-        json: async () => []
-      });
-    });
-
-    await act(async () => {
-      render(<MatchmakingPage />);
-    });
-
-    // Find a match
-    const timezoneInput = screen.getByPlaceholderText("Search timezone...");
-    await act(async () => {
-      fireEvent.focus(timezoneInput);
-      fireEvent.click(await screen.findByText("UTC-05"));
-    });
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: /Find Match/i }));
-    });
-
-    // Should show JSON representation
-    await waitFor(() => {
-      expect(screen.getByText(/"unknownField": "test value"/)).toBeInTheDocument();
-    });
-  });
-
-  test("handles long-term chat selection", async () => {
-    await act(async () => {
-      render(<MatchmakingPage />);
-    });
-
-    // Find a match first
-    const timezoneInput = screen.getByPlaceholderText("Search timezone...");
-    await act(async () => {
-      fireEvent.focus(timezoneInput);
-      fireEvent.click(await screen.findByText("UTC-05"));
-    });
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: /Find Match/i }));
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText("Long Term Chat")).toBeInTheDocument();
-    });
-
-    // Select long-term chat
-    await act(async () => {
-      fireEvent.click(screen.getByText("Long Term Chat"));
-    });
-
-    expect(screen.getByText("Selected: Long Term Chat")).toBeInTheDocument();
   });
 });

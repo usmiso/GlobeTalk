@@ -1,17 +1,32 @@
 import { render, screen } from "@testing-library/react";
-import Navbar from "../app/components/Navbar"; // adjust path if needed
+import Navbar from "../app/components/Navbar";
 
 // Mock next/navigation
 jest.mock("next/navigation", () => ({
   usePathname: jest.fn(),
 }));
 
+// Mock Firebase auth
+jest.mock("firebase/auth", () => ({
+  getAuth: jest.fn(),
+  onAuthStateChanged: jest.fn(),
+}));
+
+// Mock Firebase app
+jest.mock("firebase/app", () => ({
+  initializeApp: jest.fn(),
+}));
+
 const { usePathname } = require("next/navigation");
 
 describe("Navbar", () => {
+  beforeEach(() => {
+    // Clear all mocks before each test
+    jest.clearAllMocks();
+  });
+
   it("renders GlobeTalk logo and nav links", () => {
     usePathname.mockReturnValue("/pages/dashboard");
-
     render(<Navbar />);
 
     expect(screen.getByText("GlobeTalk")).toBeInTheDocument();
@@ -24,7 +39,6 @@ describe("Navbar", () => {
 
   it("highlights the active route", () => {
     usePathname.mockReturnValue("/pages/inbox");
-
     render(<Navbar />);
 
     const inboxLink = screen.getByText("Inbox");
@@ -33,7 +47,6 @@ describe("Navbar", () => {
 
   it("does not highlight inactive links", () => {
     usePathname.mockReturnValue("/pages/inbox");
-
     render(<Navbar />);
 
     const dashboardLink = screen.getByText("Dashboard");
