@@ -207,4 +207,167 @@ describe('MatchmakingPage', () => {
       expect(screen.getByText('No results')).toBeInTheDocument();
     });
   });
+
+  test('searches and selects timezone', async () => {
+    render(<MatchmakingPage />);
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Search timezone...')).toBeInTheDocument();
+    });
+
+    const tzInput = screen.getByPlaceholderText('Search timezone...');
+    fireEvent.focus(tzInput);
+    fireEvent.change(tzInput, { target: { value: 'London' } });
+
+    await waitFor(() => {
+      expect(screen.getByText('Europe/London')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('Europe/London'));
+
+    expect(screen.getByText(/Selected: Europe\/London/)).toBeInTheDocument();
+  });
+
+  test('Find Match button disabled when no filters selected', async () => {
+    render(<MatchmakingPage />);
+    const button = await screen.findByText('Find Match');
+    expect(button.closest('button')).toBeDisabled();
+  });
+
+  test('finds match with timezone filter', async () => {
+    render(<MatchmakingPage />);
+
+    const tzInput = await screen.findByPlaceholderText('Search timezone...');
+    fireEvent.focus(tzInput);
+    fireEvent.change(tzInput, { target: { value: 'Tokyo' } });
+
+    await waitFor(() => {
+      expect(screen.getByText('Asia/Tokyo')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('Asia/Tokyo'));
+
+    fireEvent.click(screen.getByText('Find Match'));
+
+    await waitFor(() => {
+      // URLSearchParams encodes '/'
+      expect(fetch).toHaveBeenCalledWith(expect.stringContaining('timezone=Asia%2FTokyo'));
+    });
+
+    expect(await screen.findByText('Matched User')).toBeInTheDocument();
+  });
+
+  test('proceed to chat success flow', async () => {
+    jest.useFakeTimers();
+    render(<MatchmakingPage />);
+
+    // Select a language to enable button and find match
+    const languageInput = await screen.findByPlaceholderText('Search language...');
+    fireEvent.focus(languageInput);
+    fireEvent.change(languageInput, { target: { value: 'Eng' } });
+    await waitFor(() => expect(screen.getByText('English')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('English'));
+
+    fireEvent.click(screen.getByText('Find Match'));
+    await screen.findByText('Matched User');
+
+    // choose chat type then proceed
+    fireEvent.click(screen.getByText(/One Time Chat/));
+    const proceedBtn = screen.getByText('Proceed to chat');
+    fireEvent.click(proceedBtn);
+
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/api/match'));
+    });
+
+    // Advance timers to trigger router push
+    act(() => {
+      jest.advanceTimersByTime(850);
+    });
+
+    expect(mockPush).toHaveBeenCalledWith('/pages/inbox');
+    jest.useRealTimers();
+  });
+
+  test('proceed to chat error flow shows error and does not navigate', async () => {
+    // Override fetch for /api/match to fail
+    global.fetch.mockImplementation((url) => {
+      if (url.includes('/api/available_timezones')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+      }
+      if (url.includes('/api/available_languages')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([{ id: 1, name: 'English', value: 'English' }]) });
+      }
+      if (url.includes('/api/matchmaking')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({ userID: 'u2', username: 'u2' }) });
+      }
+      if (url.includes('/api/match')) {
+        return Promise.resolve({ ok: false, json: () => Promise.resolve({ error: 'Failed to create match' }) });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+    });
+
+    jest.useFakeTimers();
+    render(<MatchmakingPage />);
+
+    const languageInput = await screen.findByPlaceholderText('Search language...');
+    fireEvent.focus(languageInput);
+    fireEvent.change(languageInput, { target: { value: 'Eng' } });
+    await waitFor(() => expect(screen.getByText('English')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('English'));
+
+    fireEvent.click(screen.getByText('Find Match'));
+    await screen.findByText('Matched User');
+
+    fireEvent.click(screen.getByText(/One Time Chat/));
+    fireEvent.click(screen.getByText('Proceed to chat'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Failed to create match')).toBeInTheDocument();
+    });
+
+    // Ensure no navigation happened
+    expect(mockPush).not.toHaveBeenCalled();
+    jest.useRealTimers();
+  });
+
+  test('dropdown hides when clicking outside', async () => {
+    render(<MatchmakingPage />);
+
+    const languageInput = await screen.findByPlaceholderText('Search language...');
+    fireEvent.focus(languageInput);
+
+    // List should be visible now
+    fireEvent.change(languageInput, { target: { value: 'E' } });
+    await waitFor(() => expect(screen.getByText('English')).toBeInTheDocument());
+
+    // Click outside (on heading text for example)
+    fireEvent.mouseDown(screen.getByText((c) => c.includes('Find a Match')));
+
+    // Options should be hidden; querying by text should fail
+    await waitFor(() => {
+      expect(screen.queryByText('English')).not.toBeInTheDocument();
+    });
+  });
+
+  test('clear selection resets search and selected language', async () => {
+    render(<MatchmakingPage />);
+
+    const languageInput = await screen.findByPlaceholderText('Search language...');
+    fireEvent.focus(languageInput);
+    fireEvent.change(languageInput, { target: { value: 'Eng' } });
+    await waitFor(() => expect(screen.getByText('English')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('English'));
+
+    // Clear
+    fireEvent.click(screen.getByText('Clear'));
+
+    // Selected label should be gone
+    expect(screen.queryByText('Selected: English')).not.toBeInTheDocument();
+
+    // Re-focus and type again to show results anew
+    fireEvent.focus(languageInput);
+    fireEvent.change(languageInput, { target: { value: 'French' } });
+    await waitFor(() => expect(screen.getByText('French')).toBeInTheDocument());
+  });
 });

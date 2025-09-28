@@ -65,7 +65,9 @@ const Profile = () => {
 
   // Filtered options for dropdowns
   const filteredTimezones = timezones.filter(tz => {
-    const countryName = countryMap && tz.country_code ? countryMap[tz.country_code].toLowerCase() : '';
+    const countryName = (countryMap && tz.country_code && countryMap[tz.country_code])
+      ? countryMap[tz.country_code].toLowerCase()
+      : '';
     return (
       tz.timezone_id.toLowerCase().includes(timezone.toLowerCase()) ||
       (tz.gmt_offset !== undefined && (`GMT${tz.gmt_offset >= 0 ? '+' : ''}${tz.gmt_offset}`).includes(timezone)) ||
@@ -256,12 +258,13 @@ const Profile = () => {
     return (
       <main className="flex flex-col items-center justify-center min-h-screen">
         <h1 className="text-2xl mb-6">Profile</h1>
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
+        <form onSubmit={handleSubmit} noValidate className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
           {error && <div className="text-red-500 mb-2">{error}</div>}
           {/* Country */}
           <div className="mb-4 w-full max-w-md">
-            <label className="block mb-1 font-medium">Country</label>
+            <label className="block mb-1 font-medium" htmlFor="country">Country</label>
             <input
+              id="country"
               type="text"
               className="w-full border rounded px-3 py-2 mb-2 bg-gray-100 cursor-not-allowed"
               value={countryName}
@@ -271,8 +274,9 @@ const Profile = () => {
           </div>
           {/* Intro */}
           <div className="mb-4">
-            <label className="block mb-1 font-medium">Short Intro</label>
+            <label className="block mb-1 font-medium" htmlFor="intro">Short Intro</label>
             <textarea
+              id="intro"
               className="w-full border rounded px-3 py-2"
               value={intro}
               onChange={e => setIntro(e.target.value)}
@@ -282,8 +286,9 @@ const Profile = () => {
           </div>
           {/* Age */}
           <div className="mb-4">
-            <label className="block mb-1 font-medium">Age Range</label>
+            <label className="block mb-1 font-medium" htmlFor="ageRange">Age Range</label>
             <select
+              id="ageRange"
               className="w-full border rounded px-3 py-2"
               value={ageRange}
               onChange={e => setAgeRange(e.target.value)}
@@ -297,7 +302,7 @@ const Profile = () => {
           </div>
           {/* Hobbies */}
           <div className="mb-4">
-            <label className="block mb-1 font-medium">Hobbies (press Enter or comma to add)</label>
+            <label className="block mb-1 font-medium" htmlFor="hobbyInput">Hobbies (press Enter or comma to add)</label>
             <div className="flex flex-wrap gap-2 mb-2">
               {hobbies.map(hobby => (
                 <span key={hobby} className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full flex items-center">
@@ -307,6 +312,7 @@ const Profile = () => {
               ))}
             </div>
             <input
+              id="hobbyInput"
               className="w-full border rounded px-3 py-2"
               type="text"
               value={hobbyInput}
@@ -317,8 +323,9 @@ const Profile = () => {
           </div>
           {/* Timezone */}
           <div className="mb-4 w-full max-w-md relative">
-            <label className="block mb-1 font-medium">Region (Timezone)</label>
+            <label className="block mb-1 font-medium" htmlFor="timezone">Region (Timezone)</label>
             <input
+              id="timezone"
               type="text"
               className="w-full border rounded px-3 py-2 mb-2"
               placeholder="Type timezone..."
@@ -349,8 +356,9 @@ const Profile = () => {
           </div>
           {/* Language */}
           <div className="mb-4 w-full max-w-md relative">
-            <label className="block mb-1 font-medium">Language</label>
+            <label className="block mb-1 font-medium" htmlFor="language">Language</label>
             <input
+              id="language"
               type="text"
               className="w-full border rounded px-3 py-2 mb-2"
               placeholder="Type language..."
@@ -383,6 +391,13 @@ const Profile = () => {
             className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition"
           >
             Save Profile
+          </button>
+          <button
+            type="button"
+            className="w-full mt-3 bg-purple-500 text-white py-2 rounded hover:bg-purple-600 transition"
+            onClick={() => setMode('avatar')}
+          >
+            Edit Avatar
           </button>
         </form>
       </main>

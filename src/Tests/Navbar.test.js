@@ -4,18 +4,19 @@ import Navbar from "../app/components/Navbar";
 // Mock next/navigation
 jest.mock("next/navigation", () => ({
   usePathname: jest.fn(),
+  useRouter: () => ({ push: jest.fn() }),
 }));
 
-// Mock Firebase auth
+// Mock Firebase auth & app-level auth export to avoid Firestore init
 jest.mock("firebase/auth", () => ({
-  getAuth: jest.fn(),
-  onAuthStateChanged: jest.fn(),
+  signOut: jest.fn(() => Promise.resolve()),
+}));
+jest.mock("../app/firebase/auth", () => ({
+  auth: {},
 }));
 
-// Mock Firebase app
-jest.mock("firebase/app", () => ({
-  initializeApp: jest.fn(),
-}));
+// Ensure firebase/app is not invoked during tests
+jest.mock("firebase/app", () => ({ initializeApp: jest.fn(() => ({})) }));
 
 const { usePathname } = require("next/navigation");
 

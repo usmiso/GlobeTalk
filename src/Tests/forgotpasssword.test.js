@@ -1,6 +1,6 @@
 // __tests__/ForgotPassword.test.js
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import ForgotPassword from "../app/pages/forgetpassword/page"; // adjust path
 import { forgotPassword } from "../app/firebase/auth";
 
@@ -50,68 +50,84 @@ describe("ForgotPassword component", () => {
   });
 
   test("updates email input field", () => {
-    render(<ForgotPassword />);
-    const input = screen.getByPlaceholderText(/Email/i);
+    const { container } = render(<ForgotPassword />);
+    // Multiple inputs exist (mobile + desktop). Pick the first one in this render scope.
+    const input = within(container).getAllByPlaceholderText(/Email/i)[0];
     fireEvent.change(input, { target: { value: "test@example.com" } });
     expect(input.value).toBe("test@example.com");
   });
 
   test("successful form submission shows message", async () => {
-    forgotPassword.mockResolvedValueOnce();
-    render(<ForgotPassword />);
+    // Ensure any calls resolve
+    forgotPassword.mockResolvedValue(undefined);
+    const { container } = render(<ForgotPassword />);
 
-    const input = screen.getByPlaceholderText(/Email/i);
-    const button = screen.getByRole("button", { name: /Send Reset Email/i });
+    // Pick the first visible submit button and its associated input.
+    const button = within(container).getAllByRole("button", { name: /Send Reset Email/i })[0];
+    const input = within(button.closest("form") || container).getAllByPlaceholderText(/Email/i)[0];
+    const scope = button.closest("section") || button.closest("form") || container;
 
     fireEvent.change(input, { target: { value: "user@example.com" } });
     fireEvent.click(button);
 
     await waitFor(() => {
       expect(forgotPassword).toHaveBeenCalledWith("user@example.com");
-      expect(screen.getByText(/Password reset email sent/i)).toBeInTheDocument();
-      expect(input.value).toBe(""); // cleared
+      // Scope the assertion to the same section to avoid duplicate matches (mobile + desktop)
+      expect(within(scope).getByText(/Password reset email sent/i)).toBeInTheDocument();
     });
+    expect(input.value).toBe(""); // cleared
   });
 
   test("failed form submission shows error", async () => {
-    forgotPassword.mockRejectedValueOnce(new Error("User not found"));
-    render(<ForgotPassword />);
+    // Ensure any calls reject
+    forgotPassword.mockRejectedValue(new Error("User not found"));
+    const { container } = render(<ForgotPassword />);
 
-    const input = screen.getByPlaceholderText(/Email/i);
-    const button = screen.getByRole("button", { name: /Send Reset Email/i });
+  const button = within(container).getAllByRole("button", { name: /Send Reset Email/i })[0];
+  const input = within(button.closest("form") || container).getAllByPlaceholderText(/Email/i)[0];
+  const scope = button.closest("section") || button.closest("form") || container;
 
     fireEvent.change(input, { target: { value: "wrong@example.com" } });
     fireEvent.click(button);
 
     await waitFor(() => {
       expect(forgotPassword).toHaveBeenCalledWith("wrong@example.com");
-      expect(screen.getByText(/User not found/i)).toBeInTheDocument();
+      // Scope the assertion to the same section to avoid duplicate matches (mobile + desktop)
+      expect(within(scope).getByText(/User not found/i)).toBeInTheDocument();
     });
   });
 
   test("renders both success and error branches for mobile and desktop", async () => {
-    // Mobile success
+    // Mobile success — target the first form explicitly
     setWindowWidth(500);
-    forgotPassword.mockResolvedValueOnce();
-    render(<ForgotPassword />);
-    const inputMobile = screen.getByPlaceholderText(/Email/i);
-    const buttonMobile = screen.getByRole("button", { name: /Send Reset Email/i });
-    fireEvent.change(inputMobile, { target: { value: "user@example.com" } });
-    fireEvent.click(buttonMobile);
+    forgotPassword.mockResolvedValueOnce(undefined);
+    const mobile = render(<ForgotPassword />);
+    const mobileForms = within(mobile.container).getAllByRole('form', { hidden: true });
+    const mobileForm = mobileForms[0];
+    const mobileInput = within(mobileForm).getByPlaceholderText(/Email/i);
+    const mobileButton = within(mobileForm).getByRole('button', { name: /Send Reset Email/i });
+    fireEvent.change(mobileInput, { target: { value: 'user@example.com' } });
+    fireEvent.click(mobileButton);
     await waitFor(() => {
-      expect(screen.getByText(/Password reset email sent/i)).toBeInTheDocument();
+      expect(within(mobileForm.parentElement || mobile.container).getByText(/Password reset email sent/i)).toBeInTheDocument();
     });
 
-    // Desktop error
+    // Unmount to isolate, then prepare desktop rejection
+    mobile.unmount();
+    forgotPassword.mockRejectedValueOnce(new Error('Test error'));
+
+    // Desktop error — target the last form explicitly
     setWindowWidth(1200);
-    forgotPassword.mockRejectedValueOnce(new Error("Test error"));
-    render(<ForgotPassword />);
-    const inputDesktop = screen.getByPlaceholderText(/Email/i);
-    const buttonDesktop = screen.getByRole("button", { name: /Send Reset Email/i });
-    fireEvent.change(inputDesktop, { target: { value: "test2@example.com" } });
-    fireEvent.click(buttonDesktop);
+    const desktop = render(<ForgotPassword />);
+    const desktopForms = within(desktop.container).getAllByRole('form', { hidden: true });
+    const desktopForm = desktopForms[desktopForms.length - 1];
+    const desktopInput = within(desktopForm).getByPlaceholderText(/Email/i);
+    const desktopButton = within(desktopForm).getByRole('button', { name: /Send Reset Email/i });
+    fireEvent.change(desktopInput, { target: { value: 'test2@example.com' } });
+    fireEvent.click(desktopButton);
     await waitFor(() => {
-      expect(screen.getByText(/Test error/i)).toBeInTheDocument();
+      expect(forgotPassword).toHaveBeenCalledWith('test2@example.com');
+      expect(within(desktopForm.parentElement || desktop.container).getByText(/Test error/i)).toBeInTheDocument();
     });
   });
 });
