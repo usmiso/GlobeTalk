@@ -76,18 +76,8 @@ export default function Index() {
           </Link>
           <ul className=" col-start-3 flex items-center justify-center gap-20 mt-1 mr-40 whitespace-nowrap">
             <li>
-              <Link href="/" className={`text-[19px] font-[roboto_slab] ${router === "/" ? "text-blue-900" : "hover:text-blue-800 "}`}>
-                Home
-              </Link>
-            </li>
-            <li>
               <Link href="/pages/about" className={`text-gray-800 text-[19px] font-[roboto_slab] ${router === "/pages/about" ? "text-blue-900" : "hover:text-blue-800"}`}>
                 About
-              </Link>
-            </li>
-            <li>
-              <Link href="/pages/explore" className={`text-gray-800 text-[19px] font-[roboto_slab]  ${router === "/pages/about" ? "text-blue-900" : "hover:text-blue-800"}`}>
-                Explore
               </Link>
             </li>
           </ul>
@@ -105,7 +95,7 @@ export default function Index() {
         </section>
         <section aria-label='Open chat' className='justify-self-end'>
           <button type='button'
-            onClick={() => router.push("/pages/signin")}
+            onClick={() => router.push("/pages/signin?signup=true")}
             className='rounded-3xl mr-20 ml-6 bg-blue-300/20 
             shadow-[0px_4px_4px_0px_rgba(0,0,0,0.50)] 
             border border-neutral-400 h-12 w-35 px-6 cursor-pointer

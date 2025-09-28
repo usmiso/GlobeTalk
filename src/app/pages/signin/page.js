@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -11,8 +11,18 @@ import {
 } from "../../firebase/auth";
 
 const AuthPage = () => {
-    const router = useRouter();
-    const [mode, setMode] = useState("signin"); // 'signin' or 'signup'
+        const router = useRouter();
+        const [mode, setMode] = useState("signin"); // 'signin' or 'signup'
+
+        // Switch to signup mode if ?signup=true is present
+        useEffect(() => {
+            if (typeof window !== "undefined") {
+                const params = new URLSearchParams(window.location.search);
+                if (params.get("signup") === "true") {
+                    setMode("signup");
+                }
+            }
+        }, []);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
