@@ -4,7 +4,6 @@
 import React from 'react';
 import { render, screen, waitFor, within, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import ExplorePage from '@/app/pages/explore/page';
 
 // Mock Navbar to avoid layout complexity
 jest.mock('@/app/components/Navbar', () => () => <nav data-testid="navbar" />);
@@ -12,6 +11,11 @@ jest.mock('@/app/components/Navbar', () => () => <nav data-testid="navbar" />);
 // Mock router to avoid Next.js App Router invariant
 jest.mock('next/navigation', () => ({
   useRouter: () => ({ push: jest.fn(), prefetch: jest.fn() }),
+}));
+
+// Mock app auth to avoid initializing Firebase in tests
+jest.mock('@/app/firebase/auth', () => ({
+  auth: { currentUser: { uid: 'u-123' } },
 }));
 
 // Mock Papa.parse to control CSV parsing
@@ -23,6 +27,9 @@ jest.mock('papaparse', () => ({
 
 // Access the mocked SDKs after jest transforms
 import Papa from 'papaparse';
+
+// Import the page under test AFTER mocks so they take effect
+import ExplorePage from '@/app/pages/explore/page';
 
 // Ensure timers don't trigger the 10s interval repeatedly
 beforeEach(() => {
