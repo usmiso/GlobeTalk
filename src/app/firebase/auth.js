@@ -101,3 +101,5 @@ async function saveUserIP(uid, ip) {
 }
 
 export { auth, onAuthStateChanged };
+// Re-export sendEmailVerification for use in components
+export { sendEmailVerification };

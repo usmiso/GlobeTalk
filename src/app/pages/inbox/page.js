@@ -9,6 +9,7 @@ import { useSearchParams } from "next/navigation";
 import { EnvelopeIcon, CalendarIcon, ClockIcon } from "@heroicons/react/24/outline";
 import Navbar from '@/app/components/Navbar';
 import TicTacToe from '@/app/components/TicTacToe';
+import { jsPDF } from 'jspdf';
 
 const Inbox = () => {
   const router = useRouter();
@@ -59,108 +60,104 @@ const Inbox = () => {
 
   // PDF download handlers
   const handleDownloadPDF = (msg, isSender, recipientName) => {
-    import('jspdf').then(({ jsPDF }) => {
-      const doc = new jsPDF();
-      const margin = 20;
-      let y = margin;
-      doc.setFont('times', 'normal');
-      doc.setFontSize(12);
-      
-      const dateStr = msg.deliveryTime ? new Date(msg.deliveryTime).toLocaleDateString() : '';
-      doc.text(dateStr, 180, y);
-      y += 16;
-      
-      let greetingName, signatureName;
-      if (isSender) {
-        greetingName = recipientName;
-        signatureName = 'You';
-      } else {
-        greetingName = 'You';
-        signatureName = (openChat.userProfiles && openChat.userProfiles.find(u => u.uid === msg.sender)?.username || msg.sender);
-      }
-      
-      doc.setFontSize(14);
-      doc.text(`Dear ${greetingName},`, margin, y);
-      y += 12;
-      
-      doc.setFontSize(12);
-      const lines = doc.splitTextToSize(msg.text, 170);
-      doc.text(lines, margin, y);
-      y += lines.length * 7 + 12;
-      
-      doc.setFontSize(13);
-      doc.text('Kind regards,', margin, y);
-      y += 10;
-      doc.setFontSize(12);
-      doc.text(signatureName, margin, y);
-      
-      doc.save(`Letter_${dateStr}.pdf`);
-    });
+    const doc = new jsPDF();
+    const margin = 20;
+    let y = margin;
+    doc.setFont('times', 'normal');
+    doc.setFontSize(12);
+    
+    const dateStr = msg.deliveryTime ? new Date(msg.deliveryTime).toLocaleDateString() : '';
+    doc.text(dateStr, 180, y);
+    y += 16;
+    
+    let greetingName, signatureName;
+    if (isSender) {
+      greetingName = recipientName;
+      signatureName = 'You';
+    } else {
+      greetingName = 'You';
+      signatureName = (openChat.userProfiles && openChat.userProfiles.find(u => u.uid === msg.sender)?.username || msg.sender);
+    }
+    
+    doc.setFontSize(14);
+    doc.text(`Dear ${greetingName},`, margin, y);
+    y += 12;
+    
+    doc.setFontSize(12);
+    const lines = doc.splitTextToSize(msg.text, 170);
+    doc.text(lines, margin, y);
+    y += lines.length * 7 + 12;
+    
+    doc.setFontSize(13);
+    doc.text('Kind regards,', margin, y);
+    y += 10;
+    doc.setFontSize(12);
+    doc.text(signatureName, margin, y);
+    
+    doc.save(`Letter_${dateStr}.pdf`);
   };
 
   const handleDownloadChatPDF = (messages, currentUserID, userProfiles) => {
-    import("jspdf").then(({ jsPDF }) => {
-      const doc = new jsPDF();
-      const margin = 20;
-      let y = margin;
+    const doc = new jsPDF();
+    const margin = 20;
+    let y = margin;
 
-      doc.setFont("times", "normal");
-      doc.setFontSize(16);
-      doc.text("Chat Transcript", margin, y);
-      y += 12;
+    doc.setFont("times", "normal");
+    doc.setFontSize(16);
+    doc.text("Chat Transcript", margin, y);
+    y += 12;
 
-      const now = Date.now();
+    const now = Date.now();
 
-      messages.forEach((msg) => {
-        if (!msg) return;
+    messages.forEach((msg) => {
+      if (!msg) return;
 
-        const isSender = msg.sender === currentUserID;
-        const senderName = isSender
-          ? "You"
-          : userProfiles?.find((u) => u.uid === msg.sender)?.username || msg.sender;
+      const isSender = msg.sender === currentUserID;
+      const senderName = isSender
+        ? "You"
+        : userProfiles?.find((u) => u.uid === msg.sender)?.username || msg.sender;
 
-        const dateStr = msg.deliveryTime
-          ? new Date(msg.deliveryTime).toLocaleDateString()
-          : "";
+      const dateStr = msg.deliveryTime
+        ? new Date(msg.deliveryTime).toLocaleDateString()
+        : "";
 
-        const isUnlocked = msg.deliveryTime <= now;
+      const isUnlocked = msg.deliveryTime <= now;
 
-        doc.setFontSize(12);
-        doc.setFont(undefined, "bold");
-        doc.text(`${senderName} (${dateStr})`, margin, y);
-        y += 8;
+      doc.setFontSize(12);
+      doc.setFont(undefined, "bold");
+      doc.text(`${senderName} (${dateStr})`, margin, y);
+      y += 8;
 
-        doc.setFont(undefined, "normal");
-        if (isUnlocked) {
-          const lines = doc.splitTextToSize(msg.text, 170);
-          doc.text(lines, margin, y);
-          y += lines.length * 7 + 6;
-        } else {
-          doc.setTextColor(150);
-          doc.text("This letter is locked and will unlock later...", margin, y);
-          doc.setTextColor(0);
-          y += 12;
-        }
+      doc.setFont(undefined, "normal");
+      if (isUnlocked) {
+        const lines = doc.splitTextToSize(msg.text, 170);
+        doc.text(lines, margin, y);
+        y += lines.length * 7 + 6;
+      } else {
+        doc.setTextColor(150);
+        doc.text("This letter is locked and will unlock later...", margin, y);
+        doc.setTextColor(0);
+        y += 12;
+      }
 
-        if (y > 270) {
-          doc.addPage();
-          y = margin;
-        }
-      });
-
-      doc.save("Chat_Transcript.pdf");
+      if (y > 270) {
+        doc.addPage();
+        y = margin;
+      }
     });
+
+    doc.save("Chat_Transcript.pdf");
   };
 
   // Polling for open chat messages
   useEffect(() => {
     if (!openChat || !openChat.chatId) return;
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
     let isMounted = true;
     
     const fetchMessages = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/chat?chatId=${encodeURIComponent(openChat.chatId)}`);
+        const res = await fetch(`${apiUrl}/api/chat?chatId=${encodeURIComponent(openChat.chatId)}`);
         if (!res.ok) return;
         const chat = await res.json();
         if (isMounted && chat && chat.messages) {

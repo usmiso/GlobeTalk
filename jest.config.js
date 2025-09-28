@@ -9,6 +9,7 @@ const customJestConfig = {
 
   moduleNameMapper: {
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+    '^@/(.*)$': '<rootDir>/src/$1',
     '^@/components/(.*)$': '<rootDir>/src/components/$1',
     '^components/(.*)$': '<rootDir>/src/components/$1',
   },
@@ -32,8 +33,8 @@ const customJestConfig = {
     '!src/app/components/ProtectedLayout.js',
     '!src/app/components/ProtectedRoute.js',
     '!src/app/components/useAuthRedirect.js',
-    '!src/app/firebase/auth.js',
-    '!src/app/firebase/config.js',
+    'src/app/firebase/auth.js',
+    'src/app/firebase/config.js',
     '!src/app/components/AuthContext.js', // optional
     '!src/pages/**/*.{js,jsx,ts,tsx}',
     '!**/*.test.{js,jsx,ts,tsx}',

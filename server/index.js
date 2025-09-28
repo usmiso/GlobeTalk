@@ -248,14 +248,17 @@ app.post('/api/match', async (req, res) => {
             userBRef.set({ chats: admin.firestore.FieldValue.arrayUnion(matchKey) }, { merge: true })
         ]);
 
+        // 🔹 ADDED: Update MatchedUsers array for both users
+        await Promise.all([
+            userARef.set({ MatchedUsers: admin.firestore.FieldValue.arrayUnion(userB) }, { merge: true }),
+            userBRef.set({ MatchedUsers: admin.firestore.FieldValue.arrayUnion(userA) }, { merge: true })
+        ]);
+
         res.status(200).json({ message: 'Match and chat created', chatId: matchKey });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
-// app.use('/static', express.static(path.join(__dirname, 'public')));
-
-
 
 //api for edit page specifically
 app.post('/api/profile/edit', async (req, res) => {
@@ -425,7 +428,7 @@ app.get('/api/matchedUsers', async (req, res) => {
 
     try {
         // 1️⃣ Get current user profile
-        const userDoc = await db.collection('profiles').doc(userID).get();
+        const userDoc = await db.collection('profiles').doc(userID).get();//Querying profile collection for userID
         if (!userDoc.exists) {
             console.log("User profile not found for:", userID);
             return res.status(404).json({ error: 'User profile not found' });

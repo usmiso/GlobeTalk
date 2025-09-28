@@ -240,9 +240,11 @@ export default function UserProfile() {
             const tzObj = timezones.find(tz => tz.timezone_id === timezone);
             let countryToSave = country;
             if (!countryToSave) {
-                const tzObj = timezones.find(tz => tz.timezone_id === timezone);
-                if (tzObj && tzObj.country_code && countryMap && countryMap[tzObj.country_code]) {
-                    countryToSave = countryMap[tzObj.country_code];
+                const tzObjInner = timezones.find(tz => tz.timezone_id === timezone);
+                // Safely check for a global countryMap without throwing if undefined
+                const safeCountryMap = (typeof countryMap !== 'undefined' && countryMap) ? countryMap : undefined;
+                if (tzObjInner && tzObjInner.country_code && safeCountryMap && safeCountryMap[tzObjInner.country_code]) {
+                    countryToSave = safeCountryMap[tzObjInner.country_code];
                 }
             }
 
