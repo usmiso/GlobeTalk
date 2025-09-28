@@ -239,6 +239,7 @@ const Profile = () => {
     }
   };
 
+
   return (
     <ProtectedLayout redirectTo="/">
       {loading ? (
@@ -258,5 +259,6 @@ const Profile = () => {
       ) : null}
     </ProtectedLayout>
   );
+}
 
 export default Profile;
