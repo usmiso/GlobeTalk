@@ -9,37 +9,6 @@ export default function AvatarUsernameGen({ onSuccess }) {
   const [username, setUsername] = useState("");
   const [gender, setGender] = useState("male");
   const [hair, setHair] = useState("");
-  const [hobbyInput, setHobbyInput] = useState("");
-  const [hobbies, setHobbies] = useState([]);
-  // Add hobby if comma is detected in input (works on mobile)
-  const handleHobbyInputChange = (e) => {
-    const value = e.target.value;
-    if (value.includes(",")) {
-      const parts = value.split(",").map(h => h.trim()).filter(h => h);
-      const newHobbies = [...hobbies];
-      parts.forEach(hobby => {
-        if (hobby && !newHobbies.includes(hobby)) {
-          newHobbies.push(hobby);
-        }
-      });
-      setHobbies(newHobbies);
-      setHobbyInput("");
-    } else {
-      setHobbyInput(value);
-    }
-  };
-
-  // Add hobby on Enter (desktop)
-  const handleHobbyKeyDown = (e) => {
-    if ((e.key === "Enter") && hobbyInput.trim()) {
-      e.preventDefault();
-      const trimmed = hobbyInput.trim();
-      if (trimmed && !hobbies.includes(trimmed)) {
-        setHobbies([...hobbies, trimmed]);
-      }
-      setHobbyInput("");
-    }
-  };
   const router = useRouter();
 
   const femaleHairOptions = ['straight02', 'bun', 'curly'];
@@ -177,28 +146,6 @@ export default function AvatarUsernameGen({ onSuccess }) {
             )}
           </div>
 
-          {/* Hobbies Input */}
-          <div className="w-full mb-4">
-            <label className="block text-xs font-medium mb-1" style={{ color: theme.textDark }}>
-              Hobbies (press Enter or comma to add)
-            </label>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {hobbies.map(hobby => (
-                <span key={hobby} className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full flex items-center">
-                  {hobby}
-                  <button type="button" className="ml-1 text-xs" onClick={() => setHobbies(hobbies.filter(h => h !== hobby))}>&times;</button>
-                </span>
-              ))}
-            </div>
-            <input
-              className="w-full border rounded px-3 py-2"
-              type="text"
-              value={hobbyInput}
-              onChange={handleHobbyInputChange}
-              onKeyDown={handleHobbyKeyDown}
-              placeholder="Type a hobby and press Enter or comma"
-            />
-          </div>
           {/* Dropdowns */}
           <div className="flex flex-col sm:flex-row gap-3 w-full">
             <div className="flex-1">
