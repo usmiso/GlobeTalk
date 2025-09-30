@@ -186,8 +186,27 @@ const Profile = () => {
     setTimezones(validZones);
   }, []);
 
+  // Add hobby when comma is typed (mobile) or Enter is pressed (desktop)
+  const handleHobbyInputChange = (e) => {
+    const value = e.target.value;
+    // If comma is present, split and add all new hobbies
+    if (value.includes(',')) {
+      const parts = value.split(',');
+      parts.forEach(part => {
+        const trimmed = part.trim();
+        if (trimmed && !trimmed.includes(' ') && !hobbies.includes(trimmed)) {
+          setHobbies(prev => [...prev, trimmed]);
+        }
+      });
+      setHobbyInput('');
+    } else {
+      setHobbyInput(value);
+    }
+  };
+
+  // Add hobby on Enter (desktop)
   const handleHobbyKeyDown = (e) => {
-    if ((e.key === 'Enter' || e.key === ',') && hobbyInput.trim()) {
+    if (e.key === 'Enter' && hobbyInput.trim()) {
       e.preventDefault();
       const trimmed = hobbyInput.trim();
       if (trimmed.includes(' ')) {
@@ -376,7 +395,7 @@ const Profile = () => {
                     className="w-full rounded px-3 py-2"
                     type="text"
                     value={hobbyInput}
-                    onChange={e => setHobbyInput(e.target.value)}
+                    onChange={handleHobbyInputChange}
                     onKeyDown={handleHobbyKeyDown}
                     placeholder="Type a hobby and press Enter or comma"
                     style={{
