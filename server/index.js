@@ -37,33 +37,73 @@ app.get('/api/health', (req, res) => {
 /**
  * POST /api/profile
  * Create or update a user profile.
- * Body: { userID, intro, ageRange, hobbies, timezone, language, country }
+ * Body (required): { userID, intro, ageRange, hobbies, timezone, language, country }
+ * Body (optional): { favorites, facts, sayings, username, avatarUrl, countryCode, languageCode }
  */
 app.post('/api/profile', async (req, res) => {
     if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
 
-    const { userID, intro, ageRange, hobbies, timezone, language, country } = req.body;
+    const {
+        userID,
+        intro,
+        ageRange,
+        hobbies,
+        timezone,
+        language, // can be string or array of strings
+        country,
+        favorites,
+        facts,
+        sayings,
+        username,
+        avatarUrl,
+        countryCode,
+        languageCode,
+    } = req.body;
 
     if (!userID || !intro || !ageRange || !hobbies || !timezone || !language || !country) {
         return res.status(400).json({ error: 'Missing required fields' });
     }
 
     try {
-        await db.collection('profiles').doc(userID).set(
-            { userID, intro, ageRange, hobbies, timezone, language, country },
-            { merge: true }
-        );
+        const update = {
+            userID,
+            intro,
+            ageRange,
+            hobbies,
+            timezone,
+            language,
+            country,
+        };
+
+        // Optional enrichments
+        if (typeof favorites !== 'undefined') update.favorites = favorites;
+        if (typeof facts !== 'undefined') update.facts = facts;
+        if (typeof sayings !== 'undefined') update.sayings = sayings;
+        if (typeof username !== 'undefined') update.username = username;
+        if (typeof avatarUrl !== 'undefined') update.avatarUrl = avatarUrl;
+        if (typeof countryCode !== 'undefined') update.countryCode = countryCode;
+        if (typeof languageCode !== 'undefined') update.languageCode = languageCode;
+
+        await db.collection('profiles').doc(userID).set(update, { merge: true });
 
         // Ensure language exists in available_languages
-        if (language && typeof language === 'string') {
-            const langDocId = encodeURIComponent(language);
-            try {
+        try {
+            const addLanguage = async (lang) => {
+                if (!lang || typeof lang !== 'string') return;
+                const langDocId = encodeURIComponent(lang);
                 const langRef = db.collection('available_languages').doc(langDocId);
                 const langDoc = await langRef.get();
-                if (!langDoc.exists) await langRef.set({ name: language });
-            } catch (err) {
-                console.error('Error adding language to available_languages:', err);
+                if (!langDoc.exists) await langRef.set({ name: lang });
+            };
+            if (Array.isArray(language)) {
+                for (const lang of language) {
+                    await addLanguage(lang);
+                }
+            } else if (typeof language === 'string') {
+                await addLanguage(language);
             }
+        } catch (err) {
+            console.error('Error adding language(s) to available_languages:', err);
         }
 
         // Ensure timezone exists in available_countries
