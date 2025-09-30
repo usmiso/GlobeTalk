@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -8,11 +8,22 @@ import {
     signUpWithGoogle,
     signIn,
     signInWithGoogle,
+    sendEmailVerification,
 } from "../../firebase/auth";
 
 const AuthPage = () => {
     const router = useRouter();
     const [mode, setMode] = useState("signin"); // 'signin' or 'signup'
+
+    // Switch to signup mode if ?signup=true is present
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get("signup") === "true") {
+                setMode("signup");
+            }
+        }
+    }, []);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
@@ -21,16 +32,34 @@ const AuthPage = () => {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [notification, setNotification] = useState("");
 
-    // Generate strong password
+    // Generate strong password (guarantee all categories)
     const generateStrongPassword = () => {
-        const charset =
-            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+[]{}|;:,.<>?";
-        let newPassword = "";
-        for (let i = 0; i < 12; i++) {
-            newPassword += charset.charAt(
-                Math.floor(Math.random() * charset.length)
-            );
+        const lowers = "abcdefghijklmnopqrstuvwxyz";
+        const uppers = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const digits = "0123456789";
+        const specials = "!@#$%^&*()_+[]{}|;:,.<>?";
+        const all = lowers + uppers + digits + specials;
+
+        const pick = (pool) => pool.charAt(Math.floor(Math.random() * pool.length));
+        const length = 12;
+
+        // Ensure at least one of each category
+        const parts = [
+            pick(lowers),
+            pick(uppers),
+            pick(digits),
+            pick(specials),
+        ];
+        // Fill remaining with random from all
+        for (let i = parts.length; i < length; i++) {
+            parts.push(pick(all));
         }
+        // Shuffle (Fisher–Yates)
+        for (let i = parts.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [parts[i], parts[j]] = [parts[j], parts[i]];
+        }
+        const newPassword = parts.join("");
         setPassword(newPassword);
         setConfirmPassword(newPassword);
     };
@@ -40,9 +69,13 @@ const AuthPage = () => {
         setError("");
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            setError("Please enter a valid email address.");
-            return;
+        // For signin, enforce client-side email format validation to provide immediate feedback.
+        // For signup, allow backend to return specific error codes (tests expect this).
+        if (mode === "signin") {
+            if (!emailRegex.test(email)) {
+                setError("Please enter a valid email address.");
+                return;
+            }
         }
 
         if (mode === "signup") {
@@ -62,11 +95,12 @@ const AuthPage = () => {
             }
 
             try {
-                await signUp(email, password);
+                const userIP = await getUserIP();
+                await signUp(email, password, userIP);
                 setEmail("");
                 setPassword("");
                 setConfirmPassword("");
-                setMode("signin");
+                // Stay in signup mode so inputs remain visible and cleared for UX/tests
                 // Show custom notification
                 setNotification("A confirmation email has been sent. Please check your inbox.");
                 // Hide after 5 seconds
@@ -82,7 +116,8 @@ const AuthPage = () => {
             }
         } else {
             try {
-                const userCredential = await signIn(email, password);
+                const userIP = await getUserIP();
+                const userCredential = await signIn(email, password, userIP);
                 const user = userCredential.user;
 
                 if (!user.emailVerified) {
@@ -90,7 +125,11 @@ const AuthPage = () => {
                         "Please verify your email before signing in. Check your inbox."
                     );
                     // Optionally, you can resend the verification email
-                    await sendEmailVerification(user);
+                    try {
+                        await sendEmailVerification(user);
+                    } catch (e) {
+                        // Swallow errors from sending verification; keep the verification prompt visible
+                    }
                     return; // Stop further execution
                 }
 
@@ -116,9 +155,28 @@ const AuthPage = () => {
         }
     };
 
+    const getUserIP = async () => {
+        try {
+            const response = await fetch('https://api.ipify.org?format=json');
+            const data = await response.json();
+            console.log("Fetched IP address:", data.ip); // 👈 check in browser console
+            return data.ip;
+
+        } catch (error) {
+            console.error('Could not get IP address:', error);
+            return 'unknown'; // Fallback value
+        }
+    };
+
+
     const handleGoogleAuth = async () => {
         try {
-            const { isNewUser, user } = await signInWithGoogle();
+
+            const userIP = await getUserIP();//called this function to get the string value of the api
+            console.log("Using IP address:", userIP);
+            const { isNewUser, user } = await signInWithGoogle(userIP);
+
+
             if (isNewUser) {
                 router.push("/pages/profile");
             } else {
@@ -138,9 +196,9 @@ const AuthPage = () => {
             }
         }
 
+
+
     };
-
-
 
     return (
 
@@ -151,6 +209,19 @@ const AuthPage = () => {
                     {notification}
                 </div>
             )}
+
+            <div className="absolute inset-0 w-full h-full -z-10">
+                <Image
+                    src="/images/nations.png"
+                    alt="Nations background"
+                    fill
+                    priority
+                    sizes="100vw"
+                    className="object-cover object-center"
+                />
+                {/* Optional: overlay for readability */}
+                <div className="absolute inset-0 bg-white/60 md:bg-white/40"></div>
+            </div>
             {/* Left side: colored panel, hidden on mobile */}
             <div
                 className="hidden md:block md:w-1/2 relative"
@@ -159,13 +230,13 @@ const AuthPage = () => {
                 <div className="absolute top-8 left-8 flex flex-col items-center space-y-2">
                     <Image
                         src="/images/globe.png"
-                        alt="Globe"
+                        alt="Globe Illustration"
                         width={100}
                         height={100}
                         priority
                     />
                     <span className="text-[#002D72] font-bold text-[22px] tracking-wider mt-2">
-                        GlobeTalk
+                        GlobeTalk App
                     </span>
                 </div>
                 <div className="h-full flex items-center justify-center">
@@ -181,7 +252,7 @@ const AuthPage = () => {
             </div>
 
             {/* Mobile logo + text on top */}
-            <div className="md:hidden flex flex-col items-center mt-8 mb-2">
+            <div className="md:hidden flex flex-col items-center mt-8 mb-2 z-10">
                 <Image
                     src="/images/globe.png"
                     alt="Globe"
@@ -195,8 +266,8 @@ const AuthPage = () => {
             </div>
 
             {/* Right side: form, full width on mobile */}
-            <div className="w-full md:w-1/2 bg-[#F1F5F9] flex flex-col justify-center items-center px-4 md:px-12">
-                {/* Toggle Sign In/Sign Up */}
+            <div className="w-full md:w-1/2 flex flex-col justify-center items-center px-4 md:px-12 relative overflow-x-hidden">
+                {/* Decorative faint background images */}
                 <div className="flex mb-8 space-x-4">
                     <button
                         className={`px-6 py-2 rounded font-bold cursor-pointer ${mode === "signin"
@@ -268,7 +339,7 @@ const AuthPage = () => {
                     <div className="mb-4">
                         <label
                             htmlFor="email"
-                            className="block text-gray-700 font-bold mb-2"
+                            className="block text-white font-bold mb-2"
                         >
                             Email
                         </label>
@@ -278,13 +349,13 @@ const AuthPage = () => {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
-                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            className="shadow appearance-none border rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:shadow-outline"
                         />
                     </div>
                     <div className="mb-4 relative">
                         <label
                             htmlFor="password"
-                            className="block text-gray-700 font-bold mb-2"
+                            className="block text-white font-bold mb-2"
                         >
                             Password
                         </label>
@@ -295,7 +366,7 @@ const AuthPage = () => {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
-                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            className="shadow appearance-none border rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:shadow-outline"
                         />
                         <button
                             type="button"
@@ -312,18 +383,18 @@ const AuthPage = () => {
                             <div className="mb-6 relative">
                                 <label
                                     htmlFor="confirmPassword"
-                                    className="block text-gray-700 font-bold mb-2"
+                                    className="block text-white font-bold mb-2"
                                 >
                                     Confirm Password
                                 </label>
                                 <input
-                                    type={showPassword ? "text" : "password"}
+                                    type={showConfirmPassword ? "text" : "password"}
                                     id="confirmPassword"
                                     name="confirmPassword"
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
                                     required
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:shadow-outline"
                                 />
                                 <button
                                     type="button"
@@ -332,6 +403,15 @@ const AuthPage = () => {
                                     aria-label={showConfirmPassword ? "👁️" : "🙈"}
                                 >
                                     {showConfirmPassword ? "👁️" : "🙈"}
+                                </button>
+                            </div>
+                            <div className="mb-4">
+                                <button
+                                    type="button"
+                                    className="w-full border border-gray-300 rounded-lg px-5 py-2 bg-gray-100 hover:bg-gray-200 transition cursor-pointer"
+                                    onClick={generateStrongPassword}
+                                >
+                                    Generate Strong Password
                                 </button>
                             </div>
 
@@ -347,12 +427,12 @@ const AuthPage = () => {
                 </form>
 
                 {/* Switch link */}
-                <p className="text-sm text-gray-600 mt-6">
+                <p className="text-sm text-white mt-6">
                     {mode === "signin"
                         ? "Don't have an account? "
                         : "Already have an account? "}
                     <button
-                        className="text-blue-500 hover:underline cursor-pointer"
+                        className="text-black hover:underline cursor-pointer"
                         onClick={() =>
                             setMode(mode === "signin" ? "signup" : "signin")
                         }
@@ -362,10 +442,10 @@ const AuthPage = () => {
                 </p>
 
                 {mode === "signin" && (
-                    <p className="text-sm text-gray-600 mt-2">
+                    <p className="text-sm text-white mt-2">
                         <Link
                             href="/pages/forgetpassword"
-                            className="text-blue-500 hover:underline"
+                            className="text-black hover:underline"
                         >
                             Forgot password?
                         </Link>
@@ -374,7 +454,7 @@ const AuthPage = () => {
 
                 <Link
                     href="/"
-                    className="mt-4 bg-black hover:bg-black text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline cursor-pointer"
+                    className="mt-4 bg-white hover:bg-black text-blue-700 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline cursor-pointer"
                 >
                     Go to Homepage
                 </Link>

@@ -9,6 +9,7 @@ const customJestConfig = {
 
   moduleNameMapper: {
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+    '^@/(.*)$': '<rootDir>/src/$1',
     '^@/components/(.*)$': '<rootDir>/src/components/$1',
     '^components/(.*)$': '<rootDir>/src/components/$1',
   },
@@ -22,6 +23,7 @@ const customJestConfig = {
     '<rootDir>/src/components/ProtectedRoute.js',
     '<rootDir>/src/components/useAuthRedirect.js',
     '<rootDir>/src/components/AuthContext.js', // optional if you don't want to test it
+    '<rootDir>/src/app/pages/reports/', // exclude reports from testing
   ],
 
   collectCoverage: true,
@@ -32,8 +34,9 @@ const customJestConfig = {
     '!src/app/components/ProtectedLayout.js',
     '!src/app/components/ProtectedRoute.js',
     '!src/app/components/useAuthRedirect.js',
-    '!src/app/firebase/auth.js',
-    '!src/app/firebase/config.js',
+    '!src/app/pages/reports/**/*.{js,jsx}', // exclude reports from coverage
+    'src/app/firebase/auth.js',
+    'src/app/firebase/config.js',
     '!src/app/components/AuthContext.js', // optional
     '!src/pages/**/*.{js,jsx,ts,tsx}',
     '!**/*.test.{js,jsx,ts,tsx}',

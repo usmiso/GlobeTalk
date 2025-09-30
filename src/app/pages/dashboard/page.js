@@ -1,147 +1,338 @@
-"use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+"use client"
 
-export default function Dashboard() {
+import Link from "next/link"
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { auth } from "../../firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
+import Navbar from "../../components/Navbar";
+import Image from "next/image"
+
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+export default function DashboardPage() {
+
+  const EMPTY_STATS = {
+    totalLetters: 0,
+    activePenPals: 0,
+    countriesConnected: 0,
+    averageResponseTime: "—",
+    lettersThisMonth: 0,
+    favoriteLetters: 0,
+    activity: [],
+  };
+
   const router = useRouter();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState(null);
+  const [stats, setStats] = useState(EMPTY_STATS);
+  const [activity, setActivity] = useState([]);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const apiUrl = API;
+        const res = await fetch(`${apiUrl}/api/stats?userID=${auth.currentUser.uid}`);
+        const data = await res.json();
+        setStats({ ...EMPTY_STATS, ...data });
+        setActivity(Array.isArray(data.activity) ? data.activity : []);
+      } catch (err) {
+        console.error("Error loading stats:", err);
+      }
+    };
+    if (auth.currentUser) fetchStats();
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          const res = await fetch(`${API}/api/profile?userID=${user.uid}`);
+          if (res.status === 404) {
+            // No profile yet — send user to setup page
+            setLoading(false);
+            router.push("/pages/profile");
+            return;
+          }
+          if (!res.ok) throw new Error("Profile fetch failed");
+          const data = await res.json();
+
+          if (Array.isArray(data.language)) {
+            data.language = data.language;
+          } else if (typeof data.language === "string" && data.language.trim() !== "") {
+            data.language = [data.language];
+          } else {
+            data.language = [];
+          }
+
+          if (Array.isArray(data.hobbies)) {
+            data.hobbies = data.hobbies;
+          } else if (typeof data.hobbies === "string" && data.hobbies.trim() !== "") {
+            data.hobbies = [data.hobbies];
+          } else {
+            data.hobbies = [];
+          }
+
+          setProfile(data);
+        } catch (err) {
+          console.error("Error loading profile:", err);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        router.push("/login"); // or redirect somewhere
+      }
+    });
+    return () => unsubscribe();
+  }, [router]);
+
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
+
+  if (!profile) {
+    return <div className="p-6">No profile data found.</div>;
+  }
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar */}
-      {sidebarOpen && (
-        <aside
-          className="flex flex-col justify-between transition-all duration-300"
-          style={{
-            backgroundColor: "#6492BD",
-            width: "13rem",
-          }}
-        >
-          {/* GlobeTalk & Toggle */}
-          <div className="flex flex-row items-start p-2 sm:gap-15 sm:p-5">
-            <div className="flex items-center gap-1 sm:gap-2 mb-2 sm:mb-3">
-              <img
-                src="/images/globe.png"
-                alt="GlobeTalk Logo"
-                className="w-5 h-5 sm:w-6 sm:h-6 object-cover"
-              />
-              <p className="text-xs sm:text-sm lg:text-base font-bold text-black">
-                GlobeTalk
-              </p>
-            </div>
+    <div className="flex min-h-screen">
 
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="p-1 sm:p-1 rounded  text-black font-bold text-sm sm:text-base mb-2 sm:mb-0"
-            >
-              ☰
-            </button>
-          </div>
-
-          {/* Menu */}
-          <div className="flex flex-col justify-between h-full p-2 sm:p-3">
-            <nav className="space-y-1 sm:space-y-2">
-              <button
-                onClick={() => router.push("/pages/userprofile")}
-                className="flex items-center gap-1 sm:gap-2 p-1 sm:p-2 rounded w-full text-left text-xs sm:text-sm lg:text-base"
-              >
-                <img
-                  src="/images/profilelogo.png"
-                  alt="Profile"
-                  className="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-cover"
-                />
-                Profile
-              </button>
-
-              <button
-                onClick={() => router.push("/pages/dashboard")}
-                className="flex items-center gap-1 sm:gap-2 p-1 sm:p-2 rounded w-full text-left text-xs sm:text-sm lg:text-base"
-              >
-                <img
-                  src="/images/letters.png"
-                  alt="Letters"
-                  className="w-5 h-5 sm:w-6 sm:h-7 rounded-full object-cover"
-                />
-                Letters
-              </button>
-            </nav>
-
-            <button
-              onClick={() => router.push("/")}
-              className="flex items-center gap-1 sm:gap-2 p-1 sm:p-2 rounded w-full text-left text-xs sm:text-sm lg:text-base mt-2 sm:mt-4"
-            >
-              <img
-                src="/images/logout.png"
-                alt="Logout"
-                className="w-5 h-5 sm:w-6 sm:h-6 object-cover"
-              />
-              Logout
-            </button>
-          </div>
-        </aside>
-      )}
-
-      {/* Main content */}
-      <main className="flex-1 p-2 sm:p-4 lg:p-6 overflow-auto relative">
-        {/* Show Sidebar Button */}
-        {!sidebarOpen && (
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="absolute top-2 sm:top-4 left-2 sm:left-4 p-1 sm:p-2 rounded  hover:bg-gray-300 text-black font-bold text-sm sm:text-base z-50"
-          >
-            ☰
-          </button>
-        )}
-
-        <h2 className="text-lg sm:text-xl lg:text-3xl font-bold mb-2 sm:mb-4 lg:mb-6 text-center">
-          WELCOME TO GLOBETALK
-        </h2>
-
-        {/* Journey Card */}
-        <div className="bg-white shadow-md rounded-2xl p-2 sm:p-4 mb-2 sm:mb-4 lg:mb-6">
-          <h3 className="text-sm sm:text-base lg:text-xl font-semibold mb-1 sm:mb-2 lg:mb-4">
-            Your Journey
-          </h3>
-          <div className="flex items-start gap-1 sm:gap-2 flex-wrap">
-            {/* <img
-              src="/images/journeys.png"
-              alt="Profile"
-              className="w-10 h-10 sm:w-12 sm:h-12 object-cover mt-1"
-            /> */}
-            <ul className="space-y-1 sm:space-y-2 text-gray-700 text-xs sm:text-sm lg:text-base">
-              Nothing to show yet
-            </ul>
-          </div>
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col items-center w-full min-h-screen py-2 px-4 space-y-6">
+        <Navbar />
+        {/* Welcome */}
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl font-bold text-foreground">
+            Welcome back, {profile.username || "Friend"}!
+          </h1>
+          <p className="text-muted-foreground">
+            Your global pen pal journey continues
+          </p>
         </div>
 
-        {/* Letters Card */}
-        <div className="bg-white shadow-md rounded-2xl p-12 sm:p-12  mb-2 sm:mb-4 lg:mb-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1 sm:gap-2">
-            <div className="flex items-center gap-1 sm:gap-2">
+        {/* Profile Overview */}
+        <div className="border-[0.5px] border-blue-200 bg-gray-50 rounded-lg shadow-sm p-6 w-full">
+          <h2 className="flex items-center gap-2 font-bold mb-6">
+            Your Profile
+          </h2>
+
+          <div className="flex flex-col md:flex-row gap-10">
+            {/* Avatar + Info */}
+            <div className="flex items-center gap-6">
               <img
-                src="/images/lettersimg.png"
-                alt="Letters"
-                className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded-full"
+                src={profile.avatarUrl || "/default-avatar.png"}
+                alt="avatar"
+                className="h-20 w-20 rounded-full object-cover"
               />
-              <p className="text-xs sm:text-sm lg:text-base font-medium">
-                2 New Letters
-              </p>
+              <div className="space-y-1">
+                <h3 className="text-xl font-semibold">{profile.username}</h3>
+                {/* Made muted text darker + slightly bolder */}
+                <div className="text-sm text-gray-600 font-medium">{profile.timezone}</div>
+                <div className="text-sm text-gray-600 font-medium">
+                  Joined {profile.joinDate || "Unknown"}
+                </div>
+              </div>
             </div>
 
+            {/* Languages & Interests */}
+            <div className="flex-1 space-y-8 pl-4">
+              <div>
+                <h4 className="flex items-center font-semibold mb-3 text-lg">
+                  <img src="/images/Language.jpg" alt="Languages" className="h-6 w-6 mr-2" />
+                  Languages
+                </h4>
+                <div className="flex flex-wrap gap-3">
+                  {profile.language?.map((lang, i) => (
+                    <span
+                      key={i}
+                      className="px-4 text-base rounded-md bg-gray-100 border border-gray-300 font-medium 
+                      duration-200 hover:bg-blue-100 hover:border-blue-400 hover:text-blue-700 cursor-pointer
+                     py-2 
+             transition-transform transform hover:scale-105 hover:shadow-md"
+                    >
+                      {lang}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h4 className="flex items-center font-semibold mb-3 text-lg">
+                  <img src="/images/hobbies.jpg" alt="Hobbies" className="h-5 w-5 mr-2" />
+                  Hobbies
+                </h4>
+                <div className="flex flex-wrap gap-3">
+                  {profile.hobbies?.map((hobby, i) => (
+                    <span
+                      key={i}
+                      className="px-4 text-base rounded-md bg-gray-100 border border-gray-300 font-medium 
+                      duration-200 hover:bg-blue-100 hover:border-blue-400 hover:text-blue-700 cursor-pointer
+                     py-2 
+             transition-transform transform hover:scale-105 hover:shadow-md"
+                    >
+                      {hobby}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+
+            {/* Edit Button */}
             <button
-              onClick={() => router.push("/pages/matchmaking")}
-              className="text-blue-600 font-semibold hover:underline text-xs sm:text-sm lg:text-base mt-1 sm:mt-0"
+              onClick={() => router.push("/pages/userprofile")}
+              className="self-start px-3 py-2  flex items-center gap-2
+              text-base rounded-md bg-gray-100 border border-gray-300 font-medium 
+                      duration-200  hover:text-blue-700 cursor-pointer
+             transition-transform transform hover:scale-105 hover:shadow-md"
             >
-              Find A Pal →
+              <img src="/images/editprofile.jpg" alt="Edit" className="h-4 w-4" />
+              Edit Profile
             </button>
           </div>
         </div>
 
-        {/* Safety Reminder */}
-        <p className="text-center text-red-500 mt-85 sm:mt-85 text-xs sm:text-sm lg:text-base">
-          Safety reminder: Stay kind, no file sharing
-        </p>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
+          <div className="border-[0.5px] border-gray-200  bg-gray-50 rounded-lg p-4 text-center flex flex-col items-center gap-1">
+            <img src="/images/mail.jpg" alt="Mail" className="h-18 w-18" />
+            <div className="text-2xl font-bold">{stats?.totalLetters ?? 0}</div>
+            <div className="text-sm text-muted-foreground">Total Letters</div>
+          </div>
+          <div className="border-[0.5px] border-gray-200  bg-gray-50 rounded-lg p-4 text-center flex flex-col items-center gap-1">
+            <img src="/images/active_pals.jpg" alt="Active Pals" className="h-18 w-18" />
+            <div className="text-2xl font-bold">{stats?.activePenPals ?? 0}</div>
+            <div className="text-sm text-muted-foreground">Active Pen Pals</div>
+          </div>
+          <div className="border-[0.5px] border-gray-200  bg-gray-50 rounded-lg p-4 text-center flex flex-col items-center gap-1">
+            <img src="/images/globe.png" alt="Globe" className="h-18 w-18" />
+            <div className="text-2xl font-bold">{stats?.countriesConnected ?? 0}</div>
+            <div className="text-sm text-muted-foreground">Countries</div>
+          </div>
+          <div className="border-[0.5px] border-gray-200  bg-gray-50 rounded-lg p-4 text-center flex flex-col items-center gap-1">
+            <img src="/images/time.jpg" alt="Time" className="h-18 w-18" />
+            <div className="text-2xl font-bold">{stats?.averageResponseTime ?? "—"}</div>
+            <div className="text-sm text-muted-foreground">Avg Response</div>
+          </div>
+        </div>
+
+        {/* Activity Overview */}
+        <div className="grid md:grid-cols-2 gap-6 w-full">
+          {/* Monthly Progress */}
+          <div className="border-[0.5px] border-gray-200  bg-gray-50 rounded-lg">
+            <div className="p-4 font-semibold border-b-[0.5px] border-gray-200">This Month&apos;s Activity</div>
+            <div className="p-4 space-y-4">
+              <div>
+                <div className="flex justify-between text-sm mb-2">
+                  <span>Letters Sent</span>
+                  <span>{stats?.lettersThisMonth ?? 0}/20 goal</span>
+                </div>
+                <div className="h-2 bg-gray-200 rounded">
+                  <div
+                    className="h-2 bg-blue-500 rounded"
+                    style={{ width: `${((stats?.lettersThisMonth ?? 0) / 20) * 100}%` }}
+                  ></div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 pt-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-500">{stats?.lettersThisMonth ?? 0}</div>
+                  <div className="text-sm text-muted-foreground">Letters Sent</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-rose-500">{stats?.favoriteLetters ?? 0}</div>
+                  <div className="text-sm text-muted-foreground">Favorites</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Activity */}
+          <div className="border-[0.5px] border-gray-200 bg-gray-50 rounded-lg">
+            <div className="p-4 font-semibold border-b-[0.5px] border-gray-200">
+              Recent Activity
+            </div>
+            <div className="p-4 space-y-3">
+              {Array.isArray(activity) && activity.length > 0 ? (
+                activity.map((a, idx) => (
+                  <div key={idx} className="flex items-center gap-3 p-2 rounded bg-gray-50">
+                    {/* Colored dot */}
+                    <div
+                      className={`h-2 w-2 rounded-full ${a.type === "received"
+                        ? "bg-green-500"
+                        : a.type === "sent"
+                          ? "bg-blue-500"
+                          : "bg-purple-500"
+                        }`}
+                    />
+
+                    {/* Activity message */}
+                    <div className="flex-1 text-sm">
+                      {a.type === "received" && (
+                        <>Received a letter: <strong>{a.text}</strong></>
+                      )}
+                      {a.type === "sent" && (
+                        <>Sent a letter: <strong>{a.text}</strong></>
+                      )}
+                      {a.type === "match" && (
+                        <>New match with <strong>{a.otherUsername}</strong></>
+                      )}
+                    </div>
+
+                    {/* Timestamp */}
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(a.timestamp).toLocaleString()}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-sm text-gray-500 italic">No recent activity yet</div>
+              )}
+            </div>
+          </div>
+
+        </div>
+
+        {/* Quick Actions */}
+        <div className="border-[0.5px] border-gray-200  bg-gray-50 rounded-lg p-4 w-full">
+          <div className="p-4 border-b-[0.5px] border-gray-200 font-semibold">Quick Actions</div>
+          <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-1">
+            <Link
+              href="/pages/matchmaking"
+              className="h-20 border border-gray-200 bg-gray-50 rounded flex flex-col justify-center items-center gap-2 
+              hover:shadow-lg transform hover:scale-105 transition-all duration-200"            >
+              <img src="/images/pals.png" alt="Find Pen Pal" className="h-8 w-8" />
+              Find New Pen Pal
+            </Link>
+
+            <Link
+              href="/pages/inbox"
+              className="h-20 border border-gray-200 bg-gray-50 rounded flex flex-col justify-center items-center gap-2 
+            hover:shadow-lg transform hover:scale-105 transition-all duration-200"            >
+              <img src="/images/lettersimg.png" alt="Write Letter" className="h-8 w-8" />
+              Write Letter
+            </Link>
+
+            <Link
+              href="/pages/inbox"
+              className="h-20 border border-gray-200 bg-gray-50 rounded flex flex-col justify-center items-center gap-2 
+              hover:shadow-lg transform hover:scale-105 transition-all duration-200"            >
+              <img src="/images/letters.png" alt="Check Inbox" className="h-8 w-8" />
+              Check Inbox
+            </Link>
+
+            <Link
+              href="/pages/userprofile"
+              className="h-20 border border-gray-200 bg-gray-50 rounded flex flex-col justify-center items-center gap-2 
+             hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+            >
+              <img src="/images/profilelogo.png" alt="Edit Profile" className="h-8 w-8" />
+              Edit Profile
+            </Link>
+
+          </div>
+        </div>
       </main>
     </div>
-  );
+  )
 }

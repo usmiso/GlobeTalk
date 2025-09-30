@@ -63,7 +63,7 @@ const ForgotPassword = () => {
         {message && <p className="text-green-500 text-center mb-2">{message}</p>}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+  <form onSubmit={handleSubmit} className="space-y-4" aria-label="mobile-forgot-form" noValidate>
           <label htmlFor="email" className="sr-only">Email</label>
           <input
             id="email"
@@ -133,7 +133,7 @@ const ForgotPassword = () => {
             Don&apos;t worry, it happens. Please enter your email.
           </p>
 
-          <form onSubmit={handleSubmit} className="w-full max-w-md space-y-4">
+          <form onSubmit={handleSubmit} className="w-full max-w-md space-y-4" aria-label="desktop-forgot-form" noValidate>
             <label htmlFor="email" className="sr-only">Email</label>
             <input
               id="email"

@@ -11,40 +11,28 @@ export default function Index() {
 
 
   return (
-<main className="relative min-h-screen w-full pt-10 overflow-hidden">
-  <Image
-    src="/images/backgroundImage.avif"
-    alt="background image"
-    fill
-    priority
-    sizes="100vw"
-    className="object-cover object-center -z-10"
-  />
+    <main className="relative min-h-screen w-full pt-10 overflow-hidden">
+      <Image
+        src="/images/backgroundImage.avif"
+        alt="background image"
+        fill
+        priority
+        sizes="100vw"
+        className="object-cover object-center -z-10"
+      />
 
       {/* MOBILE HEADER */}
       <header className="md:hidden flex items-center justify-between px-4 py-4 text-white">
 
-        <details className="md:hidden text-white">
-
-          <summary className="flex items-center justify-between px-4 py-4 cursor-pointer list-none">
-
-            <section className="p-2 -ml-2">
-              <span className="block w-6 h-[2px] mb-1 bg-white"></span>
-              <span className="block w-6 h-[2px] mb-1 bg-white"></span>
-              <span className="block w-6 h-[2px] bg-white"></span>
-            </section>
-          </summary>
-
-          <nav className="px-4 pb-4 bg-white text-gray-900 rounded-xl shadow-lg">
-            <ul className="flex flex-col gap-3">
-              <li><Link href="/">Home</Link></li>
-              <li><Link href="/pages/about">About</Link></li>
-              <li><Link href="/pages/explore">Explore</Link></li>
-              <li><Link href="/pages/signin">LogIn</Link></li>
-              <li><Link href="/pages/signup">SIgnUp</Link></li>
-            </ul>
-          </nav>
-        </details>
+        <button type='button'
+          onClick={() => router.push("/pages/signin")}
+          className=' 
+            rounded-3xl h-[44px] px-6 bg-gray-800
+             shadow-[0px_4px_4px_0px_rgba(0,0,0,0.50)] 
+             border border-neutral-400 w-33 cursor-pointer
+             font-bold text-[17px] font-[Roboto_Serif] text-white'>
+          Login
+        </button>
 
 
 
@@ -74,23 +62,7 @@ export default function Index() {
               priority />
             <p className="text-base font-semibold text-slate-800 px-2">GlobeTalk</p>
           </Link>
-          <ul className=" col-start-3 flex items-center justify-center gap-20 mt-1 mr-40 whitespace-nowrap">
-            <li>
-              <Link href="/" className={`text-[19px] font-[roboto_slab] ${router === "/" ? "text-blue-900" : "hover:text-blue-800 "}`}>
-                Home
-              </Link>
-            </li>
-            <li>
-              <Link href="/pages/about" className={`text-gray-800 text-[19px] font-[roboto_slab] ${router === "/pages/about" ? "text-blue-900" : "hover:text-blue-800"}`}>
-                About
-              </Link>
-            </li>
-            <li>
-              <Link href="/pages/explore" className={`text-gray-800 text-[19px] font-[roboto_slab]  ${router === "/pages/about" ? "text-blue-900" : "hover:text-blue-800"}`}>
-                Explore
-              </Link>
-            </li>
-          </ul>
+          {/* Navigation links removed as requested */}
 
           <button type='button'
             onClick={() => router.push("/pages/signin")}
@@ -105,7 +77,7 @@ export default function Index() {
         </section>
         <section aria-label='Open chat' className='justify-self-end'>
           <button type='button'
-            onClick={() => router.push("/pages/signin")}
+            onClick={() => router.push("/pages/signin?signup=true")}
             className='rounded-3xl mr-20 ml-6 bg-blue-300/20 
             shadow-[0px_4px_4px_0px_rgba(0,0,0,0.50)] 
             border border-neutral-400 h-12 w-35 px-6 cursor-pointer
@@ -115,6 +87,7 @@ export default function Index() {
         </section>
 
       </nav>
+
 
       <section className='flex flex-col items-center mt-20'>
         <h1 className="max-w-[22rem] sm:max-w-[36rem]
