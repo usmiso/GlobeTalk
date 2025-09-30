@@ -259,15 +259,13 @@ Status: planning/implementation. This sprint focuses on matchmaking, richer prof
 - [ ] Edit profile
   - Acceptance: An “Edit Profile” form that lets a signed-in user update profile fields and persists to backend.
   - Client validation and helpful error messages; success toast; disabled save while submitting.
-  - Pointers: `src/app/pages/userprofile/` or `src/app/pages/profile/` (whichever is consolidated in implementation) and server endpoints under `server/`.
+  - Pointers: `src/app/pages/userprofile/` or `src/app/pages/profile/` and server endpoints under `server/`.
 
 - [ ] More significant profile details
   - Acceptance: Store and render richer fields beyond MVP, e.g., `timezone`, `languages` (codes + names), `favorites`, `funFacts`, `sayings`, `country`, `username`, `avatarUrl`.
-  - Provide a minimal schema doc in `Documents/profile-schema.md` and ensure the UI + API respect the same shape.
 
 - [ ] Testing coverage ≥ 40%
-  - Acceptance: `npm run test -- --coverage` shows overall lines coverage ≥ 40% in CI; critical flows (matchmaking and profile edit) have happy-path tests and at least one error-path test.
-  - Optional: add a Jest coverage threshold and a Codecov status check.
+  - Acceptance: `npm run test -- --coverage` shows overall lines coverage ≥ 40% in CI; critical flows (matchmaking and profile edit) have happy-path tests and at least one
 
 - [ ] Functional backend server setup on Railway
   - Acceptance: Server starts on Railway and serves API endpoints (profiles, matchmaking, lookups). Health check route responds 200.
@@ -277,12 +275,6 @@ Status: planning/implementation. This sprint focuses on matchmaking, richer prof
     3) Configure start command (e.g., `node index.js`) and a `PORT` binding.
     4) Verify via Railway deployment logs and `GET /health`.
   - Note: Keep secrets in Railway variables; do not commit them.
-
-Deliverables for submission
-- Screenshots/GIF of matchmaking flow and edit profile.
-- Link to Railway service or deployment screenshot + health check.
-- Coverage report showing ≥ 40% (attach Codecov link or lcov summary).
-
 ---
 
 # Sprint 3 Deliverables (Rubric-aligned)
@@ -327,10 +319,6 @@ Focus: end-to-end messaging polish, moderation workflows, safety features, perso
   - Acceptance: Test coverage ≥ 60% enforced via Jest thresholds and Codecov status check. Supply-chain audit runs in CI using `scripts/security/scan-compromised.js` and fails on findings.
   - Extras: Basic Express rate limiting and CORS origin allow-list on the server.
 
-Deliverables for submission
-- Screenshots/GIFs: locked vs unlocked letters; PDF export; moderation actions; stats dashboard.
-- Links: Deployed Railway server (health check), Netlify app.
-- Evidence: CI run showing coverage ≥ 60% and audit passing; brief note on rate limiting/CORS configuration.
 
 ---
 
