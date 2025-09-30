@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { auth } from "../../firebase/auth";
 import Navbar from "@/app/components/Navbar";
+import Image from "next/image";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
@@ -132,15 +133,18 @@ export default function MatchmakingPage() {
   );
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen bg-gray-100 py-2 px-4 relative overflow-x-hidden">
+    <div className="flex-1 flex flex-col min-h-screen py-2 px-4 relative overflow-x-hidden">
       {/* Decorative background images */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="flex justify-end items-end h-full w-full">
-          <img src="/images/globe.png" alt="Globe" className="w-[420px] opacity-10 mr-8 mb-8 select-none hidden md:block" />
-        </div>
-        <div className="flex justify-start items-end h-full w-full absolute top-0 left-0">
-          <img src="/images/nations.png" alt="Nations" className="w-[1000px] h-[655px] opacity-10 select-none hidden md:block" />
-        </div>
+      <div className="fixed inset-0 w-full h-screen -z-10">
+        <Image
+          src="/images/nations.png"
+          alt="Nations background"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-center"
+        />
+        <div className="absolute inset-0 bg-white/40 md:bg-white/40"></div>
       </div>
       <Navbar />
       <div className="max-w-3xl mx-auto p-12 bg-white rounded-3xl shadow-2xl mt-10 border border-blue-200 transition-all duration-300 hover:shadow-blue-200 z-10 relative">
@@ -158,7 +162,7 @@ export default function MatchmakingPage() {
         </div>
 
         {/* Timezone filter */}
-  <div className="mb-3 relative" ref={timezoneOptionsRef}>
+        <div className="mb-3 relative" ref={timezoneOptionsRef}>
           <label htmlFor="timezone-search" className="mb-1 font-medium flex items-center gap-1">
             <TimezoneIcon /> Timezone
           </label>
@@ -216,7 +220,7 @@ export default function MatchmakingPage() {
         </div>
 
         {/* Language filter */}
-  <div className="mb-3 relative" ref={languageOptionsRef}>
+        <div className="mb-3 relative" ref={languageOptionsRef}>
           <label htmlFor="language-search" className="mb-1 font-medium flex items-center gap-1">
             <LanguageIcon /> Language
           </label>
@@ -274,8 +278,8 @@ export default function MatchmakingPage() {
         </div>
 
         {/* Find Match button */}
-  <div className="mb-2" />
-  {!match && (
+        <div className="mb-2" />
+        {!match && (
           <button
             className="bg-blue-600 text-white px-6 py-3 rounded-xl shadow-lg hover:scale-105 hover:bg-blue-700 transition-all duration-200 font-bold flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
             onClick={handleMatch}
@@ -295,7 +299,7 @@ export default function MatchmakingPage() {
         )}
 
         {/* Error message */}
-  {error && <div className="text-red-600 mt-2 text-center animate-shake">{error}</div>}
+        {error && <div className="text-red-600 mt-2 text-center animate-shake">{error}</div>}
 
         {/* Matched user card */}
         {match && (
@@ -325,7 +329,7 @@ export default function MatchmakingPage() {
                   <div><span className="font-medium">Timezone:</span> <span className="text-purple-700">{match.timezone}</span></div>
                 )}
                 {match.intro && (
-                  <div><span className="font-medium">Intro:</span> {match.intro}</div>
+                  <div><span className="font-medium">borderLight:</span> {match.intro}</div>
                 )}
                 {(match.ageMin || match.ageMax) && (
                   <div>

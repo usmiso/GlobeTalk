@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { auth } from "../../firebase/auth";
 import { onAuthStateChanged } from "firebase/auth";
 import Navbar from "../../components/Navbar";
-
+import Image from "next/image"
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -95,9 +95,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar */}
-
+    <div className="flex min-h-screen">
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col items-center w-full min-h-screen py-2 px-4 space-y-6">
@@ -135,7 +133,7 @@ export default function DashboardPage() {
                 </div>
               </div>
             </div>
-            
+
             {/* Languages & Interests */}
             <div className="flex-1 space-y-8 pl-4">
               <div>
@@ -261,10 +259,10 @@ export default function DashboardPage() {
                     {/* Colored dot */}
                     <div
                       className={`h-2 w-2 rounded-full ${a.type === "received"
-                          ? "bg-green-500"
-                          : a.type === "sent"
-                            ? "bg-blue-500"
-                            : "bg-purple-500"
+                        ? "bg-green-500"
+                        : a.type === "sent"
+                          ? "bg-blue-500"
+                          : "bg-purple-500"
                         }`}
                     />
 

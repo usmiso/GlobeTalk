@@ -12,18 +12,18 @@ import {
 } from "../../firebase/auth";
 
 const AuthPage = () => {
-        const router = useRouter();
-        const [mode, setMode] = useState("signin"); // 'signin' or 'signup'
+    const router = useRouter();
+    const [mode, setMode] = useState("signin"); // 'signin' or 'signup'
 
-        // Switch to signup mode if ?signup=true is present
-        useEffect(() => {
-            if (typeof window !== "undefined") {
-                const params = new URLSearchParams(window.location.search);
-                if (params.get("signup") === "true") {
-                    setMode("signup");
-                }
+    // Switch to signup mode if ?signup=true is present
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get("signup") === "true") {
+                setMode("signup");
             }
-        }, []);
+        }
+    }, []);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
@@ -95,8 +95,8 @@ const AuthPage = () => {
             }
 
             try {
-                 const userIP = await getUserIP();
-                await signUp(email, password,userIP);
+                const userIP = await getUserIP();
+                await signUp(email, password, userIP);
                 setEmail("");
                 setPassword("");
                 setConfirmPassword("");
@@ -116,20 +116,20 @@ const AuthPage = () => {
             }
         } else {
             try {
-                 const userIP = await getUserIP();
-                const userCredential = await signIn(email, password,userIP);
+                const userIP = await getUserIP();
+                const userCredential = await signIn(email, password, userIP);
                 const user = userCredential.user;
 
-                                if (!user.emailVerified) {
+                if (!user.emailVerified) {
                     setError(
                         "Please verify your email before signing in. Check your inbox."
                     );
                     // Optionally, you can resend the verification email
-                                        try {
-                                            await sendEmailVerification(user);
-                                        } catch (e) {
-                                            // Swallow errors from sending verification; keep the verification prompt visible
-                                        }
+                    try {
+                        await sendEmailVerification(user);
+                    } catch (e) {
+                        // Swallow errors from sending verification; keep the verification prompt visible
+                    }
                     return; // Stop further execution
                 }
 
@@ -156,27 +156,27 @@ const AuthPage = () => {
     };
 
     const getUserIP = async () => {
-    try {
-      const response = await fetch('https://api.ipify.org?format=json');
-      const data = await response.json();
-      console.log("Fetched IP address:", data.ip); // 👈 check in browser console
-      return data.ip;
-      
-    } catch (error) {
-      console.error('Could not get IP address:', error);
-      return 'unknown'; // Fallback value
-    }
-  };
+        try {
+            const response = await fetch('https://api.ipify.org?format=json');
+            const data = await response.json();
+            console.log("Fetched IP address:", data.ip); // 👈 check in browser console
+            return data.ip;
+
+        } catch (error) {
+            console.error('Could not get IP address:', error);
+            return 'unknown'; // Fallback value
+        }
+    };
 
 
     const handleGoogleAuth = async () => {
         try {
-        
+
             const userIP = await getUserIP();//called this function to get the string value of the api
-            console.log("Using IP address:", userIP); 
+            console.log("Using IP address:", userIP);
             const { isNewUser, user } = await signInWithGoogle(userIP);
 
-        
+
             if (isNewUser) {
                 router.push("/pages/profile");
             } else {
@@ -195,15 +195,10 @@ const AuthPage = () => {
                 setError("Google sign-up failed. Please try again.");
             }
         }
-        
+
 
 
     };
-
-    
-
-
-
 
     return (
 
@@ -214,6 +209,19 @@ const AuthPage = () => {
                     {notification}
                 </div>
             )}
+
+            <div className="absolute inset-0 w-full h-full -z-10">
+                <Image
+                    src="/images/nations.png"
+                    alt="Nations background"
+                    fill
+                    priority
+                    sizes="100vw"
+                    className="object-cover object-center"
+                />
+                {/* Optional: overlay for readability */}
+                <div className="absolute inset-0 bg-white/60 md:bg-white/40"></div>
+            </div>
             {/* Left side: colored panel, hidden on mobile */}
             <div
                 className="hidden md:block md:w-1/2 relative"
@@ -244,7 +252,7 @@ const AuthPage = () => {
             </div>
 
             {/* Mobile logo + text on top */}
-            <div className="md:hidden flex flex-col items-center mt-8 mb-2">
+            <div className="md:hidden flex flex-col items-center mt-8 mb-2 z-10">
                 <Image
                     src="/images/globe.png"
                     alt="Globe"
@@ -257,18 +265,9 @@ const AuthPage = () => {
                 </span>
             </div>
 
-                        {/* Right side: form, full width on mobile */}
-                        <div className="w-full md:w-1/2 bg-[#F1F5F9] flex flex-col justify-center items-center px-4 md:px-12 relative overflow-x-hidden">
-                                {/* Decorative faint background images */}
-                                <div className="fixed md:absolute inset-0 z-0 pointer-events-none">
-                                    <div className="flex justify-end items-end h-full w-full">
-                                        <img src="/images/globe.png" alt="Globe" className="w-[220px] md:w-[420px] opacity-10 mr-2 mb-2 md:mr-8 md:mb-8 select-none hidden md:block" />
-                                    </div>
-                                    <div className="flex justify-start items-end h-full w-full absolute top-0 left-0">
-                                        <img src="/images/nations.png" alt="Nations" className="w-[400px] h-[250px] md:w-[1000px] md:h-[655px] opacity-10 select-none hidden md:block" />
-                                    </div>
-                                </div>
-                {/* ...existing code... */}
+            {/* Right side: form, full width on mobile */}
+            <div className="w-full md:w-1/2 flex flex-col justify-center items-center px-4 md:px-12 relative overflow-x-hidden">
+                {/* Decorative faint background images */}
                 <div className="flex mb-8 space-x-4">
                     <button
                         className={`px-6 py-2 rounded font-bold cursor-pointer ${mode === "signin"
@@ -340,7 +339,7 @@ const AuthPage = () => {
                     <div className="mb-4">
                         <label
                             htmlFor="email"
-                            className="block text-gray-700 font-bold mb-2"
+                            className="block text-white font-bold mb-2"
                         >
                             Email
                         </label>
@@ -350,13 +349,13 @@ const AuthPage = () => {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
-                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            className="shadow appearance-none border rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:shadow-outline"
                         />
                     </div>
                     <div className="mb-4 relative">
                         <label
                             htmlFor="password"
-                            className="block text-gray-700 font-bold mb-2"
+                            className="block text-white font-bold mb-2"
                         >
                             Password
                         </label>
@@ -367,7 +366,7 @@ const AuthPage = () => {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
-                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            className="shadow appearance-none border rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:shadow-outline"
                         />
                         <button
                             type="button"
@@ -384,7 +383,7 @@ const AuthPage = () => {
                             <div className="mb-6 relative">
                                 <label
                                     htmlFor="confirmPassword"
-                                    className="block text-gray-700 font-bold mb-2"
+                                    className="block text-white font-bold mb-2"
                                 >
                                     Confirm Password
                                 </label>
@@ -395,7 +394,7 @@ const AuthPage = () => {
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
                                     required
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:shadow-outline"
                                 />
                                 <button
                                     type="button"
@@ -428,12 +427,12 @@ const AuthPage = () => {
                 </form>
 
                 {/* Switch link */}
-                <p className="text-sm text-gray-600 mt-6">
+                <p className="text-sm text-white mt-6">
                     {mode === "signin"
                         ? "Don't have an account? "
                         : "Already have an account? "}
                     <button
-                        className="text-blue-500 hover:underline cursor-pointer"
+                        className="text-black hover:underline cursor-pointer"
                         onClick={() =>
                             setMode(mode === "signin" ? "signup" : "signin")
                         }
@@ -443,10 +442,10 @@ const AuthPage = () => {
                 </p>
 
                 {mode === "signin" && (
-                    <p className="text-sm text-gray-600 mt-2">
+                    <p className="text-sm text-white mt-2">
                         <Link
                             href="/pages/forgetpassword"
-                            className="text-blue-500 hover:underline"
+                            className="text-black hover:underline"
                         >
                             Forgot password?
                         </Link>
@@ -455,7 +454,7 @@ const AuthPage = () => {
 
                 <Link
                     href="/"
-                    className="mt-4 bg-black hover:bg-black text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline cursor-pointer"
+                    className="mt-4 bg-white hover:bg-black text-blue-700 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline cursor-pointer"
                 >
                     Go to Homepage
                 </Link>

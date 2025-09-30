@@ -363,10 +363,7 @@ app.post('/api/chat/send', async (req, res) => {
 
 // Report a message in a chat
 app.post('/api/chat/report', async (req, res) => {
-    if (!db) {
-        console.error('[REPORT] Firestore not initialized');
-        return res.status(500).json({ error: 'Firestore not initialized' });
-    }
+    if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
     const { chatId, message, reporter, reason } = req.body;
     console.log('[REPORT] Incoming report:', { chatId, message, reporter, reason });
     if (!chatId || !message || !reporter) {
@@ -418,6 +415,53 @@ app.post('/api/user/ip', async (req, res) => {
 });
 
 // Get countries/timezones for matched users
+    // ===================== REPORTS ENDPOINTS =====================
+
+    // Get all reports (for moderation dashboard)
+    app.get('/api/reports', async (req, res) => {
+        if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
+        try {
+            const snapshot = await db.collection('reports').get();
+            const reports = [];
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                reports.push({
+                    ...data,
+                    id: doc.id,
+                    _id: doc.id,
+                });
+            });
+            res.status(200).json({ success: true, data: reports });
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    // Mark a report as valid (resolved)
+    app.post('/api/reports/:id/validate', async (req, res) => {
+        if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
+        const { id } = req.params;
+        try {
+            const reportRef = db.collection('reports').doc(id);
+            await reportRef.set({ status: 'resolved' }, { merge: true });
+            res.status(200).json({ success: true, message: 'Report marked as valid (resolved).' });
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    // Mark a report as invalid (rejected)
+    app.post('/api/reports/:id/invalidate', async (req, res) => {
+        if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
+        const { id } = req.params;
+        try {
+            const reportRef = db.collection('reports').doc(id);
+            await reportRef.set({ status: 'rejected' }, { merge: true });
+            res.status(200).json({ success: true, message: 'Report marked as invalid (rejected).' });
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
 app.get('/api/matchedUsers', async (req, res) => {
     if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
 

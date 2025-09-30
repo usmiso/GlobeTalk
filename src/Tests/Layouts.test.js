@@ -4,6 +4,15 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
+// Mock next/image to avoid non-standard props errors in Jest
+jest.mock('next/image', () => {
+  function MockNextImage({ src, alt, fill, priority, ...rest }) {
+    return <img src={src} alt={alt} {...rest} />;
+  }
+  MockNextImage.displayName = 'MockNextImage';
+  return { __esModule: true, default: MockNextImage };
+});
+
 // Mock ProtectedLayout to capture props and render a marker with children
 jest.mock('@/app/components/ProtectedLayout', () => {
   return function ProtectedLayoutMock(props) {
@@ -19,6 +28,7 @@ import DashboardLayout from '@/app/pages/dashboard/layout';
 import MatchmakingLayout from '@/app/pages/matchmaking/layout';
 import InboxLayout from '@/app/pages/inbox/layout';
 import UserProfileLayout from '@/app/pages/userprofile/layout';
+import ExploreLayout from '@/app/pages/explore/layout';
 
 function itBehavesLikeProtectedLayout(LayoutComponent, name) {
   test(`${name} wraps children in ProtectedLayout with redirectTo=/`, () => {
@@ -41,4 +51,5 @@ describe('Page Layouts', () => {
   itBehavesLikeProtectedLayout(MatchmakingLayout, 'Matchmaking layout');
   itBehavesLikeProtectedLayout(InboxLayout, 'Inbox layout');
   itBehavesLikeProtectedLayout(UserProfileLayout, 'UserProfile layout');
+  itBehavesLikeProtectedLayout(ExploreLayout, 'Explore layout');
 });

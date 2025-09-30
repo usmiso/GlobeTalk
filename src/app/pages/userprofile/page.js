@@ -26,6 +26,7 @@ export default function UserProfile() {
     const [avatarUrl, setAvatarUrl] = useState("");
     const [error, setError] = useState('');
     const [saving, setSaving] = useState(false);
+    const [saveSuccess, setSaveSuccess] = useState(false);
     const [readOnly, setReadOnly] = useState(false);
     const [customHobby, setCustomHobby] = useState("");
     const [customLanguage, setCustomLanguage] = useState("");
@@ -214,6 +215,7 @@ export default function UserProfile() {
         if (e) e.preventDefault();
         setError('');
         setSaving(true);
+    setSaveSuccess(false);
 
         const user = auth.currentUser;
         if (!user) {
@@ -223,32 +225,16 @@ export default function UserProfile() {
         }
 
         try {
-            console.log("Submitting profile:", {
-                userID: user.uid,
-                intro,
-                ageRange,
-                hobbies,
-                timezone,
-                language,
-                favorites,
-                facts,
-                sayings: sayings || [],
-                country,
-                // username,
-                // avatarUrl
-            });
+            // ...existing code...
             const tzObj = timezones.find(tz => tz.timezone_id === timezone);
             let countryToSave = country;
             if (!countryToSave) {
                 const tzObjInner = timezones.find(tz => tz.timezone_id === timezone);
-                // Safely check for a global countryMap without throwing if undefined
                 const safeCountryMap = (typeof countryMap !== 'undefined' && countryMap) ? countryMap : undefined;
                 if (tzObjInner && tzObjInner.country_code && safeCountryMap && safeCountryMap[tzObjInner.country_code]) {
                     countryToSave = safeCountryMap[tzObjInner.country_code];
                 }
             }
-
-            // const res = await fetch(`http://localhost:5000/api/profile`, {
             const res = await fetch(`${API}/api/profile`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -264,24 +250,20 @@ export default function UserProfile() {
                     sayings: sayings || [],
                     username,
                     avatarUrl,
-                    country: countryToSave,             // full country name
+                    country: countryToSave,
                     countryCode: tzObj?.country_code || ''
-
                 }),
             });
-
             const data = await res.json();
-            console.log("Response:", data);
-
             if (!res.ok) {
                 setError(data.error || 'Failed to save profile.');
                 setSaving(false);
                 return;
             }
-
-            await fetchProfile(user.uid);   // refresh data
+            await fetchProfile(user.uid);
             setSaving(false);
-            // switch to view mode after successful save
+            setSaveSuccess(true);
+            setTimeout(() => setSaveSuccess(false), 1500);
             setReadOnly(true);
         } catch (err) {
             console.error("Save failed:", err);
@@ -302,10 +284,10 @@ export default function UserProfile() {
     return (
 
 
-        <div className="flex min-h-screen bg-gray-100">
+        <div className="flex min-h-screen">
 
 
-            <main className="flex flex-col items-center w-full min-h-screen py-2 px-4 bg-gray-50">
+            <main className="flex flex-col items-center w-full min-h-screen py-2 px-">
                 <Navbar />
                 {/* Profile Card */}
                 <div className="bg-white w-full flex flex-col gap-4 rounded-xl border border-gray-100
@@ -524,11 +506,27 @@ export default function UserProfile() {
                         <button
                             type="button"
                             onClick={handleSubmitSave}
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-md
-                            h-12 border border-gray-200  flex flex-col justify-center items-center gap-2 
-             hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+                            className={`bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-md h-12 border border-gray-200 flex flex-col justify-center items-center gap-2 hover:shadow-lg transform hover:scale-105 transition-all duration-200 relative ${saving ? 'opacity-70 cursor-not-allowed' : ''}`}
+                            disabled={saving}
                         >
-                            Save Changes
+                            {saving ? (
+                                <span className="flex items-center gap-2">
+                                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                                    </svg>
+                                    Saving...
+                                </span>
+                            ) : saveSuccess ? (
+                                <span className="flex items-center gap-2 text-green-200">
+                                    <svg className="h-5 w-5 text-green-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    Saved!
+                                </span>
+                            ) : (
+                                'Save Changes'
+                            )}
                         </button>
                     </div>
                 </div>

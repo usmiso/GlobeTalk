@@ -213,13 +213,8 @@ export default function ExplorePage({ userID }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-2 px-4 space-y-6 relative overflow-hidden">
+    <div className="min-h-screen py-2 px-4 space-y-6 relative overflow-hidden">
       {/* Faint background image */}
-      <img
-        src="/images/nations.png"
-        alt="background"
-        className="absolute inset-0 w-full h-full object-cover opacity-20 pointer-events-none select-none z-0"
-      />
       <div className="relative z-10">
         <Navbar />
         <main className="container mx-auto px-4 py-8 max-w-7xl space-y-6">
@@ -241,11 +236,8 @@ export default function ExplorePage({ userID }) {
                 type="button"
                 role="tab"
                 onClick={() => setSelectedTab("facts")}
-                className={`${
-                  selectedTab === "facts"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "hover:bg-accent hover:text-accent-foreground"
-                } px-2 py-1 rounded-md text-sm font-medium`}
+                className={`bg-white ml-5 mr-5 shadow-sm px-2 py-1 rounded-md text-sm font-medium border-2 transition-all duration-150
+                  ${selectedTab === "facts" ? "border-blue-500 text-blue-700 font-bold" : "border-transparent text-foreground hover:bg-accent hover:text-accent-foreground"}`}
               >
                 Cultural Facts
               </button>
@@ -253,11 +245,8 @@ export default function ExplorePage({ userID }) {
                 type="button"
                 role="tab"
                 onClick={() => setSelectedTab("profiles")}
-                className={`${
-                  selectedTab === "profiles"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "hover:bg-accent hover:text-accent-foreground"
-                } px-2 py-1 rounded-md text-sm font-medium`}
+                className={`bg-white ml-5 mr-5 shadow-sm px-2 py-1 rounded-md text-sm font-medium border-2 transition-all duration-150
+                  ${selectedTab === "profiles" ? "border-blue-500 text-blue-700 font-bold" : "border-transparent text-foreground hover:bg-accent hover:text-accent-foreground"}`}
               >
                 Country Profiles
               </button>
@@ -271,7 +260,7 @@ export default function ExplorePage({ userID }) {
                 <input
                   type="text"
                   placeholder="Search for traditions, countries, or customs..."
-                  className="pl-10 pr-3 py-2 w-full border-[0.5px] border-gray-200 rounded-md shadow-sm bg-background focus:ring-2 focus:ring-primary outline-none"
+                  className="pl-10 pr-3 py-2 w-full border-[0.5px] border-gray-200 rounded-md shadow-sm bg-white focus:ring-2 focus:ring-primary outline-none"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -284,7 +273,7 @@ export default function ExplorePage({ userID }) {
                     className={`flex items-center gap-2 px-3 py-1 rounded-md text-sm transition ${
                       selectedCategory === name
                         ? "bg-primary text-primary-foreground shadow"
-                        : "border-[0.5px] border-gray-200 hover:bg-accent hover:text-accent-foreground"
+                        : "bg-white border-[0.5px] border-gray-200 hover:bg-accent hover:text-accent-foreground"
                     }`}
                   >
                     <Icon className="h-4 w-4" />
@@ -298,7 +287,7 @@ export default function ExplorePage({ userID }) {
                   filteredFacts.map((fact, i) => (
                     <div
                       key={i}
-                      className="border-[0.5px] border-gray-200 rounded-xl p-6 bg-card shadow-sm hover:shadow-md transition"
+                      className="border-[0.5px] border-gray-200 rounded-xl p-6 bg-white shadow-sm hover:shadow-md transition"
                     >
                       <h2 className="font-semibold text-lg">{fact.title}</h2>
                       <p className="text-sm text-muted-foreground">{fact.category}</p>
@@ -318,7 +307,7 @@ export default function ExplorePage({ userID }) {
           {selectedTab === "profiles" && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Country List */}
-              <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border-[0.5px] border-gray-200 py-4 shadow-sm overflow-y-auto max-h-[500px]">
+              <div className="bg-white text-card-foreground flex flex-col gap-2 rounded-xl border-[0.5px] border-gray-200 py-4 shadow-sm overflow-y-auto max-h-[500px]">
                 {profiles.map((c, i) => (
                   <div
                     key={i}
@@ -339,7 +328,7 @@ export default function ExplorePage({ userID }) {
               </div>
               {/* Selected Country */}
               {selectedCountry && (
-                <div className="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border-[0.5px] border-gray-200 py-4 shadow-sm">
+                <div className="bg-white text-card-foreground flex flex-col gap-2 rounded-xl border-[0.5px] border-gray-200 py-4 shadow-sm">
                   <div className="flex flex-col items-center gap-2">
                     <img
                       src={selectedCountry.countryFlag}
