@@ -7,7 +7,6 @@ import { auth } from "../../firebase/auth";
 import { onAuthStateChanged } from "firebase/auth";
 import { EnvelopeIcon, CalendarIcon, ClockIcon } from "@heroicons/react/24/outline";
 import Navbar from "@/app/components/Navbar";
-import TicTacToe from "@/app/components/TicTacToe";
 import { jsPDF } from "jspdf";
 
 const Inbox = () => {
@@ -32,8 +31,7 @@ const Inbox = () => {
   const [deliveryDelay, setDeliveryDelay] = useState(60);
   const [friendProfile, setFriendProfile] = useState(null);
 
-  // Fun
-  const [showTicTacToe, setShowTicTacToe] = useState(false);
+  // Fun feature placeholder (game removed)
 
   // Report
   const [reportModal, setReportModal] = useState({ open: false, msg: null });
@@ -602,13 +600,6 @@ const submitReport = async () => {
                   </svg>
                   <span>Download Chat History</span>
                 </button>
-                <button
-                  onClick={() => setShowTicTacToe(true)}
-                  className="flex items-center justify-center gap-2 px-3 py-2 rounded bg-blue-600 hover:bg-blue-700 text-base text-white font-semibold w-full transition-all duration-200 min-w-[120px]"
-                  title="Play Tic Tac Toe"
-                >
-                  Tic Tac Toe
-                </button>
               </div>
             )}
           </div>
@@ -661,13 +652,7 @@ const submitReport = async () => {
         <div className="absolute inset-0 bg-white/40 md:bg-white/40"></div>
       </div>
       <Navbar />
-      {showTicTacToe && (
-        <TicTacToe
-          playerX="You"
-          playerO="Friend"
-          onClose={() => setShowTicTacToe(false)}
-        />
-      )}
+  {/* game modal removed */}
       <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
         {/* Mobile: Show either sidebar or chat */}
         {isMobile ? (
