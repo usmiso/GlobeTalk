@@ -201,6 +201,40 @@ npm test
 
 ---
 
+# Security audit (supply chain)
+
+We ship a tiny audit that checks your dependency graph against known-compromised npm releases (from recent Debug/Chalk and Tinycolor campaigns). Reports are written under `security/`.
+
+Run with Node (recommended):
+
+```powershell
+# root app
+node scripts/security/scan-compromised.js security/compromised.json
+
+# server package
+Set-Location 'server'; node ../scripts/security/scan-compromised.js ../security/compromised.json; Set-Location '..'
+```
+
+Run with Python (alternative):
+
+```powershell
+# root app
+python scripts/security/scan_compromised.py --root . --compromised security/compromised.json --out security/compromised-report-python.md
+
+# server package
+Set-Location 'server'; python ../scripts/security/scan_compromised.py --root . --compromised ../security/compromised.json --out security/compromised-report-python.md; Set-Location '..'
+```
+
+Outputs
+- Root (Node): `security/compromised-report.md`
+- Server (Node): `server/security/compromised-report.md`
+- Root (Python): `security/compromised-report-python.md`
+- Server (Python): `server/security/compromised-report-python.md`
+
+To update the list of bad packages/versions, edit `security/compromised.json` and re-run the audit.
+
+---
+
 # Sprint 1 Deliverables (Rubric-aligned)
 - [x] User authentication (email, Google OAuth)
 - [x] Anonymous profile creation
