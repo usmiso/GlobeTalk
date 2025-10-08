@@ -236,11 +236,11 @@ const AuthPage = () => {
                         priority
                     />
                     <div className="flex flex-col items-center mt-2">
-                        <span className="text-purple-700 font-extrabold text-[2rem] leading-none" style={{ fontFamily: 'Montserrat, Arial, sans-serif' }}>
-                            Globe
+                        <span className="text-purple-700 font-extrabold text-[2rem] leading-none" style={{ fontFamily: 'Fairplay Display, serif' }}>
+                            <span className="text-purple-900">Globe</span>
                         </span>
-                        <span className="text-purple-700 font-extrabold text-[2rem] leading-none -mt-1" style={{ fontFamily: 'Montserrat, Arial, sans-serif' }}>
-                            Talk
+                        <span className="text-purple-700 font-extrabold text-[2rem] leading-none -mt-1" style={{ fontFamily: 'Fairplay Display, serif' }}>
+                            <span className="text-purple-900">Talk</span>
                         </span>
                     </div>
                 </div>
@@ -266,11 +266,11 @@ const AuthPage = () => {
                     priority
                 />
                 <div className="flex flex-col items-center mt-2">
-                    <span className="text-purple-700 font-extrabold text-[1.7rem] leading-none" style={{ fontFamily: 'Montserrat, Arial, sans-serif' }}>
-                        Globe
+                    <span className="text-purple-700 font-extrabold text-[1.7rem] leading-none" style={{ fontFamily: 'Fairplay Display, serif' }}>
+                        <span className="text-purple-900">Globe</span>
                     </span>
-                    <span className="text-purple-700 font-extrabold text-[1.7rem] leading-none -mt-1" style={{ fontFamily: 'Montserrat, Arial, sans-serif' }}>
-                        Talk
+                    <span className="text-purple-700 font-extrabold text-[1.7rem] leading-none -mt-1" style={{ fontFamily: 'Fairplay Display, serif' }}>
+                        <span className="text-purple-900">Talk</span>
                     </span>
                 </div>
             </div>
