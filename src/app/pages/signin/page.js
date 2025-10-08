@@ -235,9 +235,14 @@ const AuthPage = () => {
                         height={100}
                         priority
                     />
-                    <span className="text-[#002D72] font-bold text-[22px] tracking-wider mt-2">
-                        GlobeTalk App
-                    </span>
+                    <div className="flex flex-col items-center mt-2">
+                        <span className="text-purple-700 font-extrabold text-[2rem] leading-none" style={{ fontFamily: 'Montserrat, Arial, sans-serif' }}>
+                            Globe
+                        </span>
+                        <span className="text-purple-700 font-extrabold text-[2rem] leading-none -mt-1" style={{ fontFamily: 'Montserrat, Arial, sans-serif' }}>
+                            Talk
+                        </span>
+                    </div>
                 </div>
                 <div className="h-full flex items-center justify-center">
                     <Image
@@ -260,9 +265,14 @@ const AuthPage = () => {
                     height={80}
                     priority
                 />
-                <span className="text-[#002D72] font-bold text-xl tracking-wider mt-2">
-                    GlobeTalk
-                </span>
+                <div className="flex flex-col items-center mt-2">
+                    <span className="text-purple-700 font-extrabold text-[1.7rem] leading-none" style={{ fontFamily: 'Montserrat, Arial, sans-serif' }}>
+                        Globe
+                    </span>
+                    <span className="text-purple-700 font-extrabold text-[1.7rem] leading-none -mt-1" style={{ fontFamily: 'Montserrat, Arial, sans-serif' }}>
+                        Talk
+                    </span>
+                </div>
             </div>
 
             {/* Right side: form, full width on mobile */}
