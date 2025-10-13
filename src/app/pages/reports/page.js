@@ -2,27 +2,63 @@
 
 import React, { useEffect, useState } from "react";
 import ProtectedLayout from "@/app/components/ProtectedLayout";
+import { useRouter } from "next/navigation";
+import { auth, onAuthStateChanged } from "@/app/firebase/auth";
 
 export default function ReportsPage() {
   const [reports, setReports] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // data loading
   const [selectedReport, setSelectedReport] = useState(null);
+  const [authorized, setAuthorized] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [failCount, setFailCount] = useState(0);
+  const router = useRouter();
+
+  // Only allow this email
+  const ALLOWED_EMAIL = "gamersboysa@gmail.com";
+
+  // Auth / authorization gate
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        router.push("/");
+        setAuthChecked(true);
+        return;
+      }
+      if (user.email === ALLOWED_EMAIL) {
+        setAuthorized(true);
+      } else {
+        // Not authorized – redirect away
+        router.push("/");
+      }
+      setAuthChecked(true);
+    });
+    return () => unsub();
+  }, [router]);
 
   useEffect(() => {
-    fetchReports();
-  }, []);
-
-  // Lightweight real-time updates via polling
-  useEffect(() => {
-    const interval = setInterval(() => {
+    if (authorized) {
       fetchReports();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authorized]);
+
+  // Lightweight real-time updates via polling ONLY when authorized
+  useEffect(() => {
+    if (!authorized) return;
+    if (failCount >= 3) return; // pause polling after repeated failures
+    const interval = setInterval(() => {
+      if (failCount < 3) fetchReports();
     }, 5000); // update every 5s
     return () => clearInterval(interval);
-  }, []);
+  }, [authorized, failCount]);
+
+  const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
 
   const fetchReports = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/reports");
+      const response = await fetch(`${API_BASE}/api/reports`);
       if (!response.ok) throw new Error("Failed to fetch reports");
       const result = await response.json();
 
@@ -35,21 +71,25 @@ export default function ReportsPage() {
           if (report.reportedUserId) userIds.add(report.reportedUserId);
         });
 
-        // Fetch usernames for all user IDs
-        const idToUsername = {};
+        // Fetch profile info for all user IDs (username, violationCount, blocked)
+        const idToProfile = {};
         await Promise.all(
           Array.from(userIds).map(async (uid) => {
             if (!uid || uid === "N/A") return;
             try {
-              const res = await fetch(`http://localhost:5000/api/profile?userID=${uid}`);
+              const res = await fetch(`${API_BASE}/api/profile?userID=${uid}`);
               if (res.ok) {
                 const data = await res.json();
-                idToUsername[uid] = data.username || "Unknown";
+                idToProfile[uid] = {
+                  username: data.username || "Unknown",
+                  violationCount: data.violationCount || 0,
+                  blocked: !!data.blocked,
+                };
               } else {
-                idToUsername[uid] = "Unknown";
+                idToProfile[uid] = { username: "Unknown", violationCount: 0, blocked: false };
               }
             } catch {
-              idToUsername[uid] = "Unknown";
+              idToProfile[uid] = { username: "Unknown", violationCount: 0, blocked: false };
             }
           })
         );
@@ -67,8 +107,8 @@ export default function ReportsPage() {
             id: uniqueKey,
             reportId: `RPT-${String(rawId).substring(0, 3).toUpperCase()}`,
             offenseType: report.reason || "Unknown",
-            reporterUsername: idToUsername[reporterUid] || "Unknown",
-            reportedUsername: idToUsername[reportedUid] || "Unknown",
+            reporterUsername: idToProfile[reporterUid]?.username || "Unknown",
+            reportedUsername: idToProfile[reportedUid]?.username || "Unknown",
             messageText: report.message?.text || report.messageText || "No message text available",
             date: report.reportedAt
               ? new Date(Number(report.reportedAt)).toISOString().split("T")[0]
@@ -77,14 +117,25 @@ export default function ReportsPage() {
                 : "N/A",
             status: report.status || "pending",
             severity: getSeverityFromReason(report.reason),
+            reportedUserId: reportedUid,
+            reportedUserViolationCount: idToProfile[reportedUid]?.violationCount || 0,
+            reportedUserBlocked: idToProfile[reportedUid]?.blocked || false,
           };
         });
   setReports(sortReports(formattedReports));
+        setErrorMsg("");
+        setFailCount(0);
       } else {
         console.error("Unexpected API data:", result);
       }
     } catch (error) {
       console.error("Error fetching reports:", error);
+      setFailCount((c) => c + 1);
+      if (error?.message?.includes('Failed to fetch')) {
+        setErrorMsg("Cannot reach backend. Is the server running on " + API_BASE + "?");
+      } else {
+        setErrorMsg(error.message || "Unknown error fetching reports");
+      }
     } finally {
       setLoading(false);
     }
@@ -151,6 +202,37 @@ export default function ReportsPage() {
     }
   };
 
+  const handleBlockUser = async (userId) => {
+    if (!userId) return;
+    try {
+      await fetch('http://localhost:5000/api/blockUser', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userID: userId })
+      });
+      // Refetch to update violation/block status
+      fetchReports();
+    } catch (e) {
+      console.error('Error blocking user:', e);
+    }
+  };
+
+  // Authorization gate UI states
+  if (!authChecked) {
+    return (
+      <ProtectedLayout redirectTo="/">
+        <div className="flex items-center justify-center min-h-screen bg-gray-50">
+          <div className="text-gray-600">Checking access...</div>
+        </div>
+      </ProtectedLayout>
+    );
+  }
+
+  if (!authorized) {
+    // Redirect already triggered; render nothing (or could show message)
+    return null;
+  }
+
   return (
     <ProtectedLayout redirectTo="/">
       <div className="min-h-screen bg-gray-50 p-8">
@@ -202,11 +284,31 @@ export default function ReportsPage() {
                         </button>
                       </>
                     )}
+                    {report.status !== 'pending' && (
+                      <div className="flex flex-col space-y-2">
+                        <div className="text-xs text-gray-600">
+                          Violations: {report.reportedUserViolationCount} {report.reportedUserBlocked && '(Blocked)'}
+                        </div>
+                        {report.reportedUserViolationCount >= 3 && !report.reportedUserBlocked && (
+                          <button
+                            className="bg-black text-white px-2 py-1 rounded text-xs hover:bg-gray-800"
+                            onClick={() => handleBlockUser(report.reportedUserId)}
+                          >
+                            Block User
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        )}
+        {errorMsg && (
+          <div className="mt-4 p-3 rounded bg-red-100 text-red-700 border border-red-300 text-sm">
+            {errorMsg}{failCount >= 3 && " (Polling paused after multiple failures)"}
+          </div>
         )}
       </div>
     </ProtectedLayout>

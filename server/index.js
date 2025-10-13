@@ -25,6 +25,7 @@ try {
 }
 
 const db = admin.apps.length ? admin.firestore() : null;
+const adminAuth = admin.apps.length ? admin.auth() : null;
 
 /**
  * GET /api/health
@@ -458,6 +459,77 @@ app.post('/api/user/ip', async (req, res) => {
 });
 
 /**
+ * POST /api/blockUser
+ * Body: { userID }
+ * Marks a user as blocked in their profile; optionally stores their email for audit.
+ */
+app.post('/api/blockUser', async (req, res) => {
+    if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
+    const { userID } = req.body;
+    if (!userID) return res.status(400).json({ error: 'Missing userID' });
+    try {
+        let email = null;
+        if (adminAuth) {
+            try {
+                const userRecord = await adminAuth.getUser(userID);
+                email = userRecord.email || null;
+            } catch (e) {
+                // user may not exist in auth; ignore
+            }
+        }
+        const profileRef = db.collection('profiles').doc(userID);
+        await profileRef.set({
+            userID,
+            blocked: true,
+            blockedAt: Date.now(),
+            blockedEmail: email
+        }, { merge: true });
+        // Add to blocked_users collection (idempotent)
+        const blockedRef = db.collection('blocked_users').doc(userID);
+        await blockedRef.set({
+            userID,
+            email,
+            blockedAt: Date.now(),
+            source: 'admin_action'
+        }, { merge: true });
+        res.status(200).json({ success: true, message: 'User blocked.' });
+    } catch (error) {
+        console.error('Error blocking user:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * GET /api/blocked/:userID
+ * Returns { blocked: boolean, source?, blockedAt? }
+ */
+app.get('/api/blocked/:userID', async (req, res) => {
+    if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
+    const { userID } = req.params;
+    if (!userID) return res.status(400).json({ error: 'Missing userID' });
+    try {
+        // Prefer blocked_users collection
+        const blockedDoc = await db.collection('blocked_users').doc(userID).get();
+        if (blockedDoc.exists) {
+            const data = blockedDoc.data();
+            return res.status(200).json({ blocked: true, source: data.source || 'admin_action', blockedAt: data.blockedAt || null });
+        }
+        // Fallback to profile flag
+        const profileDoc = await db.collection('profiles').doc(userID).get();
+        if (profileDoc.exists) {
+            const pdata = profileDoc.data();
+            if (pdata.blocked) {
+                return res.status(200).json({ blocked: true, source: 'profile_flag', blockedAt: pdata.blockedAt || null });
+            }
+        }
+        return res.status(200).json({ blocked: false });
+    } catch (error) {
+        console.error('Error checking blocked status:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
  * GET /api/reports
  * List all reports (moderation).
  */
@@ -485,8 +557,41 @@ app.post('/api/reports/:id/validate', async (req, res) => {
     const { id } = req.params;
     try {
         const reportRef = db.collection('reports').doc(id);
-        await reportRef.set({ status: 'resolved' }, { merge: true });
-        res.status(200).json({ success: true, message: 'Report marked as valid (resolved).' });
+        const reportSnap = await reportRef.get();
+        if (!reportSnap.exists) {
+            return res.status(404).json({ success: false, error: 'Report not found' });
+        }
+
+        const reportData = reportSnap.data();
+
+        // Mark report as resolved first
+        await reportRef.set({ status: 'resolved', validatedAt: Date.now() }, { merge: true });
+
+        // Determine reported user (sender of offending message or explicit reportedUserId)
+        const reportedUserId = (reportData.message && reportData.message.sender) || reportData.reportedUserId;
+        if (reportedUserId) {
+            try {
+                const profileRef = db.collection('profiles').doc(reportedUserId);
+                const violationEntry = {
+                    reportId: id,
+                    reason: reportData.reason || '',
+                    chatId: reportData.chatId || null,
+                    messageText: reportData.message && reportData.message.text ? String(reportData.message.text).slice(0,500) : '',
+                    reporter: reportData.reporter || null,
+                    reportedAt: reportData.reportedAt || null,
+                    validatedAt: Date.now()
+                };
+                await profileRef.set({
+                    userID: reportedUserId,
+                    violationCount: admin.firestore.FieldValue.increment(1),
+                    violations: admin.firestore.FieldValue.arrayUnion(violationEntry)
+                }, { merge: true });
+            } catch (profileErr) {
+                console.error('Error updating reported user profile with violation:', profileErr);
+            }
+        }
+
+        res.status(200).json({ success: true, message: 'Report marked as valid (resolved) and violation recorded.' });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }

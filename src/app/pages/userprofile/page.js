@@ -287,7 +287,7 @@ export default function UserProfile() {
         <div className="flex min-h-screen">
 
 
-            <main className="flex flex-col items-center w-full min-h-screen py-2 px-">
+            <main className="flex flex-col items-center w-full min-h-screen px-">
                 <Navbar />
                 {/* Profile Card */}
                 <div className="bg-white w-full flex flex-col gap-4 rounded-xl border border-gray-100
@@ -306,7 +306,7 @@ export default function UserProfile() {
                         </div>
 
                         {/* Display Name */}
-                        <h1 className="text-2xl font-bold mb-2">{username}</h1>
+                        <h1 className="text-2xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent inline-block">{username}</h1>
                         <p className="text-sm text-gray-500">{timezone || "No location set"}</p>
                     </div>
 

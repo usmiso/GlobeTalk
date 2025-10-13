@@ -57,7 +57,7 @@ export default function ExplorePage({ userID }) {
   const [profiles, setProfiles] = useState([]);
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
-  
+
   // Quiz states
   const [quizStarted, setQuizStarted] = useState(false);
   const [activeQuestion, setActiveQuestion] = useState(0);
@@ -98,14 +98,14 @@ export default function ExplorePage({ userID }) {
     setResult((prev) =>
       selectedAnswer
         ? {
-            ...prev,
-            score: prev.score + 5,
-            correctAnswers: prev.correctAnswers + 1,
-          }
+          ...prev,
+          score: prev.score + 5,
+          correctAnswers: prev.correctAnswers + 1,
+        }
         : {
-            ...prev,
-            wrongAnswers: prev.wrongAnswers + 1,
-          }
+          ...prev,
+          wrongAnswers: prev.wrongAnswers + 1,
+        }
     );
     if (activeQuestion !== currentQuestions.length - 1) {
       setActiveQuestion((prev) => prev + 1);
@@ -302,7 +302,7 @@ export default function ExplorePage({ userID }) {
                 <span>/{currentQuestions.length}</span>
               </div>
             </div>
-            
+
             <div className="mb-6">
               <h3 className="text-xl font-semibold text-gray-800 mb-4">
                 {currentQuestions[activeQuestion]?.question}
@@ -313,17 +313,16 @@ export default function ExplorePage({ userID }) {
                     key={idx}
                     onClick={() => !checked && onAnswerSelected(answer, idx)}
                     disabled={checked}
-                    className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 font-medium ${
-                      selectedAnswerIndex === idx
+                    className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 font-medium ${selectedAnswerIndex === idx
                         ? checked
                           ? answer === currentQuestions[activeQuestion].correctAnswer
                             ? 'bg-green-500 text-white border-green-500'
                             : 'bg-red-500 text-white border-red-500'
                           : 'bg-blue-600 text-white border-blue-600'
                         : checked && answer === currentQuestions[activeQuestion].correctAnswer
-                        ? 'bg-green-500 text-white border-green-500'
-                        : 'bg-white text-blue-800 border-blue-200 hover:bg-blue-50 hover:border-blue-300'
-                    } ${!checked ? 'cursor-pointer hover:shadow-md' : 'cursor-default'}`}
+                          ? 'bg-green-500 text-white border-green-500'
+                          : 'bg-white text-blue-800 border-blue-200 hover:bg-blue-50 hover:border-blue-300'
+                      } ${!checked ? 'cursor-pointer hover:shadow-md' : 'cursor-default'}`}
                   >
                     {answer}
                   </button>
@@ -350,7 +349,7 @@ export default function ExplorePage({ userID }) {
         ) : (
           <div className="quiz-container text-center">
             <h2 className="text-3xl font-bold text-blue-800 mb-6">🎉 Quiz Completed!</h2>
-            
+
             <div className="bg-blue-50 rounded-2xl p-6 mb-6">
               <h3 className="text-4xl font-bold text-blue-700 mb-2">
                 {((result.score / (currentQuestions.length * 5)) * 100).toFixed(1)}%
@@ -401,7 +400,7 @@ export default function ExplorePage({ userID }) {
   );
 
   return (
-    <div className="min-h-screen  py-2 px-4 space-y-6 relative overflow-hidden">
+    <div className="min-h-screen  space-y-6 relative overflow-hidden">
       {/* Quiz Modal */}
       {quizStarted && <QuizModal />}
 
@@ -410,14 +409,17 @@ export default function ExplorePage({ userID }) {
         <Navbar />
         <main className="container mx-auto px-4 py-8 max-w-7xl space-y-6">
           {/* Header */}
-          <div className="text-center mb-8">
-            <div className="flex justify-center items-center gap-2 mb-4">
-              <Search className="h-8 w-8 text-primary" />
-              <h1 className="text-4xl font-bold">Cultural Explorer</h1>
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm text-center">
+            <div className="text-center mb-8">
+              <div className="flex justify-center items-center gap-2 mb-4">
+                <Search className="h-8 w-8 text-primary" />
+                <h1 className="text-4xl font-bold">Cultural Explorer</h1>
+              </div>
+              <p className="text-lg text-muted-foreground">
+                Discover fascinating traditions, customs, and stories from around the world:
+              </p>
+
             </div>
-            <p className="text-lg text-muted-foreground">
-              Discover fascinating traditions, customs, and stories from around the world:
-            </p>
             {/* Tabs */}
             <div
               role="tablist"
@@ -474,11 +476,10 @@ export default function ExplorePage({ userID }) {
                   <button
                     key={name}
                     onClick={() => setSelectedCategory(name)}
-                    className={`flex items-center gap-2 px-3 py-1 rounded-md text-sm transition ${
-                      selectedCategory === name
+                    className={`flex items-center gap-2 px-3 py-1 rounded-md text-sm transition ${selectedCategory === name
                         ? "bg-primary text-primary-foreground shadow"
                         : "bg-white border-[0.5px] border-gray-200 hover:bg-accent hover:text-accent-foreground"
-                    }`}
+                      }`}
                   >
                     <Icon className="h-4 w-4" />
                     {name}
@@ -524,9 +525,8 @@ export default function ExplorePage({ userID }) {
                   <div
                     key={i}
                     onClick={() => setSelectedCountry(c)}
-                    className={`p-3 border-[0.5px] border-gray-300 cursor-pointer hover:bg-muted/50 transition-colors ${
-                      selectedCountry?.name === c.name ? "bg-muted" : ""
-                    }`}
+                    className={`p-3 border-[0.5px] border-gray-300 cursor-pointer hover:bg-muted/50 transition-colors ${selectedCountry?.name === c.name ? "bg-muted" : ""
+                      }`}
                   >
                     <div className="flex items-center gap-3">
                       <img src={c.countryFlag} alt={`${c.name} flag`} className="w-6 h-4 object-cover" />

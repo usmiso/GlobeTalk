@@ -133,7 +133,7 @@ export default function MatchmakingPage() {
   );
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen py-2 px-4 relative overflow-x-hidden">
+    <div className="flex-1 flex flex-col min-h-screen  relative overflow-x-hidden">
       {/* Decorative background images */}
       <div className="fixed inset-0 w-full h-screen -z-10">
         <Image

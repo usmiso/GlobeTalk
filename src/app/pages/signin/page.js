@@ -64,6 +64,8 @@ const AuthPage = () => {
         setConfirmPassword(newPassword);
     };
 
+    const BLOCKED_MESSAGE = "Your account has been blocked and you can no longer access GlobeTalk. If you believe this is a mistake, contact support.";
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
@@ -133,10 +135,37 @@ const AuthPage = () => {
                     return; // Stop further execution
                 }
 
-                // If email is verified, proceed
+                // If email is verified, check blocked status before proceeding
+                try {
+                    const blockedRes = await fetch(`http://localhost:5000/api/blocked/${user.uid}`);
+                    if (blockedRes.ok) {
+                        const blockedData = await blockedRes.json();
+                        if (blockedData.blocked) {
+                            setError(BLOCKED_MESSAGE);
+                            // Sign out locally
+                            try {
+                                const { auth } = await import("../../firebase/auth");
+                                const { signOut } = await import("firebase/auth");
+                                await signOut(auth);
+                            } catch (e) { /* ignore */ }
+                            return;
+                        }
+                    }
+                } catch (e) {
+                    // If blocked check fails, allow fallback navigation but log
+                    console.warn('Blocked status check failed', e);
+                }
+
                 setEmail("");
                 setPassword("");
-                router.push("/pages/profile");
+
+                if (user?.email === "gamersboysa@gmail.com") {
+                    router.push("/pages/reports");
+                } else if (userCredential?.isNewUser) {
+                    router.push("/pages/profile");
+                } else {
+                    router.push("/pages/dashboard");
+                }
             } catch (error) {
                 if (
                     error.code === "auth/user-not-found" ||
@@ -177,7 +206,28 @@ const AuthPage = () => {
             const { isNewUser, user } = await signInWithGoogle(userIP);
 
 
-            if (isNewUser) {
+            // Check blocked status before redirecting
+            try {
+                const blockedRes = await fetch(`http://localhost:5000/api/blocked/${user.uid}`);
+                if (blockedRes.ok) {
+                    const blockedData = await blockedRes.json();
+                    if (blockedData.blocked) {
+                        setError(BLOCKED_MESSAGE);
+                        try {
+                            const { auth } = await import("../../firebase/auth");
+                            const { signOut } = await import("firebase/auth");
+                            await signOut(auth);
+                        } catch (e) { /* ignore */ }
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.warn('Blocked status check failed (Google)', e);
+            }
+
+            if (user?.email === "gamersboysa@gmail.com") {
+                router.push("/pages/reports");
+            } else if (isNewUser) {
                 router.push("/pages/profile");
             } else {
                 router.push("/pages/dashboard");
