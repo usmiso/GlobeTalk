@@ -306,7 +306,7 @@ export default function UserProfile() {
                         </div>
 
                         {/* Display Name */}
-                        <h1 className="text-2xl font-bold mb-2">{username}</h1>
+                        <h1 className="text-2xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent inline-block">{username}</h1>
                         <p className="text-sm text-gray-500">{timezone || "No location set"}</p>
                     </div>
 

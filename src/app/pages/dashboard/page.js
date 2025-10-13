@@ -98,19 +98,21 @@ export default function DashboardPage() {
     <div className="flex min-h-screen">
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col">
+      <main className="flex-1 flex flex-col ">
         <Navbar />
 
-
-        <div className="flex-1 flex flex-col items-center w-full min-h-screen px-8 space-y-6 mb-4">
-          <div className="text-center space-y-2">
-            <h1 className="text-3xl font-bold text-foreground">
-              Welcome back, {profile.username || "Friend"}!
+        <div className="flex-1 flex flex-col items-center w-full min-h-screen px-8 space-y-8 mb-4">
+          <div className="text-center space-y-2 mt-8">
+            <h1 className="text-4xl font-extrabold text-blue-700 drop-shadow-sm">
+              Welcome back, <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">{profile.username || "Friend"}</span>!
             </h1>
-            <p className="text-muted-foreground">
-              Your global pen pal journey continues
+            <p className="text-lg text-white italic">
+              Your global pen pal journey continues 🌍✉️
             </p>
           </div>
+
+          {/* Decorative Divider */}
+          <div className="w-32 h-1 rounded-full bg-gradient-to-r from-blue-400 to-purple-400 mx-auto mb-4"></div>
 
           {/* Profile Overview & Quick Actions Side by Side */}
           <div className="w-full flex flex-col md:flex-row gap-6">
