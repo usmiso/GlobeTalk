@@ -401,7 +401,7 @@ export default function ExplorePage({ userID }) {
   );
 
   return (
-    <div className="min-h-screen  py-2 px-4 space-y-6 relative overflow-hidden">
+    <div className="min-h-screen  space-y-6 relative overflow-hidden">
       {/* Quiz Modal */}
       {quizStarted && <QuizModal />}
 

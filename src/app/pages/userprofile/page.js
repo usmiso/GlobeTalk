@@ -287,7 +287,7 @@ export default function UserProfile() {
         <div className="flex min-h-screen">
 
 
-            <main className="flex flex-col items-center w-full min-h-screen py-2 px-">
+            <main className="flex flex-col items-center w-full min-h-screen px-">
                 <Navbar />
                 {/* Profile Card */}
                 <div className="bg-white w-full flex flex-col gap-4 rounded-xl border border-gray-100

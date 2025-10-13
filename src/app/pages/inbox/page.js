@@ -640,19 +640,8 @@ const submitReport = async () => {
   return (
     <div className="relative flex flex-col h-screen">
       {/* Nations background */}
-      <div className="fixed inset-0 w-full h-full -z-10">
-        <Image
-          src="/images/nations.png"
-          alt="Nations background"
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover object-center"
-        />
-        <div className="absolute inset-0 bg-white/40 md:bg-white/40"></div>
-      </div>
       <Navbar />
-  {/* game modal removed */}
+      
       <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
         {/* Mobile: Show either sidebar or chat */}
         {isMobile ? (
