@@ -30,19 +30,21 @@ const customJestConfig = {
 
   // Exclude specific files/folders from coverage reporting
   collectCoverageFrom: [
-    'src/app//*.{js,jsx}',
-    'server//*.{js,jsx}',
+    'src/app/**/*.{js,jsx}',
+    'server/**/*.{js,jsx}',
+    // Exclude CLI-only server scripts from coverage
+    '!server/scripts/**/*.{js,jsx}',
     '!src/app/components/ProtectedLayout.js',
     '!src/app/components/ProtectedRoute.js',
     '!src/app/components/useAuthRedirect.js',
-    '!src/app/pages/reports//*.{js,jsx}', // exclude reports from coverage
+    '!src/app/pages/reports/**/*.{js,jsx}', // exclude reports from coverage
     'src/app/firebase/auth.js',
     'src/app/firebase/config.js',
     '!src/app/components/AuthContext.js', // optional
-    '!src/pages//*.{js,jsx,ts,tsx}',
-    '!/*.test.{js,jsx,ts,tsx}',
-    '!/node_modules/',
-    '!/.next/',
+    '!src/pages/**/*.{js,jsx,ts,tsx}',
+    '!**/*.test.{js,jsx,ts,tsx}',
+    '!**/node_modules/**',
+    '!**/.next/**',
   ],
 
   coverageReporters: ['lcov', 'text'],

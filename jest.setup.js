@@ -77,6 +77,18 @@ const ERROR_WARNING_FILTERS = [
   'Received false for a non-boolean attribute',
   // App-specific test noise
   'Could not get IP address:',
+  // Intentional server error-path logs triggered in tests
+  'Error adding language(s) to available_languages',
+  'Error adding timezone to available_countries',
+  '[REPORT] Error saving report',
+  'Error storing IP address',
+  'Error updating reported user profile with violation',
+  'Error fetching matched users:',
+  'Error fetching stats:',
+  // UserProfile page error-path logs (expected in tests)
+  'Error fetching profile:',
+  'Error fetching languages:',
+  'Error fetching timezones:',
 ];
 
 function isAuthErrorObject(arg) {
