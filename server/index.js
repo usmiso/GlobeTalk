@@ -3,6 +3,13 @@ const cors = require('cors');
 const path = require('path');
 const admin = require('firebase-admin');
 const fs = require('fs');
+let swaggerUi = null;
+try {
+    // Optional dependency for tests where server deps may not be installed at repo root
+    swaggerUi = require('swagger-ui-express');
+} catch (e) {
+    // Leave swaggerUi as null; docs will be disabled in this environment
+}
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -26,6 +33,21 @@ try {
 
 const db = admin.apps.length ? admin.firestore() : null;
 const adminAuth = admin.apps.length ? admin.auth() : null;
+
+// Swagger/OpenAPI setup (serves docs whether Firestore is initialized or not)
+let openApiSpec = null;
+try {
+    const specPath = path.join(__dirname, 'openapi.json');
+    if (fs.existsSync(specPath)) {
+        openApiSpec = JSON.parse(fs.readFileSync(specPath, 'utf-8'));
+    }
+} catch (e) {
+    console.warn('Failed to load OpenAPI spec:', e.message);
+}
+if (openApiSpec && swaggerUi) {
+    app.get('/api-docs.json', (req, res) => res.json(openApiSpec));
+    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
+}
 
 /**
  * GET /api/health

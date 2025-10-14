@@ -129,6 +129,15 @@ moderation logs
 
 > See [docs/api.md](docs/api.md) for full request/response examples.
 
+## Swagger/OpenAPI docs
+
+When running the Express server in `server/`, interactive API docs are available:
+
+- Swagger UI: http://localhost:5000/api-docs
+- OpenAPI JSON: http://localhost:5000/api-docs.json
+
+The spec lives in `server/openapi.json`. If you modify routes in `server/index.js`, update the spec accordingly.
+
 ### Auth
 - `GET /auth/oauth/login` — Redirect user to OAuth provider.
 - `POST /auth/oauth/callback` — Exchange provider code for app JWT.
