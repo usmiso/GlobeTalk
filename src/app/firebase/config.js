@@ -1,3 +1,4 @@
+// Firebase client initialization (Auth, Firestore with persistence, Storage)
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { 

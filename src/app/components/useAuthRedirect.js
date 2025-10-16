@@ -1,5 +1,6 @@
 "use client";
 
+// Hook that redirects to `redirectTo` when the user is not authenticated.
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";

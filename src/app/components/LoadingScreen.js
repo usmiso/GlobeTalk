@@ -1,3 +1,4 @@
+// Full-screen loading overlay used during auth checks or suspense states.
 import React from "react";
 
 export default function LoadingScreen() {

@@ -1,3 +1,4 @@
+// Firebase auth helpers: sign up/in flows, Google popup, password reset, and basic user doc wiring.
 import { auth, db } from "./config";
 import {
   GoogleAuthProvider,
@@ -7,13 +8,9 @@ import {
   sendPasswordResetEmail,
   signOut,
   onAuthStateChanged,
+  sendEmailVerification,
 } from "firebase/auth";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { doc, setDoc, getDoc,updateDoc } from "firebase/firestore";
-import { sendEmailVerification } from "firebase/auth";
-
-
-//const auth = getAuth(app);
+import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
 
 // Email/password signup
 export async function signUp(email, password) {
@@ -57,10 +54,10 @@ export async function signInWithGoogle(ipAddress) {
 
     const userDocRef = doc(db, "users", user.uid);
     const userDoc = await getDoc(userDocRef);
-    console.log("Auth", ipAddress);
+  console.log("Auth", ipAddress);
 
     if (!userDoc.exists()) {
-      // New user → Store minimal data including userId and lastIP
+      // New user → Store minimal data including userId and IP
       await setDoc(userDocRef, {
         userId: user.uid,
         email: user.email,

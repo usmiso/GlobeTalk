@@ -1,5 +1,6 @@
 "use client";
 
+// App navigation bar: highlights active section and supports mobile menu.
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -73,7 +74,7 @@ export default function Navbar() {
         {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
       </button>
 
-      {/* Mobile Nav Dropdown */}
+      {/* Mobile Nav Dropdown (closes after navigation) */}
       {isOpen && (
         <div className="absolute top-20 left-0 w-full bg-white shadow-md border-t border-gray-200 md:hidden z-50">
           <nav className="flex flex-col p-4 space-y-2">
