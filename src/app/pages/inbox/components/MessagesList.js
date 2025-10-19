@@ -11,7 +11,7 @@ export default function MessagesList({ messages, currentUserID, openChat, onDown
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2 px-4">
       {messages.map((msg, i) => (
         <MessageItem
           key={i}
