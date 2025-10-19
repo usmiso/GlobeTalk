@@ -1,8 +1,6 @@
 "use client";
 import React from "react";
 import { useAuthPage } from "./hooks/useAuthPage";
-import Image from "next/image";
-import Link from "next/link";
 import BackgroundImage from "./components/BackgroundImage";
 import NotificationBanner from "./components/NotificationBanner";
 import LeftPanel from "./components/LeftPanel";
@@ -33,8 +31,6 @@ const AuthPage = () => {
         handleSubmit,
         handleGoogleAuth,
     } = useAuthPage();
-
-    // Note: all side effects and auth logic are handled by useAuthPage
 
     return (
 

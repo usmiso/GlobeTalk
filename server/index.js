@@ -5,12 +5,13 @@ const cors = require('cors');
 const path = require('path');
 const admin = require('firebase-admin');
 const fs = require('fs');
+const cron = require('node-cron');
 let swaggerUi = null;
+
 try {
-    // Optional dependency for tests where server deps may not be installed at repo root
     swaggerUi = require('swagger-ui-express');
 } catch (e) {
-    // Leave swaggerUi as null; docs will be disabled in this environment
+    console.warn('Swagger UI not available. Skipping API docs setup.');
 }
 
 const app = express();
@@ -19,8 +20,7 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Initialize Firebase Admin (from env JSON or serviceAccountKey.json)
-// Note: The server runs fine without Firestore (health/docs endpoints still work).
+// Initialize Firebase Admin
 let serviceAccount;
 try {
     require('dotenv').config();
@@ -37,7 +37,53 @@ try {
 const db = admin.apps.length ? admin.firestore() : null;
 const adminAuth = admin.apps.length ? admin.auth() : null;
 
-// Routers (separation of concerns)
+// Cron job to clean tempip_blocked collection
+cron.schedule('*/5 * * * *', async () => {
+    if (!db) return;
+    console.log('Cleaning tempip_blocked collection...');
+    const snapshot = await db.collection('tempip_blocked').get();
+    const now = Date.now();
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.expiresAt && data.expiresAt.toMillis() < now) {
+            doc.ref.delete();
+        }
+    });
+});
+
+// Endpoint to check if an IP is blocked
+app.get('/api/tempip_blocked/:ip', async (req, res) => {
+    if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
+
+    const { ip } = req.params;
+    if (!ip) return res.status(400).json({ error: 'Missing IP address' });
+
+    try {
+        const doc = await db.collection('tempip_blocked').doc(ip).get();
+        if (!doc.exists) return res.status(200).json({ blocked: false });
+
+        const data = doc.data();
+        const now = Date.now();
+
+        if (data.expiresAt && data.expiresAt.toMillis() < now) {
+            await doc.ref.delete();
+            return res.status(200).json({ blocked: false });
+        }
+
+        res.status(200).json({
+            blocked: true,
+            userId: data.userId || null,
+            blockedAt: data.blockedAt ? data.blockedAt.toDate() : null,
+            expiresAt: data.expiresAt ? data.expiresAt.toDate() : null,
+            source: data.source || 'unknown'
+        });
+    } catch (error) {
+        console.error('Error checking temp blocked IP:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Routers
 const makeHealthRouter = require('./endpoints/health');
 const makeProfileRouter = require('./endpoints/profile');
 const makeMatchmakingRouter = require('./endpoints/matchmaking');
@@ -46,7 +92,7 @@ const makeUsersRouter = require('./endpoints/users');
 const makeReportsRouter = require('./endpoints/reports');
 const makeStatsRouter = require('./endpoints/stats');
 
-// Swagger/OpenAPI setup (serves docs whether Firestore is initialized or not)
+// Swagger/OpenAPI setup
 let openApiSpec = null;
 try {
     const specPath = path.join(__dirname, 'openapi.json');
@@ -61,8 +107,7 @@ if (openApiSpec && swaggerUi) {
     app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
 }
 
-// Mount routers under /api
-// Each router is a factory that receives dependencies (db, admin, etc.).
+// Mount routers
 app.use('/api', makeHealthRouter({ db }));
 app.use('/api', makeProfileRouter({ db, admin }));
 app.use('/api', makeMatchmakingRouter({ db }));
@@ -70,7 +115,6 @@ app.use('/api', makeChatRouter({ db, admin }));
 app.use('/api', makeUsersRouter({ db, admin, adminAuth }));
 app.use('/api', makeReportsRouter({ db, admin }));
 app.use('/api', makeStatsRouter({ db }));
-
 
 /**
  * 404 handler for unknown routes.
