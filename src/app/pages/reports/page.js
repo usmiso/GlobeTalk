@@ -16,7 +16,7 @@ export default function ReportsPage() {
   const router = useRouter();
 
   const ALLOWED_EMAIL = "gamersboysa@gmail.com";
-  const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
   // Auth / authorization gate
   useEffect(() => {
