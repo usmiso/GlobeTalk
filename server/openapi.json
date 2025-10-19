@@ -1,0 +1,443 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "GlobeTalk Server API",
+    "version": "1.0.0",
+    "description": "OpenAPI documentation for GlobeTalk backend endpoints."
+  },
+  "servers": [
+    { "url": "/" }
+  ],
+  "paths": {
+    "/api/health": {
+      "get": {
+        "summary": "Health check",
+        "responses": {
+          "200": {
+            "description": "Service healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string" },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/profile": {
+      "get": {
+        "summary": "Fetch profile by userID",
+        "parameters": [
+          {
+            "name": "userID",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Profile object", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Profile" } } } },
+          "400": { "description": "Missing userID" },
+          "404": { "description": "Profile not found" },
+          "500": { "description": "Firestore not initialized or server error" }
+        }
+      },
+      "post": {
+        "summary": "Create or update a user profile",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ProfileUpsertRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Saved successfully" },
+          "400": { "description": "Missing required fields" },
+          "500": { "description": "Firestore not initialized or server error" }
+        }
+      }
+    },
+    "/api/facts": {
+      "get": {
+        "summary": "List basic profile attributes for all users",
+        "responses": {
+          "200": {
+            "description": "Array of basic facts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ProfileFacts" }
+                }
+              }
+            }
+          },
+          "500": { "description": "Firestore not initialized or server error" }
+        }
+      }
+    },
+    "/api/profile/avatar": {
+      "post": {
+        "summary": "Save avatar and username",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["userID", "username", "avatarUrl"],
+                "properties": {
+                  "userID": { "type": "string" },
+                  "username": { "type": "string" },
+                  "avatarUrl": { "type": "string", "format": "uri" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Saved" },
+          "400": { "description": "Missing required fields" },
+          "500": { "description": "Firestore not initialized or server error" }
+        }
+      }
+    },
+    "/api/matchmaking": {
+      "get": {
+        "summary": "Random match by filters",
+        "parameters": [
+          { "name": "timezone", "in": "query", "schema": { "type": "string" } },
+          { "name": "language", "in": "query", "schema": { "type": "string" } },
+          { "name": "excludeUserID", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Matched user", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Profile" } } } },
+          "400": { "description": "At least one filter required" },
+          "404": { "description": "No users found" },
+          "500": { "description": "Firestore not initialized or server error" }
+        }
+      }
+    },
+    "/api/match": {
+      "post": {
+        "summary": "Create a match and initialize a chat",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["userA", "userB"],
+                "properties": { "userA": { "type": "string" }, "userB": { "type": "string" } }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Match created",
+            "content": { "application/json": { "schema": { "type": "object", "properties": { "message": {"type":"string"}, "chatId": {"type":"string"} } } } }
+          },
+          "400": { "description": "Missing user IDs" },
+          "500": { "description": "Firestore not initialized or server error" }
+        }
+      }
+    },
+    "/api/profile/edit": {
+      "post": {
+        "summary": "Update editable profile fields",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProfileEditRequest" } } } },
+        "responses": { "200": { "description": "Saved" }, "400": { "description": "Missing userID" }, "500": { "description": "Firestore not initialized or server error" } }
+      }
+    },
+    "/api/available_languages": {
+      "get": {
+        "summary": "List of available languages",
+        "responses": {
+          "200": { "description": "Array", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/NamedItem" } } } } },
+          "500": { "description": "Firestore not initialized or server error" }
+        }
+      }
+    },
+    "/api/available_timezones": {
+      "get": {
+        "summary": "List of available timezones",
+        "responses": {
+          "200": { "description": "Array", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/NamedItem" } } } } },
+          "500": { "description": "Firestore not initialized or server error" }
+        }
+      }
+    },
+    "/api/chat": {
+      "get": {
+        "summary": "Get chat by chatId",
+        "parameters": [ { "name": "chatId", "in": "query", "required": true, "schema": { "type": "string" } } ],
+        "responses": {
+          "200": { "description": "Chat object", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Chat" } } } },
+          "400": { "description": "Missing chatId" },
+          "404": { "description": "Chat not found" },
+          "500": { "description": "Firestore not initialized or server error" }
+        }
+      }
+    },
+    "/api/chat/send": {
+      "post": {
+        "summary": "Append a message to a chat",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SendMessageRequest" }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Sent" }, "400": { "description": "Missing required fields" }, "500": { "description": "Firestore not initialized or server error" } }
+      }
+    },
+    "/api/chat/report": {
+      "post": {
+        "summary": "Report a chat message",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReportRequest" } } } },
+        "responses": { "200": { "description": "Report saved" }, "400": { "description": "Missing required fields" }, "500": { "description": "Firestore not initialized or server error" } }
+      }
+    },
+    "/api/user/ip": {
+      "post": {
+        "summary": "Store user IP address",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StoreIpRequest" } } } },
+        "responses": { "200": { "description": "Stored" }, "400": { "description": "Missing user ID" }, "500": { "description": "Firestore not initialized or server error" } }
+      }
+    },
+    "/api/blockUser": {
+      "post": {
+        "summary": "Block a user",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["userID"], "properties": { "userID": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "User blocked" }, "400": { "description": "Missing userID" }, "500": { "description": "Firestore not initialized or server error" } }
+      }
+    },
+    "/api/blocked/{userID}": {
+      "get": {
+        "summary": "Check if a user is blocked",
+        "parameters": [ { "name": "userID", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "responses": {
+          "200": { "description": "Blocked status", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BlockedStatus" } } } },
+          "400": { "description": "Missing userID" },
+          "500": { "description": "Firestore not initialized or server error" }
+        }
+      }
+    },
+    "/api/reports": {
+      "get": {
+        "summary": "List all reports",
+        "responses": {
+          "200": { "description": "Reports list", "content": { "application/json": { "schema": { "type": "object", "properties": { "success": {"type":"boolean"}, "data": { "type": "array", "items": { "$ref": "#/components/schemas/Report" } } } } } } },
+          "500": { "description": "Firestore not initialized or server error" }
+        }
+      }
+    },
+    "/api/reports/{id}/validate": {
+      "post": {
+        "summary": "Validate a report and record violation",
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "responses": { "200": { "description": "Validated" }, "404": { "description": "Report not found" }, "500": { "description": "Firestore not initialized or server error" } }
+      }
+    },
+    "/api/reports/{id}/invalidate": {
+      "post": {
+        "summary": "Reject a report",
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "responses": { "200": { "description": "Rejected" }, "500": { "description": "Firestore not initialized or server error" } }
+      }
+    },
+    "/api/matchedUsers": {
+      "get": {
+        "summary": "Timezones of matched users for a user",
+        "parameters": [ { "name": "userID", "in": "query", "required": true, "schema": { "type": "string" } } ],
+        "responses": { "200": { "description": "Array of timezones", "content": { "application/json": { "schema": { "type": "array", "items": { "type": "string" } } } } }, "400": { "description": "Missing userID" }, "404": { "description": "User profile not found" }, "500": { "description": "Firestore not initialized or server error" } }
+      }
+    },
+    "/api/stats": {
+      "get": {
+        "summary": "Compute user stats and recent activity",
+        "parameters": [ { "name": "userID", "in": "query", "required": true, "schema": { "type": "string" } } ],
+        "responses": { "200": { "description": "Stats object", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UserStats" } } } }, "400": { "description": "Missing userID" }, "500": { "description": "Firestore not initialized or server error" } }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "NamedItem": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" }
+        }
+      },
+      "Profile": {
+        "type": "object",
+        "properties": {
+          "userID": { "type": "string" },
+          "intro": { "type": "string" },
+          "ageRange": { "type": "string" },
+          "hobbies": { "type": "array", "items": { "type": "string" } },
+          "timezone": { "type": "string" },
+          "language": { "oneOf": [ {"type":"string"}, {"type":"array", "items": {"type":"string"}} ] },
+          "country": { "type": "string" },
+          "favorites": { "type": "array", "items": { "type": "string" } },
+          "facts": { "type": "array", "items": { "type": "string" } },
+          "sayings": { "type": "array", "items": { "type": "string" } },
+          "username": { "type": "string" },
+          "avatarUrl": { "type": "string" },
+          "countryCode": { "type": "string" },
+          "languageCode": { "type": "string" }
+        }
+      },
+      "ProfileFacts": {
+        "type": "object",
+        "properties": {
+          "ageRange": { "type": "string" },
+          "hobbies": { "type": "array", "items": { "type": "string" } },
+          "timezone": { "type": "string" },
+          "language": { "oneOf": [ {"type":"string"}, {"type":"array", "items": {"type":"string"}} ] }
+        }
+      },
+      "ProfileUpsertRequest": {
+        "type": "object",
+        "required": ["userID", "intro", "ageRange", "hobbies", "timezone", "language", "country"],
+        "properties": {
+          "userID": { "type": "string" },
+          "intro": { "type": "string" },
+          "ageRange": { "type": "string" },
+          "hobbies": { "type": "array", "items": { "type": "string" } },
+          "timezone": { "type": "string" },
+          "language": { "oneOf": [ {"type":"string"}, {"type":"array", "items": {"type":"string"}} ] },
+          "country": { "type": "string" },
+          "favorites": { "type": "array", "items": { "type": "string" } },
+          "facts": { "type": "array", "items": { "type": "string" } },
+          "sayings": { "type": "array", "items": { "type": "string" } },
+          "username": { "type": "string" },
+          "avatarUrl": { "type": "string" },
+          "countryCode": { "type": "string" },
+          "languageCode": { "type": "string" }
+        }
+      },
+      "ProfileEditRequest": {
+        "type": "object",
+        "required": ["userID"],
+        "properties": {
+          "userID": { "type": "string" },
+          "intro": { "type": "string" },
+          "ageRange": { "type": "string" },
+          "hobbies": { "type": "array", "items": { "type": "string" } },
+          "region": { "type": "string" },
+          "languages": { "type": "array", "items": { "type": "string" } },
+          "sayings": { "type": "array", "items": { "type": "string" } },
+          "username": { "type": "string" },
+          "avatarUrl": { "type": "string" },
+          "country": { "type": "string" }
+        }
+      },
+      "Chat": {
+        "type": "object",
+        "properties": {
+          "chatId": { "type": "string" },
+          "users": { "type": "array", "items": { "type": "string" } },
+          "messages": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ChatMessage" }
+          },
+          "createdAt": { "type": "string" }
+        }
+      },
+      "ChatMessage": {
+        "type": "object",
+        "required": ["sender", "text", "deliveryTime"],
+        "properties": {
+          "sender": { "type": "string" },
+          "text": { "type": "string" },
+          "deliveryTime": { "type": "number", "description": "Epoch millis" }
+        }
+      },
+      "SendMessageRequest": {
+        "type": "object",
+        "required": ["chatId", "message"],
+        "properties": {
+          "chatId": { "type": "string" },
+          "message": { "$ref": "#/components/schemas/ChatMessage" }
+        }
+      },
+      "Report": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "_id": { "type": "string" },
+          "chatId": { "type": "string" },
+          "message": { "$ref": "#/components/schemas/ChatMessage" },
+          "reporter": { "type": "string" },
+          "reason": { "type": "string" },
+          "reportedAt": { "type": "number" },
+          "status": { "type": "string" }
+        }
+      },
+      "ReportRequest": {
+        "type": "object",
+        "required": ["chatId", "message", "reporter"],
+        "properties": {
+          "chatId": { "type": "string" },
+          "message": { "$ref": "#/components/schemas/ChatMessage" },
+          "reporter": { "type": "string" },
+          "reason": { "type": "string" }
+        }
+      },
+      "StoreIpRequest": {
+        "type": "object",
+        "required": ["uid"],
+        "properties": {
+          "uid": { "type": "string" },
+          "ipAddress": { "type": "string" }
+        }
+      },
+      "BlockedStatus": {
+        "type": "object",
+        "properties": {
+          "blocked": { "type": "boolean" },
+          "source": { "type": "string" },
+          "blockedAt": { "type": "number" }
+        }
+      },
+      "UserStats": {
+        "type": "object",
+        "properties": {
+          "totalLetters": { "type": "number" },
+          "activePenPals": { "type": "number" },
+          "countriesConnected": { "type": "number" },
+          "averageResponseTime": { "type": "string" },
+          "lettersThisMonth": { "type": "number" },
+          "favoriteLetters": { "type": "number" },
+          "activity": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": { "type": "string" },
+                "text": { "type": "string" },
+                "sender": { "type": "string" },
+                "timestamp": { "type": "number" },
+                "users": { "type": "array", "items": { "type": "string" } },
+                "otherUsername": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

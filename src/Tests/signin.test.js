@@ -89,7 +89,7 @@ describe("AuthPage Tests", () => {
     expect(passwordInput.type).toBe("password");
   });
 
-  test("routes to profile on successful signin", async () => {
+  test("routes to dashboard on successful signin", async () => {
     auth.signIn.mockResolvedValueOnce({ user: { emailVerified: true } });
 
     render(<AuthPage />);
@@ -106,11 +106,11 @@ describe("AuthPage Tests", () => {
 
     await new Promise((r) => setTimeout(r, 0));
 
-    expect(mockPush).toHaveBeenCalledWith("/pages/profile");
+    expect(mockPush).toHaveBeenCalledWith("/pages/dashboard");
   });
 
   test("routes correctly on Google sign-in", async () => {
-    auth.signInWithGoogle.mockResolvedValueOnce({ isNewUser: true });
+    auth.signInWithGoogle.mockResolvedValueOnce({ isNewUser: true, user: { uid: 'u1' } });
 
     render(<AuthPage />);
     const googleButtons = screen.getAllByText(/Sign in with Google/i);
@@ -265,7 +265,7 @@ describe("AuthPage Tests", () => {
     }
   });
 
-  test("handles IP fetch failure gracefully", async () => {
+  test("handles IP fetch failure gracefully (still routes to dashboard)", async () => {
     global.fetch.mockRejectedValueOnce(new Error("Network error"));
 
     auth.signIn.mockResolvedValueOnce({ user: { emailVerified: true } });
@@ -285,7 +285,7 @@ describe("AuthPage Tests", () => {
     });
 
     // Should still proceed with signin even if IP fetch fails
-    expect(mockPush).toHaveBeenCalledWith("/pages/profile");
+    expect(mockPush).toHaveBeenCalledWith("/pages/dashboard");
   });
 
   test("notification disappears after 5 seconds", async () => {
@@ -404,7 +404,7 @@ describe("AuthPage Tests", () => {
   test("routes to dashboard for existing Google user", async () => {
     auth.signInWithGoogle.mockResolvedValueOnce({
       isNewUser: false,
-      user: { emailVerified: true }
+      user: { emailVerified: true, uid: 'u1' }
     });
 
     render(<AuthPage />);
@@ -627,7 +627,7 @@ test("password generation creates valid strong password", async () => {
   });
 
   // LINES 124-126: IP fetching error handling
-  test("handles IP fetch network error and uses fallback", async () => {
+  test("handles IP fetch network error and uses fallback (routes to dashboard)", async () => {
     // Mock IP fetch failure
     global.fetch.mockRejectedValueOnce(new Error("Network error"));
     
@@ -650,14 +650,14 @@ test("password generation creates valid strong password", async () => {
 
     // Should still proceed with authentication
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith("/pages/profile");
+      expect(mockPush).toHaveBeenCalledWith("/pages/dashboard");
     });
 
     // Should have attempted to get IP
     expect(global.fetch).toHaveBeenCalledWith('https://api.ipify.org?format=json');
   });
 
-  test("handles IP fetch API response error", async () => {
+  test("handles IP fetch API response error (routes to dashboard)", async () => {
     // Mock IP fetch returning error response
     global.fetch.mockResolvedValueOnce({
       ok: false,
@@ -682,7 +682,7 @@ test("password generation creates valid strong password", async () => {
 
     // Should still proceed with authentication
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith("/pages/profile");
+      expect(mockPush).toHaveBeenCalledWith("/pages/dashboard");
     });
   });
 

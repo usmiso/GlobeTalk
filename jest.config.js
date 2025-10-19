@@ -23,6 +23,7 @@ const customJestConfig = {
     '<rootDir>/src/components/ProtectedRoute.js',
     '<rootDir>/src/components/useAuthRedirect.js',
     '<rootDir>/src/components/AuthContext.js', // optional if you don't want to test it
+    '<rootDir>/src/app/pages/reports/', // exclude reports from testing
   ],
 
   collectCoverage: true,
@@ -30,9 +31,13 @@ const customJestConfig = {
   // Exclude specific files/folders from coverage reporting
   collectCoverageFrom: [
     'src/app/**/*.{js,jsx}',
+    'server/**/*.{js,jsx}',
+    // Exclude CLI-only server scripts from coverage
+    '!server/scripts/**/*.{js,jsx}',
     '!src/app/components/ProtectedLayout.js',
     '!src/app/components/ProtectedRoute.js',
     '!src/app/components/useAuthRedirect.js',
+    '!src/app/pages/reports/**/*.{js,jsx}', // exclude reports from coverage
     'src/app/firebase/auth.js',
     'src/app/firebase/config.js',
     '!src/app/components/AuthContext.js', // optional

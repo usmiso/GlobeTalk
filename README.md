@@ -16,10 +16,12 @@
 6. [Local setup & development](#local-setup--development)  
 7. [Testing & CI](#testing--ci)  
 8. [Sprint 1 deliverables](#sprint-1-deliverables-rubric-aligned)  
-9. [Privacy, safety & moderation](#privacy-safety--moderation)  
-10. [Contributing](#contributing)  
-11. [Contact & support](#contact--support)  
-12. [License](#license)
+9. [Sprint 2 deliverables](#sprint-2-deliverables-rubric-aligned)  
+10. [Sprint 3 deliverables](#sprint-3-deliverables-rubric-aligned)  
+11. [Privacy, safety & moderation](#privacy-safety--moderation)  
+12. [Contributing](#contributing)  
+13. [Contact & support](#contact--support)  
+14. [License](#license)
 
 # Quick summary
 - **Purpose:** Help users make anonymous, cross-cultural connections via delayed text letters.  
@@ -127,6 +129,46 @@ moderation logs
 
 > See [docs/api.md](docs/api.md) for full request/response examples.
 
+## Swagger/OpenAPI docs
+
+When running the Express server in `server/`, interactive API docs are available:
+
+- Swagger UI: http://localhost:5000/api-docs
+- OpenAPI JSON: http://localhost:5000/api-docs.json
+
+The spec lives in `server/openapi.json`. If you modify routes in `server/index.js`, update the spec accordingly.
+
+## Server endpoints (Express) — separation of concerns
+
+The Express server in `server/` mounts modular routers from `server/endpoints/`, keeping each concern isolated. All routes are mounted under `/api`.
+
+- `server/endpoints/health.js`
+  - `GET /api/health` — basic health check
+- `server/endpoints/profile.js`
+  - `POST /api/profile`, `GET /api/profile`, `POST /api/profile/edit`, `POST /api/profile/avatar`
+  - `GET /api/facts`, `GET /api/available_languages`, `GET /api/available_timezones`, `GET /api/matchedUsers`
+- `server/endpoints/matchmaking.js`
+  - `GET /api/matchmaking`, `POST /api/match`
+- `server/endpoints/chat.js`
+  - `GET /api/chat`, `POST /api/chat/send`, `POST /api/chat/report`
+- `server/endpoints/users.js`
+  - `POST /api/user/ip`, `POST /api/blockUser`, `GET /api/blocked/:userID`
+- `server/endpoints/reports.js`
+  - `GET /api/reports`, `POST /api/reports/:id/validate`, `POST /api/reports/:id/invalidate`
+- `server/endpoints/stats.js`
+  - `GET /api/stats`
+
+Router wiring lives in `server/index.js`, which initializes Firebase Admin and mounts each router like:
+
+```js
+app.use('/api', makeProfileRouter({ db, admin }));
+```
+
+Add a new endpoint
+1) Create a new file in `server/endpoints/` that exports a function receiving `{ db, admin, adminAuth }` and returns an Express router.
+2) Import and mount it in `server/index.js` with `app.use('/api', makeYourRouter(ctx))`.
+3) Update `server/openapi.json` so Swagger docs reflect your change.
+
 ### Auth
 - `GET /auth/oauth/login` — Redirect user to OAuth provider.
 - `POST /auth/oauth/callback` — Exchange provider code for app JWT.
@@ -201,11 +243,122 @@ npm test
 
 ---
 
+# Security audit (supply chain)
+
+We ship a tiny audit that checks your dependency graph against known-compromised npm releases (from recent Debug/Chalk and Tinycolor campaigns). Reports are written under `security/`.
+
+Run with Node (recommended):
+
+```powershell
+# root app
+node scripts/security/scan-compromised.js security/compromised.json
+
+# server package
+Set-Location 'server'; node ../scripts/security/scan-compromised.js ../security/compromised.json; Set-Location '..'
+```
+
+Run with Python (alternative):
+
+```powershell
+# root app
+python scripts/security/scan_compromised.py --root . --compromised security/compromised.json --out security/compromised-report-python.md
+
+# server package
+Set-Location 'server'; python ../scripts/security/scan_compromised.py --root . --compromised ../security/compromised.json --out security/compromised-report-python.md; Set-Location '..'
+```
+
+Outputs
+- Root (Node): `security/compromised-report.md`
+- Server (Node): `server/security/compromised-report.md`
+- Root (Python): `security/compromised-report-python.md`
+- Server (Python): `server/security/compromised-report-python.md`
+
+To update the list of bad packages/versions, edit `security/compromised.json` and re-run the audit.
+
+---
+
 # Sprint 1 Deliverables (Rubric-aligned)
 - [x] User authentication (email, Google OAuth)
 - [x] Anonymous profile creation
 - [x] Responsive UI (Next.js + Tailwind CSS)
 - [x] Netlify deployment
+
+---
+
+# Sprint 2 Deliverables (Rubric-aligned)
+
+Status: planning/implementation. This sprint focuses on matchmaking, richer profiles, edit flows, CI coverage, and a deployable backend on Railway.
+
+- [ ] Matchmaking functionality
+  - Acceptance: Users can request a match and optionally filter by language and/or time zone. Visible in UI (Matchmaking page) with loading/error states, and a “proceed to chat” handoff.
+  - Backend: HTTP endpoint for match requests (e.g., `GET /api/match?timezone=&language=`) and data fetchers for languages/timezones.
+  - Pointers:
+    - Frontend components under `src/app/pages/matchmaking/`.
+    - Backend service under `server/` (Express/Firebase Admin).
+
+- [ ] Edit profile
+  - Acceptance: An “Edit Profile” form that lets a signed-in user update profile fields and persists to backend.
+  - Client validation and helpful error messages; success toast; disabled save while submitting.
+  - Pointers: `src/app/pages/userprofile/` or `src/app/pages/profile/` and server endpoints under `server/`.
+
+- [ ] More significant profile details
+  - Acceptance: Store and render richer fields beyond MVP, e.g., `timezone`, `languages` (codes + names), `favorites`, `funFacts`, `sayings`, `country`, `username`, `avatarUrl`.
+
+- [ ] Testing coverage ≥ 40%
+  - Acceptance: `npm run test -- --coverage` shows overall lines coverage ≥ 40% in CI; critical flows (matchmaking and profile edit) have happy-path tests and at least one
+
+- [ ] Functional backend server setup on Railway
+  - Acceptance: Server starts on Railway and serves API endpoints (profiles, matchmaking, lookups). Health check route responds 200.
+  - Suggested steps (high level):
+    1) Create a Railway project and attach this repo’s `server/` folder as a service.
+    2) Set environment variables (e.g., Firebase Admin creds, CORS origins) in Railway.
+    3) Configure start command (e.g., `node index.js`) and a `PORT` binding.
+    4) Verify via Railway deployment logs and `GET /health`.
+  - Note: Keep secrets in Railway variables; do not commit them.
+---
+
+# Sprint 3 Deliverables (Rubric-aligned)
+
+Focus: end-to-end messaging polish, moderation workflows, safety features, personal stats, and CI hardening.
+
+- [ ] Asynchronous messaging & delivery engine
+  - Acceptance: Letters remain locked until their delivery time; users see accurate unlock times even after refresh. Delivered messages are readable and appear in order. Back end either filters by deliveryTime or a lightweight scheduler flips a delivered flag.
+  - Pointers:
+    - Client: `src/app/pages/inbox/page.js` (deliveryTime, lock/unlock rendering)
+    - Server: `server/index.js` (`POST /api/chat/send`, consider a cron/worker or time-based filtering)
+
+- [ ] Inbox export & UX improvements
+  - Acceptance: Users can download a single letter and the full chat transcript as PDF. Export includes timestamps and sender labels. Composer enforces max length and shows remaining characters.
+  - Pointers: Implement `handleDownloadChatPDF` and validate with Jest by mocking jsPDF.
+
+- [ ] Moderation dashboard & actions (admin)
+  - Acceptance: Reports page lists incoming reports, shows severity tags, and allows validate/invalidate actions that persist status via API. Polling or on-demand refresh shows updates.
+  - Pointers: UI `src/app/pages/reports/page.js`; API `POST /api/reports/:id/validate|invalidate`, `GET /api/reports`.
+
+- [ ] Blocking & safety controls
+  - Acceptance: A user can block another user. Blocked users won’t appear in matchmaking and cannot send new messages. Provide unblock controls.
+  - Backend: `POST /api/block` (blockUid), `DELETE /api/block` (unblock), `GET /api/blocked` (list). Client filters matches and hides chats from blocked users.
+
+- [ ] Account management (delete + data export)
+  - Acceptance: User can request a data export (JSON download of profile, matches, and messages) and can delete their account. Deletion removes profile and chat references server-side.
+  - Backend: `GET /api/export/:uid`, `DELETE /api/users/:uid`.
+
+- [ ] Personal stats dashboard
+  - Acceptance: A dashboard visualizes key metrics (total letters, active pen pals, countries connected, average response time, recent activity). Tests verify formatting and empty states.
+  - Pointers: API `GET /api/stats`; UI under `src/app/pages/dashboard/`.
+
+- [ ] Explore quiz finalized
+  - Acceptance: Country quiz runs end-to-end with scoring and results summary, and the user can retake. Basic unit tests cover scoring logic.
+  - Pointers: `src/app/pages/explore/page.js` and `src/app/pages/explore/data.js`.
+
+- [ ] i18n/timezone data availability
+  - Acceptance: Available languages/timezones endpoints return non-empty datasets in a fresh DB by seeding from `public/assets/`. UI fallbacks still work if DB is empty.
+  - Backend seeding script or on-demand import on first request.
+
+- [ ] CI/CD hardening and quality gates
+  - Acceptance: Test coverage ≥ 60% enforced via Jest thresholds and Codecov status check. Supply-chain audit runs in CI using `scripts/security/scan-compromised.js` and fails on findings.
+  - Extras: Basic Express rate limiting and CORS origin allow-list on the server.
+
 
 ---
 
@@ -240,3 +393,12 @@ See CONTRIBUTING.md for more details.
 # License
 
 This project is licensed under the MIT License. See [`LICENSE`](LICENSE) for details.
+
+---
+
+## Quick orientation
+
+- Frontend: `src/app` (Next.js App Router). Auth lives under `src/app/firebase/`; shared UI and guards under `src/app/components/`.
+- Backend: `server/` (Express + Firebase Admin). Routers live in `server/endpoints/` and are mounted under `/api`.
+- API docs: If `swagger-ui-express` is installed, hit `http://localhost:5000/api-docs` when running the server. The spec is in `server/openapi.json`.
+- New here? `ARCHITECTURE.md` is a short map of the codebase and data flow.

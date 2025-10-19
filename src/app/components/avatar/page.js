@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { auth } from "../../firebase/auth";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export default function AvatarUsernameGen({ onSuccess }) {
   const [avatar, setAvatar] = useState("");
@@ -64,21 +65,21 @@ export default function AvatarUsernameGen({ onSuccess }) {
     }
 
     try {
-           const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
       // const res = await fetch(`${apiUrl}/api/profile/avatar`, 
-      
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/profile/avatar`, 
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userID: user.uid,
-          username,
-          avatarUrl: avatar,
-        }),
-      });
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/profile/avatar`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userID: user.uid,
+            username,
+            avatarUrl: avatar,
+          }),
+        });
 
       if (!res.ok) {
         const data = await res.json();
@@ -92,7 +93,7 @@ export default function AvatarUsernameGen({ onSuccess }) {
     }
   };
 
-  
+
   const theme = {
     primary: '#476C8A',
     primaryDark: '#3A5A72',
@@ -107,13 +108,21 @@ export default function AvatarUsernameGen({ onSuccess }) {
   return (
     <div
       className="min-h-screen w-full flex items-center justify-center overflow-hidden"
-      style={{
-        backgroundColor: theme.primaryLight, // ← FULL BACKGROUND — NO WHITE EDGES
-      }}
     >
+      <div className="fixed inset-0 w-full h-screen -z-10">
+        <Image
+          src="/images/nations.png"
+          alt="Nations background"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-center"
+        />
+        <div className="absolute inset-0 bg-white/40 md:bg-white/40"></div>
+      </div>
       {/* Main Card */}
       <div
-        className="shadow-xl rounded-2xl p-6 w-full max-w-3xl flex flex-col items-center space-y-5 transition-all"
+        className="ml-4 mr-4 shadow-xl rounded-2xl p-6 w-full max-w-3xl flex flex-col items-center space-y-5 transition-all"
         style={{
           backgroundColor: theme.cardBg,
           border: `1px solid ${theme.borderLight}`,

@@ -64,16 +64,6 @@ describe("Index Page", () => {
     expect(pushMock).toHaveBeenCalledWith("/pages/signin?signup=true");
   });
 
-  test("renders mobile header links", () => {
-    renderWithPath("/");
-    const links = screen.getAllByRole("link");
-    expect(links.some(link => link.textContent === "Home")).toBe(true);
-    expect(links.some(link => link.textContent === "About")).toBe(true);
-    expect(links.some(link => link.textContent === "Explore")).toBe(true);
-    expect(links.some(link => link.textContent === "LogIn")).toBe(true);
-    expect(links.some(link => link.textContent === "SIgnUp")).toBe(true);
-  });
-
   test("renders the background image", () => {
     renderWithPath("/");
     const bgImage = screen.getByAltText(/background image/i);
@@ -87,24 +77,5 @@ describe("Index Page", () => {
     expect(chatBubbles.length).toBeGreaterThan(0);
   });
 
-  // ---- Basic presence checks for nav links (avoid brittle class checks) ----
-  test("Home link renders when on '/'", () => {
-    renderWithPath("/");
-    const homeLink = screen.getByText("Home");
-    expect(homeLink).toBeInTheDocument();
-  });
-
-  test("About link renders when on '/pages/about'", () => {
-    renderWithPath("/pages/about");
-    const aboutLinks = screen.getAllByText("About");
-    expect(aboutLinks.length).toBeGreaterThan(0);
-  });
-
-  test("Explore link is highlighted when on '/pages/explore'", () => {
-    renderWithPath("/pages/explore");
-    const exploreLink = screen.getByText("Explore");
-    // In your code, Explore uses About's check, so highlight logic may not work
-    // but we still render the test for branch coverage
-    expect(exploreLink).toBeInTheDocument();
-  });
+  // Nav links removed from Index page per updated design; related tests removed.
 });
