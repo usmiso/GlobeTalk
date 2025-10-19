@@ -5,7 +5,7 @@ import 'whatwg-fetch'; // polyfill fetch
 // Mock environment variables
 process.env.NEXT_PUBLIC_API_URL = 'http://localhost:3000';
 
-// Global mock for next/image to avoid DOM warnings for boolean props like `priority` & `fill`
+// Global mock for next/image to avoid DOM warnings for boolean props like priority & fill
 jest.mock('next/image', () => {
   const React = require('react');
   const NextImageMock = ({ src = '', alt = '', ...props }) => {
@@ -17,29 +17,34 @@ jest.mock('next/image', () => {
   return NextImageMock;
 });
 
-// Mock window methods
-Object.defineProperty(window, 'alert', {
-  value: jest.fn(),
-  writable: true,
-});
+// Mock window methods (guard for Node test environment)
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, 'alert', {
+    value: jest.fn(),
+    writable: true,
+  });
+}
 
-// Mock localStorage if needed
-const localStorageMock = {
-  getItem: jest.fn(),
-  setItem: jest.fn(),
-  removeItem: jest.fn(),
-  clear: jest.fn(),
-};
-global.localStorage = localStorageMock;
+// Mock localStorage/sessionStorage if needed (safe in Node)
+if (typeof global.localStorage === 'undefined') {
+  const localStorageMock = {
+    getItem: jest.fn(),
+    setItem: jest.fn(),
+    removeItem: jest.fn(),
+    clear: jest.fn(),
+  };
+  global.localStorage = localStorageMock;
+}
 
-// Mock sessionStorage if needed
-const sessionStorageMock = {
-  getItem: jest.fn(),
-  setItem: jest.fn(),
-  removeItem: jest.fn(),
-  clear: jest.fn(),
-};
-global.sessionStorage = sessionStorageMock;
+if (typeof global.sessionStorage === 'undefined') {
+  const sessionStorageMock = {
+    getItem: jest.fn(),
+    setItem: jest.fn(),
+    removeItem: jest.fn(),
+    clear: jest.fn(),
+  };
+  global.sessionStorage = sessionStorageMock;
+}
 
 // Suppress console errors during tests (optional)
 const originalError = console.error;
@@ -66,12 +71,24 @@ const ERROR_WARNING_FILTERS = [
   'Text content does not match server-rendered HTML',
   'Expected server HTML to contain a matching',
   'Hydration failed',
-  'Prop `className` did not match',
+  'Prop className did not match',
   // Invalid DOM props often emitted by libraries
   'Invalid DOM property',
-  'Received `false` for a non-boolean attribute',
+  'Received false for a non-boolean attribute',
   // App-specific test noise
   'Could not get IP address:',
+  // Intentional server error-path logs triggered in tests
+  'Error adding language(s) to available_languages',
+  'Error adding timezone to available_countries',
+  '[REPORT] Error saving report',
+  'Error storing IP address',
+  'Error updating reported user profile with violation',
+  'Error fetching matched users:',
+  'Error fetching stats:',
+  // UserProfile page error-path logs (expected in tests)
+  'Error fetching profile:',
+  'Error fetching languages:',
+  'Error fetching timezones:',
 ];
 
 function isAuthErrorObject(arg) {
@@ -142,18 +159,21 @@ afterAll(() => {
   console.debug = originalDebug;
 });
 
-// Mock IntersectionObserver if needed
-global.IntersectionObserver = class IntersectionObserver {
-  constructor() {}
-  disconnect() {}
-  observe() {}
-  unobserve() {}
-};
+// Mock IntersectionObserver/ResizeObserver if needed (safe in Node)
+if (typeof global.IntersectionObserver === 'undefined') {
+  global.IntersectionObserver = class IntersectionObserver {
+    constructor() {}
+    disconnect() {}
+    observe() {}
+    unobserve() {}
+  };
+}
 
-// Mock ResizeObserver if needed
-global.ResizeObserver = class ResizeObserver {
-  constructor() {}
-  disconnect() {}
-  observe() {}
-  unobserve() {}
-};
+if (typeof global.ResizeObserver === 'undefined') {
+  global.ResizeObserver = class ResizeObserver {
+    constructor() {}
+    disconnect() {}
+    observe() {}
+    unobserve() {}
+  };
+}

@@ -3,7 +3,7 @@ import Image from "next/image";
 export default function DashboardLayout({ children }) {
   return (
     <ProtectedLayout redirectTo="/">
-      <div className="flex-1 flex flex-col min-h-screen py-2 px-4 relative overflow-x-hidden">
+      <div className="flex-1 flex flex-col min-h-screen  relative overflow-x-hidden">
               <div className="fixed inset-0 w-full h-screen -z-10">
                 <Image
                   src="/images/nations.png"

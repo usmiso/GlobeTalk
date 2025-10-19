@@ -1,4 +1,5 @@
 "use client";
+// Public landing page with CTA buttons for login and signup.
 import Link from 'next/link';
 import React from 'react';
 import Image from 'next/image';

@@ -1,7 +1,7 @@
-// components/ProtectedRoute.tsx
 "use client";
 
-import { ReactNode, useEffect } from "react";
+// Protects routes by redirecting to home if no authenticated user.
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "./AuthContext";
 

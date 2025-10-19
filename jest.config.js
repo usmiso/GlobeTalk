@@ -31,6 +31,9 @@ const customJestConfig = {
   // Exclude specific files/folders from coverage reporting
   collectCoverageFrom: [
     'src/app/**/*.{js,jsx}',
+    'server/**/*.{js,jsx}',
+    // Exclude CLI-only server scripts from coverage
+    '!server/scripts/**/*.{js,jsx}',
     '!src/app/components/ProtectedLayout.js',
     '!src/app/components/ProtectedRoute.js',
     '!src/app/components/useAuthRedirect.js',

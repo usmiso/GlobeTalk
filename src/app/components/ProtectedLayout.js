@@ -1,5 +1,6 @@
 "use client";
 
+// Wrapper that redirects unauthenticated users away from protected pages.
 import { useAuthRedirect } from "./useAuthRedirect";
 
 export default function ProtectedLayout({ children, redirectTo = "/" }) {

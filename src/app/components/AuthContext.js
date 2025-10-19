@@ -1,18 +1,17 @@
 "use client";
 
+// Lightweight auth context: exposes { user, loading } sourced from Firebase Auth.
 import { createContext, useContext, useEffect, useState } from "react";
-import { auth } from "../firebase/auth"; // adjust path
-import { onAuthStateChanged } from "../firebase/auth";
+import { auth, onAuthStateChanged } from "../firebase/auth";
 
-// Auth context type removed for JS compatibility
+const AuthContext = createContext({ user: null, loading: true });
 
-const AuthContext = createContext({
-  user: null,
-  loading: true,
-});
-
+/**
+ * AuthProvider subscribes to Firebase auth state and provides
+ * the current user and loading state to descendants.
+ */
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,7 +19,6 @@ export function AuthProvider({ children }) {
       setUser(firebaseUser);
       setLoading(false);
     });
-
     return () => unsubscribe();
   }, []);
 
@@ -31,7 +29,7 @@ export function AuthProvider({ children }) {
   );
 }
 
-// ✅ Custom hook for easy access
+// Convenience hook
 export function useAuth() {
   return useContext(AuthContext);
 }

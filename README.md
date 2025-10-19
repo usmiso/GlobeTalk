@@ -129,6 +129,46 @@ moderation logs
 
 > See [docs/api.md](docs/api.md) for full request/response examples.
 
+## Swagger/OpenAPI docs
+
+When running the Express server in `server/`, interactive API docs are available:
+
+- Swagger UI: http://localhost:5000/api-docs
+- OpenAPI JSON: http://localhost:5000/api-docs.json
+
+The spec lives in `server/openapi.json`. If you modify routes in `server/index.js`, update the spec accordingly.
+
+## Server endpoints (Express) — separation of concerns
+
+The Express server in `server/` mounts modular routers from `server/endpoints/`, keeping each concern isolated. All routes are mounted under `/api`.
+
+- `server/endpoints/health.js`
+  - `GET /api/health` — basic health check
+- `server/endpoints/profile.js`
+  - `POST /api/profile`, `GET /api/profile`, `POST /api/profile/edit`, `POST /api/profile/avatar`
+  - `GET /api/facts`, `GET /api/available_languages`, `GET /api/available_timezones`, `GET /api/matchedUsers`
+- `server/endpoints/matchmaking.js`
+  - `GET /api/matchmaking`, `POST /api/match`
+- `server/endpoints/chat.js`
+  - `GET /api/chat`, `POST /api/chat/send`, `POST /api/chat/report`
+- `server/endpoints/users.js`
+  - `POST /api/user/ip`, `POST /api/blockUser`, `GET /api/blocked/:userID`
+- `server/endpoints/reports.js`
+  - `GET /api/reports`, `POST /api/reports/:id/validate`, `POST /api/reports/:id/invalidate`
+- `server/endpoints/stats.js`
+  - `GET /api/stats`
+
+Router wiring lives in `server/index.js`, which initializes Firebase Admin and mounts each router like:
+
+```js
+app.use('/api', makeProfileRouter({ db, admin }));
+```
+
+Add a new endpoint
+1) Create a new file in `server/endpoints/` that exports a function receiving `{ db, admin, adminAuth }` and returns an Express router.
+2) Import and mount it in `server/index.js` with `app.use('/api', makeYourRouter(ctx))`.
+3) Update `server/openapi.json` so Swagger docs reflect your change.
+
 ### Auth
 - `GET /auth/oauth/login` — Redirect user to OAuth provider.
 - `POST /auth/oauth/callback` — Exchange provider code for app JWT.
@@ -353,3 +393,12 @@ See CONTRIBUTING.md for more details.
 # License
 
 This project is licensed under the MIT License. See [`LICENSE`](LICENSE) for details.
+
+---
+
+## Quick orientation
+
+- Frontend: `src/app` (Next.js App Router). Auth lives under `src/app/firebase/`; shared UI and guards under `src/app/components/`.
+- Backend: `server/` (Express + Firebase Admin). Routers live in `server/endpoints/` and are mounted under `/api`.
+- API docs: If `swagger-ui-express` is installed, hit `http://localhost:5000/api-docs` when running the server. The spec is in `server/openapi.json`.
+- New here? `ARCHITECTURE.md` is a short map of the codebase and data flow.
