@@ -27,15 +27,25 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+// Optionally load .env if available (do not fail when not installed, e.g., slim containers)
+try {
+    // eslint-disable-next-line global-require
+    require('dotenv').config();
+} catch (e) {
+    if (e && e.code !== 'MODULE_NOT_FOUND') {
+        console.warn('dotenv failed to load:', e.message);
+    }
+}
+
 // Initialize Firebase Admin
 let serviceAccount;
+let firebaseInitialized = false;
 try {
-    require('dotenv').config();
-
     // 1) Prefer full JSON in FIREBASE_SERVICE_ACCOUNT_JSON
     if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
         serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
         admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+        firebaseInitialized = true;
     } else if (
         // 2) Support split env vars to avoid JSON escaping hassles
         process.env.FIREBASE_PROJECT_ID &&
@@ -49,13 +59,23 @@ try {
         admin.initializeApp({
             credential: admin.credential.cert({ projectId, clientEmail, privateKey })
         });
+        firebaseInitialized = true;
     } else {
         // 3) Fallback to local file (useful for local dev)
-        serviceAccount = require('./serviceAccountKey.json');
-        admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+        const saPath = path.join(__dirname, 'serviceAccountKey.json');
+        if (fs.existsSync(saPath)) {
+            const raw = fs.readFileSync(saPath, 'utf-8');
+            serviceAccount = JSON.parse(raw);
+            admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+            firebaseInitialized = true;
+        }
     }
 } catch (e) {
-    console.warn('Firebase Admin SDK not initialized. serviceAccountKey.json missing or env vars not set.', e.message);
+    console.warn('Failed to initialize Firebase Admin:', e.message);
+}
+
+if (!firebaseInitialized) {
+    console.warn('Firebase Admin SDK not initialized. Provide FIREBASE_* env vars or serviceAccountKey.json.');
 }
 
 const db = admin.apps.length ? admin.firestore() : null;
