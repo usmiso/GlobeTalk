@@ -51,27 +51,77 @@ export default function ExplorePage({ userID }) {
   const [profiles, setProfiles] = useState([]);
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
-
-  // Quiz state & actions via hook
-  const {
-    quizStarted,
-    activeQuestion,
-    selectedAnswer,
-    checked,
-    selectedAnswerIndex,
-    showResult,
-    result,
-    currentQuestions,
-    startQuiz,
-    onAnswerSelected,
-    nextQuestion,
-    restartQuiz,
-    closeQuiz,
-  } = useQuiz(quiz);
+  
+  // Quiz states
+  const [quizStarted, setQuizStarted] = useState(false);
+  const [activeQuestion, setActiveQuestion] = useState(0);
+  const [selectedAnswer, setSelectedAnswer] = useState('');
+  const [checked, setChecked] = useState(false);
+  const [selectedAnswerIndex, setSelectedAnswerIndex] = useState(null);
+  const [showResult, setShowResult] = useState(false);
+  const [result, setResult] = useState({
+    score: 0,
+    correctAnswers: 0,
+    wrongAnswers: 0,
+  });
+  const [currentQuestions, setCurrentQuestions] = useState([]);
+  // quiz will be fetched from backend
+  const [quizData, setQuizData] = useState(null);
 
   const router = useRouter();
 
-  // quiz handlers moved to useQuiz
+  // Start quiz with 5 random questions
+  const startQuiz = () => {
+    const sourceQuestions = Array.isArray(quizData?.questions) ? quizData.questions : [];
+    const shuffled = [...sourceQuestions].sort(() => 0.5 - Math.random());
+    const selected = shuffled.slice(0, 5);
+    setCurrentQuestions(selected);
+    setQuizStarted(true);
+    setShowResult(false);
+    setActiveQuestion(0);
+    setResult({ score: 0, correctAnswers: 0, wrongAnswers: 0 });
+  };
+
+  // Quiz answer selection
+  const onAnswerSelected = (answer, idx) => {
+    setChecked(true);
+    setSelectedAnswerIndex(idx);
+    setSelectedAnswer(answer === currentQuestions[activeQuestion].correctAnswer);
+  };
+
+  // Calculate score and increment to next question
+  const nextQuestion = () => {
+    setSelectedAnswerIndex(null);
+    setResult((prev) =>
+      selectedAnswer
+        ? {
+            ...prev,
+            score: prev.score + 5,
+            correctAnswers: prev.correctAnswers + 1,
+          }
+        : {
+            ...prev,
+            wrongAnswers: prev.wrongAnswers + 1,
+          }
+    );
+    if (activeQuestion !== currentQuestions.length - 1) {
+      setActiveQuestion((prev) => prev + 1);
+    } else {
+      setShowResult(true);
+    }
+    setChecked(false);
+  };
+
+  const restartQuiz = () => {
+    setQuizStarted(false);
+    setCurrentQuestions([]);
+  };
+
+  const closeQuiz = () => {
+    setQuizStarted(false);
+    setCurrentQuestions([]);
+    setShowResult(false);
+  };
 
   // Load country.csv
   useEffect(() => {
@@ -210,6 +260,23 @@ export default function ExplorePage({ userID }) {
 
     return () => clearInterval(interval);
   }, [countryMap, isInitialLoading]);
+
+  // Fetch quiz data
+  useEffect(() => {
+    const fetchQuiz = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+        const res = await fetch(`${apiUrl}/api/quiz`);
+        if (!res.ok) return setQuizData(null);
+        const data = await res.json();
+        setQuizData(data);
+      } catch (e) {
+        console.error('Failed to load quiz:', e);
+        setQuizData(null);
+      }
+    };
+    fetchQuiz();
+  }, []);
 
   // ✅ Filter facts
   const filteredFacts = facts.filter((fact) => {
