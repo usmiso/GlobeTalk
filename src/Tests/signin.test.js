@@ -89,7 +89,7 @@ describe("AuthPage Tests", () => {
     expect(passwordInput.type).toBe("password");
   });
 
-  test("routes to profile on successful signin", async () => {
+  test("routes to dashboard on successful signin", async () => {
     auth.signIn.mockResolvedValueOnce({ user: { emailVerified: true } });
 
     render(<AuthPage />);
@@ -106,7 +106,7 @@ describe("AuthPage Tests", () => {
 
     await new Promise((r) => setTimeout(r, 0));
 
-    expect(mockPush).toHaveBeenCalledWith("/pages/profile");
+    expect(mockPush).toHaveBeenCalledWith("/pages/dashboard");
   });
 
   test("routes correctly on Google sign-in", async () => {
@@ -118,7 +118,7 @@ describe("AuthPage Tests", () => {
 
     await new Promise((r) => setTimeout(r, 0));
 
-    expect(mockPush).toHaveBeenCalledWith("/pages/profile");
+    expect(mockPush).toHaveBeenCalledWith("/pages/dashboard");
   });
 
   // ✅ Notification popup test (after signup)
@@ -285,7 +285,7 @@ describe("AuthPage Tests", () => {
     });
 
     // Should still proceed with signin even if IP fetch fails
-    expect(mockPush).toHaveBeenCalledWith("/pages/profile");
+    expect(mockPush).toHaveBeenCalledWith("/pages/dashboard");
   });
 
   test("notification disappears after 5 seconds", async () => {
@@ -682,7 +682,7 @@ test("password generation creates valid strong password", async () => {
 
     // Should still proceed with authentication
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith("/pages/profile");
+      expect(mockPush).toHaveBeenCalledWith("/pages/dashboard");
     });
   });
 

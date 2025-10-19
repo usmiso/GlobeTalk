@@ -63,7 +63,11 @@ describe("Dashboard component", () => {
   test("renders main content and profile overview", async () => {
     render(<Dashboard />);
     // Wait for profile load
-    await waitFor(() => expect(screen.getByText(/Welcome back, TestUser/i)).toBeInTheDocument());
+    await waitFor(() => {
+      // Heading text is split across elements, assert more flexibly
+      expect(screen.getByText(/Welcome back,/i)).toBeInTheDocument();
+      expect(screen.getByText(/TestUser/i)).toBeInTheDocument();
+    });
     // Quick sanity checks
     expect(screen.getByText(/Your Profile/i)).toBeInTheDocument();
   });
