@@ -21,7 +21,7 @@ export default function QuizModal({
       <div className="bg-white rounded-2xl shadow-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold text-blue-800">Country Quiz</h2>
-          <button onClick={closeQuiz} className="text-gray-500 hover:text-gray-700 transition-colors">
+          <button onClick={closeQuiz} className="cursor-pointer text-gray-500 hover:text-gray-700 transition-colors">
             <X className="h-6 w-6" />
           </button>
         </div>
@@ -66,7 +66,7 @@ export default function QuizModal({
             {checked ? (
               <button
                 onClick={nextQuestion}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-xl text-lg transition-all duration-300 transform hover:scale-[1.02]"
+                className="cursor-pointer w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-xl text-lg transition-all duration-300 transform hover:scale-[1.02]"
               >
                 {activeQuestion === currentQuestions.length - 1 ? '🏁 Finish Quiz' : '➡️ Next Question'}
               </button>
@@ -115,13 +115,13 @@ export default function QuizModal({
             <div className="flex gap-4">
               <button
                 onClick={restartQuiz}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-xl text-lg transition-all duration-300 transform hover:scale-[1.02]"
+                className="cursor-pointer flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-xl text-lg transition-all duration-300 transform hover:scale-[1.02]"
               >
                 🔄 Try Again
               </button>
               <button
                 onClick={closeQuiz}
-                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-4 px-6 rounded-xl text-lg transition-all duration-300 transform hover:scale-[1.02]"
+                className="cursor-pointer flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-4 px-6 rounded-xl text-lg transition-all duration-300 transform hover:scale-[1.02]"
               >
                 Close
               </button>

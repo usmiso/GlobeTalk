@@ -256,9 +256,6 @@ const submitReport = async () => {
   }
 }
 
-  // delay formatting provided by utils
-
-  // Render helpers replaced by components
 
   // Render chat area
   const renderChatArea = () => {
@@ -320,13 +317,21 @@ const submitReport = async () => {
               )}
             </div>
           ) : (
-            <div className="flex-1 flex flex-col overflow-hidden">
-              <button
-                onClick={() => setMobileShowList(true)}
-                className="bg-gray-200 text-gray-700 px-4 py-2 rounded mb-2 mt-2 w-fit"
-              >
-                ← Back to Pen Pals
-              </button>
+            <div className="flex-1 flex flex-col overflow-hidden h-screen">
+              <div className="flex gap-2 mb-2 mt-2">
+                <button
+                  onClick={() => setMobileShowList(true)}
+                  className="bg-gray-200 text-gray-700 px-4 py-2 rounded w-fit"
+                >
+                  ← Back to Pen Pals
+                </button>
+                <button
+                  onClick={() => setShowComposer(true)}
+                  className="bg-blue-600 text-white px-4 py-2 rounded w-[200px] hover:bg-blue-700 cursor-pointer"
+                >
+                  Send Letter
+                </button>
+              </div>
               {renderChatArea()}
             </div>
           )

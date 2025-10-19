@@ -8,7 +8,7 @@ export default function FactsEmpty({ onStartQuiz }) {
       </p>
       <button
         onClick={onStartQuiz}
-        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-2xl text-xl transition-all duration-300 transform hover:scale-105 shadow-lg"
+        className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-2xl text-xl transition-all duration-300 transform hover:scale-105 shadow-lg"
       >
         🚀 Start Quiz Challenge Instead!
       </button>

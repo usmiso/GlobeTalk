@@ -37,19 +37,22 @@ try {
 const db = admin.apps.length ? admin.firestore() : null;
 const adminAuth = admin.apps.length ? admin.auth() : null;
 
-// Cron job to clean tempip_blocked collection
-cron.schedule('*/5 * * * *', async () => {
-    if (!db) return;
-    console.log('Cleaning tempip_blocked collection...');
-    const snapshot = await db.collection('tempip_blocked').get();
-    const now = Date.now();
-    snapshot.forEach(doc => {
-        const data = doc.data();
-        if (data.expiresAt && data.expiresAt.toMillis() < now) {
-            doc.ref.delete();
-        }
+// Cron job to clean tempip_blocked collection (disable during Jest by default)
+const disableCronInTests = process.env.NODE_ENV === 'test' && process.env.ENABLE_CRON_IN_TESTS !== '1';
+if (!disableCronInTests) {
+    cron.schedule('*/5 * * * *', async () => {
+        if (!db) return;
+        console.log('Cleaning tempip_blocked collection...');
+        const snapshot = await db.collection('tempip_blocked').get();
+        const now = Date.now();
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.expiresAt && data.expiresAt.toMillis() < now) {
+                doc.ref.delete();
+            }
+        });
     });
-});
+}
 
 // Endpoint to check if an IP is blocked
 app.get('/api/tempip_blocked/:ip', async (req, res) => {

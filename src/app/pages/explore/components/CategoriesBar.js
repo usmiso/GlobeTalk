@@ -7,7 +7,7 @@ export default function CategoriesBar({ categories, selectedCategory, onSelect }
         <button
           key={name}
           onClick={() => onSelect(name)}
-          className={`flex items-center gap-2 px-3 py-1 rounded-md text-sm transition ${
+          className={`cursor-pointer flex items-center gap-2 px-3 py-1 rounded-md text-sm transition ${
             selectedCategory === name
               ? "bg-primary text-primary-foreground shadow"
               : "bg-white border-[0.5px] border-gray-200 hover:bg-accent hover:text-accent-foreground"

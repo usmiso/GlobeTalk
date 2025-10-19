@@ -23,7 +23,7 @@ export default function ExploreHeader({ selectedTab, setSelectedTab }) {
           type="button"
           role="tab"
           onClick={() => setSelectedTab("facts")}
-          className={`bg-white ml-5 mr-5 shadow-sm px-2 py-1 rounded-md text-sm font-medium border-2 transition-all duration-150 ${
+          className={`cursor-pointer bg-white ml-5 mr-5 shadow-sm px-2 py-1 rounded-md text-sm font-medium border-2 transition-all duration-150 ${
             selectedTab === "facts"
               ? "border-blue-500 text-blue-700 font-bold"
               : "border-transparent text-foreground hover:bg-accent hover:text-accent-foreground"
@@ -35,7 +35,7 @@ export default function ExploreHeader({ selectedTab, setSelectedTab }) {
           type="button"
           role="tab"
           onClick={() => setSelectedTab("profiles")}
-          className={`bg-white ml-5 mr-5 shadow-sm px-2 py-1 rounded-md text-sm font-medium border-2 transition-all duration-150 ${
+          className={`cursor-pointer bg-white ml-5 mr-5 shadow-sm px-2 py-1 rounded-md text-sm font-medium border-2 transition-all duration-150 ${
             selectedTab === "profiles"
               ? "border-blue-500 text-blue-700 font-bold"
               : "border-transparent text-foreground hover:bg-accent hover:text-accent-foreground"

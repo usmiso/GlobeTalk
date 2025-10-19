@@ -15,7 +15,7 @@ export default function ChatHeader({ openChat, currentUserID, sidebarOpen, onOpe
         </button>
       )}
 
-      <div className="flex flex-col items-center w-full gap-3">
+      <div className="flex flex-items items-center w-full gap-3">
         <img
           src={getFriendFromChat(openChat, currentUserID)?.avatarUrl || "/default-avatar.png"}
           alt="profile"
@@ -28,7 +28,7 @@ export default function ChatHeader({ openChat, currentUserID, sidebarOpen, onOpe
           <div className="flex flex-col gap-3 w-full">
             <button
               onClick={onDownloadChatPDF}
-              className="flex items-center justify-center gap-2 px-3 py-2 rounded bg-gray-200 hover:bg-gray-300 text-base text-gray-700 w-full transition-all duration-200 min-w-[120px]"
+              className="flex items-center justify-center gap-2 px-3 py-2 rounded bg-gray-200 hover:bg-gray-300 text-base text-gray-700 w-full transition-all duration-200 min-w-[120px] cursor-pointer"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"

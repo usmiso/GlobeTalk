@@ -19,7 +19,7 @@ export default function MessageItem({ msg, index, currentUserID, openChat, onDow
   return (
     <div
       key={index}
-      className={`w-full max-w-2xl my-4 ${
+      className={`w-full max-w-xl my-2 text-sm ${
         isSender ? "ml-auto mr-4" : "mr-auto ml-4"
       }`}
     >
@@ -102,7 +102,11 @@ export default function MessageItem({ msg, index, currentUserID, openChat, onDow
                     <ClockIcon className="w-6 h-6 animate-pulse" />
                     <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full animate-bounce"></div>
                   </div>
-                  <span className="font-medium text-lg">This letter will unlock in {formatDelay(secs)}</span>
+                  <span className="font-medium text-lg">
+                    This letter will unlock soon
+                    <span className="sr-only">.</span>
+                    <span className="ml-1">in {formatDelay(secs)}</span>
+                  </span>
                 </div>
                 
                 {/* Decorative elements around locked letter */}
@@ -130,7 +134,7 @@ export default function MessageItem({ msg, index, currentUserID, openChat, onDow
               {isUnlocked && (
                 <button
                   onClick={() => onDownloadPDF(msg, isSender, recipientName)}
-                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-100 to-blue-200 hover:from-blue-200 hover:to-blue-300 text-blue-800 rounded-full transition-all duration-300 text-sm font-medium shadow-md hover:shadow-lg transform hover:scale-105"
+                  className="flex cursor-pointer items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-100 to-blue-200 hover:from-blue-200 hover:to-blue-300 text-blue-800 rounded-full transition-all duration-300 text-sm font-medium shadow-md hover:shadow-lg transform hover:scale-105"
                   title="Download letter as PDF"
                 >
                   <svg
@@ -150,7 +154,7 @@ export default function MessageItem({ msg, index, currentUserID, openChat, onDow
               {!isSender && isUnlocked && (
                 <button
                   onClick={() => onReport(msg)}
-                  className="px-4 py-2 text-red-700 hover:text-red-900 text-sm border-2 border-red-300 rounded-full hover:bg-red-50 transition-all duration-300 font-medium shadow-md hover:shadow-lg"
+                  className="px-4 py-2 text-red-700 hover:text-red-900 text-sm border-2 border-red-300 rounded-full hover:bg-red-50 transition-all duration-300 font-medium shadow-md hover:shadow-lg cursor-pointer"
                   title="Report this message"
                 >
                   Report
