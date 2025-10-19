@@ -5,7 +5,14 @@ const cors = require('cors');
 const path = require('path');
 const admin = require('firebase-admin');
 const fs = require('fs');
-const cron = require('node-cron');
+// Try to load node-cron, but don't crash if unavailable (e.g., minimal containers)
+let cron = null;
+try {
+    // eslint-disable-next-line global-require
+    cron = require('node-cron');
+} catch (e) {
+    console.warn('node-cron not available. Scheduled maintenance will be skipped.');
+}
 let swaggerUi = null;
 
 try {
@@ -39,7 +46,7 @@ const adminAuth = admin.apps.length ? admin.auth() : null;
 
 // Cron job to clean tempip_blocked collection (disable during Jest by default)
 const disableCronInTests = process.env.NODE_ENV === 'test' && process.env.ENABLE_CRON_IN_TESTS !== '1';
-if (!disableCronInTests) {
+if (!disableCronInTests && cron && typeof cron.schedule === 'function') {
     cron.schedule('*/5 * * * *', async () => {
         if (!db) return;
         console.log('Cleaning tempip_blocked collection...');
