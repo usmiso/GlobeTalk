@@ -71,12 +71,15 @@ export default function ExplorePage({ userID }) {
     wrongAnswers: 0,
   });
   const [currentQuestions, setCurrentQuestions] = useState([]);
+  // quiz will be fetched from backend
+  const [quizData, setQuizData] = useState(null);
 
   const router = useRouter();
 
   // Start quiz with 5 random questions
   const startQuiz = () => {
-    const shuffled = [...quiz.questions].sort(() => 0.5 - Math.random());
+    const sourceQuestions = Array.isArray(quizData?.questions) ? quizData.questions : [];
+    const shuffled = [...sourceQuestions].sort(() => 0.5 - Math.random());
     const selected = shuffled.slice(0, 5);
     setCurrentQuestions(selected);
     setQuizStarted(true);
@@ -263,6 +266,23 @@ export default function ExplorePage({ userID }) {
 
     return () => clearInterval(interval);
   }, [countryMap, isInitialLoading]);
+
+  // Fetch quiz data
+  useEffect(() => {
+    const fetchQuiz = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+        const res = await fetch(`${apiUrl}/api/quiz`);
+        if (!res.ok) return setQuizData(null);
+        const data = await res.json();
+        setQuizData(data);
+      } catch (e) {
+        console.error('Failed to load quiz:', e);
+        setQuizData(null);
+      }
+    };
+    fetchQuiz();
+  }, []);
 
   // ✅ Filter facts
   const filteredFacts = facts.filter((fact) => {

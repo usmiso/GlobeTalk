@@ -557,6 +557,18 @@ app.get('/api/stats', async (req, res) => {
     }
 });
 
+// GET quiz document from Firestore
+app.get('/api/quiz', async (req, res) => {
+    if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
+    try {
+        const doc = await db.collection('quizzes').doc('countryQuiz').get();
+        if (!doc.exists) return res.status(404).json({ error: 'Quiz not found' });
+        res.status(200).json(doc.data());
+    } catch (error) {
+        console.error('Error fetching quiz:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
 
 // Catch-all for undefined routes
 app.use((req, res) => {
