@@ -14,11 +14,15 @@ function loadServerWithMocks({ adminMock, cronMock } = {}) {
   if (cronMock) {
     jest.doMock('node-cron', () => cronMock);
   }
-  // Provide a harmless swagger-ui-express mock that returns valid middleware
-  jest.doMock('swagger-ui-express', () => ({
-    serve: (req, res, next) => next(),
-    setup: () => (req, res, next) => next(),
-  }));
+  // Provide a harmless swagger-ui-express mock that returns valid middleware (virtual so package need not be installed)
+  jest.doMock(
+    'swagger-ui-express',
+    () => ({
+      serve: (req, res, next) => next(),
+      setup: () => (req, res, next) => next(),
+    }),
+    { virtual: true }
+  );
   // eslint-disable-next-line global-require
   const app = require('./index');
   return app;
