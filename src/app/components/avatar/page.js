@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { auth } from "../../firebase/auth";
-import { db } from "../../firebase/config";
-import { doc, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
@@ -96,6 +94,10 @@ export default function AvatarUsernameGen({ onSuccess }) {
         const isTestEnv = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'test';
         if (!isTestEnv && /firestore not initialized/i.test(message)) {
           try {
+            const [{ doc, setDoc }, { db }] = await Promise.all([
+              import('firebase/firestore'),
+              import('../../firebase/config')
+            ]);
             await setDoc(doc(db, "profiles", user.uid), { userID: user.uid, username, avatarUrl: avatar }, { merge: true });
             if (onSuccess) onSuccess();
             return;

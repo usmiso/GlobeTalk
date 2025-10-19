@@ -4,8 +4,6 @@ import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 import LoadingScreen from '../../components/LoadingScreen';
 import { auth } from '../../firebase/auth';
-import { db } from '../../firebase/config';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
 import LANGUAGES_LIST from '../../../../public/assets/languages.js';
 import geonamesTimezones from '../../../../public/assets/geonames_timezone.json';
 import AvatarUsernameGen from '../../components/avatar/page';
@@ -170,6 +168,10 @@ const Profile = () => {
           const isTestEnv = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'test';
           try {
             if (isTestEnv) throw new Error('Skip client Firestore in tests');
+            const [{ doc, getDoc }, { db }] = await Promise.all([
+              import('firebase/firestore'),
+              import('../../firebase/config')
+            ]);
             const snap = await getDoc(doc(db, 'profiles', user.uid));
             if (snap.exists()) {
               const data = snap.data();
@@ -200,6 +202,10 @@ const Profile = () => {
         const isTestEnv = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'test';
         try {
           if (isTestEnv) throw new Error('Skip client Firestore in tests');
+          const [{ doc, getDoc }, { db }] = await Promise.all([
+            import('firebase/firestore'),
+            import('../../firebase/config')
+          ]);
           const snap = await getDoc(doc(db, 'profiles', user.uid));
           if (snap.exists()) {
             const data = snap.data();
@@ -338,6 +344,10 @@ const Profile = () => {
               country: countryName,
               countryCode: tzObj?.country_code || '',
             };
+            const [{ doc, setDoc }, { db }] = await Promise.all([
+              import('firebase/firestore'),
+              import('../../firebase/config')
+            ]);
             await setDoc(doc(db, 'profiles', user.uid), update, { merge: true });
             // Seed available_languages and available_countries like the server does
             if (update.language) {
@@ -377,6 +387,10 @@ const Profile = () => {
           country: countryName,
           countryCode: tzObj?.country_code || '',
         };
+        const [{ doc, setDoc }, { db }] = await Promise.all([
+          import('firebase/firestore'),
+          import('../../firebase/config')
+        ]);
         await setDoc(doc(db, 'profiles', user.uid), update, { merge: true });
         if (update.language) {
           const langId = encodeURIComponent(update.language);
