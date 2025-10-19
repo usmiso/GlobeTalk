@@ -3,6 +3,8 @@ const cors = require('cors');
 const path = require('path');
 const admin = require('firebase-admin');
 const fs = require('fs');
+const cron = require('node-cron');//still needs testing
+
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -26,6 +28,52 @@ try {
 
 const db = admin.apps.length ? admin.firestore() : null;
 const adminAuth = admin.apps.length ? admin.auth() : null;
+//this can be removed if does not work properly
+cron.schedule('*/5 * * * *', async () => {
+    console.log('Cleaning tempip_blocked collection...');
+    const snapshot = await db.collection('tempip_blocked').get();
+    const now = Date.now();
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.expiresAt && data.expiresAt.toMillis() < now) {
+            doc.ref.delete();
+        }
+    });
+});
+
+app.get('/api/tempip_blocked/:ip', async (req, res) => {
+    if (!db) return res.status(500).json({ error: 'Firestore not initialized' });
+
+    const { ip } = req.params;
+    if (!ip) return res.status(400).json({ error: 'Missing IP address' });
+
+    try {
+        const doc = await db.collection('tempip_blocked').doc(ip).get();
+        if (!doc.exists) return res.status(200).json({ blocked: false });
+
+        const data = doc.data();
+        const now = Date.now();
+
+        // Delete expired entry immediately
+        if (data.expiresAt && data.expiresAt.toMillis() < now) {
+            await doc.ref.delete();
+            return res.status(200).json({ blocked: false });
+        }
+
+        res.status(200).json({
+            blocked: true,
+            userId: data.userId || null,
+            blockedAt: data.blockedAt ? data.blockedAt.toDate() : null,
+            expiresAt: data.expiresAt ? data.expiresAt.toDate() : null,
+            source: data.source || 'unknown'
+        });
+    } catch (error) {
+        console.error('Error checking temp blocked IP:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+//this is where it ends
+
 
 /**
  * GET /api/health
@@ -510,8 +558,32 @@ app.get('/api/blocked/:userID', async (req, res) => {
     try {
         // Prefer blocked_users collection
         const blockedDoc = await db.collection('blocked_users').doc(userID).get();
+        
         if (blockedDoc.exists) {
             const data = blockedDoc.data();
+            //new block
+            try {
+                const userDoc = await db.collection('users').doc(userID).get();
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    const ipAddress = userData.ipAddress;
+                    if (ipAddress) {
+                        await db.collection('tempip_blocked').doc(ipAddress).set({
+                            ip: ipAddress,
+                            userId: userID,
+                            blockedAt: new Date(),
+                            //expiresAt: new Date(Date.now() + 30 * 60 * 1000), // expires in 30 mins
+                            expiresAt: admin.firestore.Timestamp.fromDate(new Date(Date.now() + 30 * 60 * 1000)),
+ 
+                            source: data.source || 'admin_action',
+                        }, { merge: true });
+                    }
+                }
+            } catch (ipErr) {
+                console.warn("Failed to save temp blocked IP:", ipErr.message);
+            }
+
+            //new block
             return res.status(200).json({ blocked: true, source: data.source || 'admin_action', blockedAt: data.blockedAt || null });
         }
         // Fallback to profile flag

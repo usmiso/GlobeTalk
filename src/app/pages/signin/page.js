@@ -65,6 +65,7 @@ const AuthPage = () => {
     };
 
     const BLOCKED_MESSAGE = "Your account has been blocked and you can no longer access GlobeTalk. If you believe this is a mistake, contact support.";
+    const BLOCKED_MESSAGE2 = "The ip address belonging to your device is suspected to belong to a blocked user.If you believe this is a mistake, contact support.";
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -156,6 +157,25 @@ const AuthPage = () => {
                     console.warn('Blocked status check failed', e);
                 }
 
+                try {
+                    const ipRes = await fetch(`http://localhost:5000/api/tempblocked/${userIP}`);
+                        if (ipRes.ok) {
+                         const ipData = await ipRes.json();
+                        if (ipData.blocked) {
+                            setError(BLOCKED_MESSAGE2);
+                            try {
+                                const { auth } = await import("../../firebase/auth");
+                                const { signOut } = await import("firebase/auth");
+                                await signOut(auth);
+                            } catch (e) { /* ignore */ } 
+                            return;
+                            }
+                         }
+                    } catch (e) {
+                    console.warn('IP block check failed', e);
+                    }
+
+
                 setEmail("");
                 setPassword("");
 
@@ -188,7 +208,7 @@ const AuthPage = () => {
         try {
             const response = await fetch('https://api.ipify.org?format=json');
             const data = await response.json();
-            console.log("Fetched IP address:", data.ip); // 👈 check in browser console
+            console.log("Fetched IP address:", data.ip); //  check in browser console
             return data.ip;
 
         } catch (error) {
@@ -224,6 +244,24 @@ const AuthPage = () => {
             } catch (e) {
                 console.warn('Blocked status check failed (Google)', e);
             }
+
+            try {
+                    const ipRes = await fetch(`http://localhost:5000/api/tempblocked/${userIP}`);
+                        if (ipRes.ok) {
+                         const ipData = await ipRes.json();
+                        if (ipData.blocked) {
+                            setError(BLOCKED_MESSAGE2);
+                            try {
+                                const { auth } = await import("../../firebase/auth");
+                                const { signOut } = await import("firebase/auth");
+                                await signOut(auth);
+                            } catch (e) { /* ignore */ } 
+                            return;
+                            }
+                         }
+                    } catch (e) {
+                    console.warn('IP block check failed', e);
+                    }
 
             if (user?.email === "gamersboysa@gmail.com") {
                 router.push("/pages/reports");
