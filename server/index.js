@@ -31,14 +31,31 @@ app.use(express.json());
 let serviceAccount;
 try {
     require('dotenv').config();
+
+    // 1) Prefer full JSON in FIREBASE_SERVICE_ACCOUNT_JSON
     if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
         serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+        admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+    } else if (
+        // 2) Support split env vars to avoid JSON escaping hassles
+        process.env.FIREBASE_PROJECT_ID &&
+        process.env.FIREBASE_CLIENT_EMAIL &&
+        process.env.FIREBASE_PRIVATE_KEY
+    ) {
+        const projectId = process.env.FIREBASE_PROJECT_ID;
+        const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+        // Replace escaped newlines in env var with actual newlines
+        const privateKey = process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
+        admin.initializeApp({
+            credential: admin.credential.cert({ projectId, clientEmail, privateKey })
+        });
     } else {
+        // 3) Fallback to local file (useful for local dev)
         serviceAccount = require('./serviceAccountKey.json');
+        admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
     }
-    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 } catch (e) {
-    console.warn('Firebase Admin SDK not initialized. serviceAccountKey.json missing or env var not set.');
+    console.warn('Firebase Admin SDK not initialized. serviceAccountKey.json missing or env vars not set.', e.message);
 }
 
 const db = admin.apps.length ? admin.firestore() : null;
@@ -116,6 +133,12 @@ if (openApiSpec && swaggerUi) {
     app.get('/api-docs.json', (req, res) => res.json(openApiSpec));
     app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
 }
+
+// Minimal firebase health probe to help diagnose prod issues
+app.get('/api/health/firebase', (req, res) => {
+    const initialized = admin.apps && admin.apps.length > 0;
+    res.json({ firestoreInitialized: Boolean(db), adminInitialized: initialized });
+});
 
 // Mount routers
 app.use('/api', makeHealthRouter({ db }));
