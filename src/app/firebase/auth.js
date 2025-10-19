@@ -67,8 +67,7 @@ export async function signIn(email, password) {
   }
 }
 
-
-// ...existing code...
+// Google signin
 export async function signInWithGoogle(ipAddress) {
   try {
     const provider = new GoogleAuthProvider();
@@ -101,6 +100,7 @@ export async function signInWithGoogle(ipAddress) {
     throw error;
   }
 }
+
 // Forgot password
 export async function forgotPassword(email) {
   try {
@@ -121,5 +121,8 @@ async function saveUserIP(uid, ip) {
     console.warn("Could not save user IP:", err);
   }
 }
+
+// Explicitly export sendEmailVerification
+export { sendEmailVerification };
 
 export { auth, onAuthStateChanged };
