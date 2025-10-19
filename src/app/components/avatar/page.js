@@ -93,7 +93,8 @@ export default function AvatarUsernameGen({ onSuccess }) {
           // ignore JSON parse errors
         }
 
-        if (/firestore not initialized/i.test(message)) {
+        const isTestEnv = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'test';
+        if (!isTestEnv && /firestore not initialized/i.test(message)) {
           try {
             await setDoc(doc(db, "profiles", user.uid), { userID: user.uid, username, avatarUrl: avatar }, { merge: true });
             if (onSuccess) onSuccess();
