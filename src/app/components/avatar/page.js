@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { auth } from "../../firebase/auth";
+import { db } from "../../firebase/config";
+import { doc, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
@@ -82,8 +84,26 @@ export default function AvatarUsernameGen({ onSuccess }) {
         });
 
       if (!res.ok) {
-        const data = await res.json();
-        alert(data.error || "Failed to save avatar");
+        // Attempt client-side Firestore fallback if server cannot write (e.g., Admin not initialized in prod)
+        let message = "Failed to save avatar";
+        try {
+          const data = await res.json();
+          if (data && data.error) message = data.error;
+        } catch (_) {
+          // ignore JSON parse errors
+        }
+
+        if (/firestore not initialized/i.test(message)) {
+          try {
+            await setDoc(doc(db, "profiles", user.uid), { userID: user.uid, username, avatarUrl: avatar }, { merge: true });
+            if (onSuccess) onSuccess();
+            return;
+          } catch (clientErr) {
+            alert(`Server unavailable; client save failed: ${clientErr.message}`);
+            return;
+          }
+        }
+        alert(message);
         return;
       }
 

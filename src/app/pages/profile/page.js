@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 import LoadingScreen from '../../components/LoadingScreen';
 import { auth } from '../../firebase/auth';
+import { db } from '../../firebase/config';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import LANGUAGES_LIST from '../../../../public/assets/languages.js';
 import geonamesTimezones from '../../../../public/assets/geonames_timezone.json';
 import AvatarUsernameGen from '../../components/avatar/page';
@@ -164,10 +166,60 @@ const Profile = () => {
             setMode('avatar');
           }
         } else {
-          setMode('avatar');
+          // Fallback to client-side Firestore read if server is unavailable
+          try {
+            const snap = await getDoc(doc(db, 'profiles', user.uid));
+            if (snap.exists()) {
+              const data = snap.data();
+              setIntro(data.intro || '');
+              setAgeRange(data.ageRange || '');
+              setHobbies(data.hobbies || []);
+              setTimezone(data.timezone || '');
+              setSelectedLanguage(data.languageCode || '');
+              setAvatarUrl(data.avatarUrl || '');
+              setUsername(data.username || '');
+              if (data.timezone && countryMap) {
+                const tzObj = geonamesTimezones.find(tz => tz.timezone_id === data.timezone);
+                if (tzObj && tzObj.country_code && countryMap[tzObj.country_code]) {
+                  setCountryName(countryMap[tzObj.country_code]);
+                }
+              }
+              setProfileLoaded(true);
+              setMode('viewProfile');
+            } else {
+              setMode('avatar');
+            }
+          } catch (_) {
+            setMode('avatar');
+          }
         }
       } catch (err) {
-        setMode('avatar');
+        // Network error -> try client-side read
+        try {
+          const snap = await getDoc(doc(db, 'profiles', user.uid));
+          if (snap.exists()) {
+            const data = snap.data();
+            setIntro(data.intro || '');
+            setAgeRange(data.ageRange || '');
+            setHobbies(data.hobbies || []);
+            setTimezone(data.timezone || '');
+            setSelectedLanguage(data.languageCode || '');
+            setAvatarUrl(data.avatarUrl || '');
+            setUsername(data.username || '');
+            if (data.timezone && countryMap) {
+              const tzObj = geonamesTimezones.find(tz => tz.timezone_id === data.timezone);
+              if (tzObj && tzObj.country_code && countryMap[tzObj.country_code]) {
+                setCountryName(countryMap[tzObj.country_code]);
+              }
+            }
+            setProfileLoaded(true);
+            setMode('viewProfile');
+          } else {
+            setMode('avatar');
+          }
+        } catch (_) {
+          setMode('avatar');
+        }
       }
       setLoading(false);
     };
@@ -261,14 +313,77 @@ const Profile = () => {
           }),
         });
       if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || 'Failed to save profile.');
+        // If server Firestore isn't initialized, fallback to client-side write
+        let message = 'Failed to save profile.';
+        try {
+          const data = await res.json();
+          if (data && data.error) message = data.error;
+        } catch (_) {}
+
+        if (/firestore not initialized/i.test(message)) {
+          try {
+            const update = {
+              userID: user.uid,
+              intro,
+              ageRange,
+              hobbies,
+              timezone,
+              language: getLanguageName(selectedLanguage),
+              languageCode: selectedLanguage,
+              country: countryName,
+              countryCode: tzObj?.country_code || '',
+            };
+            await setDoc(doc(db, 'profiles', user.uid), update, { merge: true });
+            // Seed available_languages and available_countries like the server does
+            if (update.language) {
+              const langId = encodeURIComponent(update.language);
+              await setDoc(doc(db, 'available_languages', langId), { name: update.language }, { merge: true });
+            }
+            if (timezone) {
+              const tzId = encodeURIComponent(timezone);
+              await setDoc(doc(db, 'available_countries', tzId), { name: timezone }, { merge: true });
+            }
+            setProfileLoaded(true);
+            setMode('viewProfile');
+            return;
+          } catch (clientErr) {
+            setError(`Server unavailable; client save failed: ${clientErr.message}`);
+            return;
+          }
+        }
+        setError(message);
         return;
       }
       setProfileLoaded(true);
       setMode('viewProfile');
     } catch (err) {
-      setError('Failed to connect to server.');
+      // Network error: try client-side save as best-effort
+      try {
+        const update = {
+          userID: user.uid,
+          intro,
+          ageRange,
+          hobbies,
+          timezone,
+          language: getLanguageName(selectedLanguage),
+          languageCode: selectedLanguage,
+          country: countryName,
+          countryCode: tzObj?.country_code || '',
+        };
+        await setDoc(doc(db, 'profiles', user.uid), update, { merge: true });
+        if (update.language) {
+          const langId = encodeURIComponent(update.language);
+          await setDoc(doc(db, 'available_languages', langId), { name: update.language }, { merge: true });
+        }
+        if (timezone) {
+          const tzId = encodeURIComponent(timezone);
+          await setDoc(doc(db, 'available_countries', tzId), { name: timezone }, { merge: true });
+        }
+        setProfileLoaded(true);
+        setMode('viewProfile');
+      } catch (clientErr) {
+        setError('Failed to connect to server.');
+      }
     }
   };
 
