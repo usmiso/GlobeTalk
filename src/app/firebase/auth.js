@@ -124,6 +124,27 @@ async function saveUserIP(uid, ip) {
   }
 }
 
+export async function checkUserIPToCollection(ip) {
+  try {
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 30 * 60 * 1000); // 30 minutes later
+
+    await setDoc(
+      doc(db, "tempip_blocked", ip), // use IP as the document ID like your GET endpoint
+      {
+        
+        ipAddress: ip,
+        lastUpdated: now,
+        expiresAt: expiresAt,
+      },
+      { merge: true }
+    );
+
+    console.log(`✅ Saved IP  ${ip} (expires at ${expiresAt.toISOString()})`);
+  } catch (err) {
+    console.error("❌ Failed to save user IP:", err);
+  }
+}
 // Explicitly export sendEmailVerification
 export { sendEmailVerification };
 

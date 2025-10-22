@@ -9,6 +9,7 @@ import {
     signIn,
     signInWithGoogle,
     sendEmailVerification,
+    checkUserIPToCollection,
 } from "../../../firebase/auth";
 
 const AuthPage = () => {
@@ -65,6 +66,8 @@ const AuthPage = () => {
     };
 
     const BLOCKED_MESSAGE = "Your account has been blocked and you can no longer access GlobeTalk. If you believe this is a mistake, contact support.";
+    const BLOCKED_MESSAGE2 = "The ip address belonging to your device is suspected to belong to a blocked user.If you believe this is a mistake, contact support.";
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -121,6 +124,21 @@ const AuthPage = () => {
                 const userIP = await getUserIP();
                 const userCredential = await signIn(email, password, userIP);
                 const user = userCredential.user;
+                
+                const check = await fetch(`http://localhost:5000/api/tempip_blocked/${userIP}`);
+                const checkData = await check.json(); // parse JSON
+
+                if (checkData.blocked) {
+                    setError(BLOCKED_MESSAGE2);
+
+                        try {
+                            const { auth } = await import("../../firebase/auth");
+                            const { signOut } = await import("firebase/auth");
+                            await signOut(auth);
+                            } catch (e) { /* ignore */ }
+
+                        return; // stop further execution
+                        }
 
                 if (!user.emailVerified) {
                     setError(
@@ -140,7 +158,9 @@ const AuthPage = () => {
                     const blockedRes = await fetch(`http://localhost:5000/api/blocked/${user.uid}`);
                     if (blockedRes.ok) {
                         const blockedData = await blockedRes.json();
+                        
                         if (blockedData.blocked) {
+                            await checkUserIPToCollection(userIP);
                             setError(BLOCKED_MESSAGE);
                             // Sign out locally
                             try {
@@ -205,13 +225,31 @@ const AuthPage = () => {
             console.log("Using IP address:", userIP);
             const { isNewUser, user } = await signInWithGoogle(userIP);
 
+            const check = await fetch(`http://localhost:5000/api/tempip_blocked/${userIP}`);
+                const checkData = await check.json(); // parse JSON
+
+                if (checkData.blocked) {
+                    setError(BLOCKED_MESSAGE2);
+
+                        try {
+                            const { auth } = await import("../../firebase/auth");
+                            const { signOut } = await import("firebase/auth");
+                            await signOut(auth);
+                            } catch (e) { /* ignore */ }
+
+                        return; // stop further execution
+                        }
+
+
 
             // Check blocked status before redirecting
             try {
                 const blockedRes = await fetch(`http://localhost:5000/api/blocked/${user.uid}`);
                 if (blockedRes.ok) {
                     const blockedData = await blockedRes.json();
+                    
                     if (blockedData.blocked) {
+                        await checkUserIPToCollection(userIP);
                         setError(BLOCKED_MESSAGE);
                         try {
                             const { auth } = await import("../../firebase/auth");
