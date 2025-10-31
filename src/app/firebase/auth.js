@@ -12,7 +12,7 @@ import { collection, query, where, getDocs } from "firebase/firestore";
 import { doc, setDoc, getDoc,updateDoc } from "firebase/firestore";
 import { sendEmailVerification } from "firebase/auth";
 
-
+//asdasdjas
 //const auth = getAuth(app);
 
 // Email/password signup
